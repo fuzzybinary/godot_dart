@@ -2,5 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="godot_dart.cpp" />
+    <ClCompile Include="dart_bindings.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dart_bindings.h" />
   </ItemGroup>
 </Project>

@@ -19,7 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="dart_bindings.cpp" />
     <ClCompile Include="godot_dart.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dart_bindings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

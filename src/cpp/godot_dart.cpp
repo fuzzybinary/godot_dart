@@ -1,7 +1,6 @@
 #include <godot/gdextension_interface.h>
 
-#include <dart_dll.h>
-#include <dart_api.h>
+#include "dart_bindings.h"
 
 #if !defined(GDE_EXPORT)
 #if defined(_WIN32)
@@ -41,6 +40,7 @@ const uint32_t kGetBaseDirHash = 3942272618;
 const GDExtensionInterface* gdeInterface = nullptr;
 GDExtensionClassLibraryPtr library = nullptr;
 void* token = nullptr;
+DartBindings* dart_bindings = nullptr;
 
 void gd_string_name_new(GDExtensionStringNamePtr out, const char* cstr) {
   uint8_t as_gdstring[GD_STRING_MAX_SIZE];
@@ -80,8 +80,6 @@ void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
     return;
   }
 
-  DartDll_Initialize();
-
   uint8_t gdsn_method_name[GD_STRING_NAME_MAX_SIZE];
   gd_string_name_new(&gdsn_method_name, "get_base_dir");
   GDExtensionPtrBuiltInMethod get_base_dir = gdeInterface->variant_get_ptr_builtin_method(
@@ -116,48 +114,15 @@ void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
   basedir_path[basedir_path_size] = '\0';
   gdstring_destructor(gd_basedir_path);
 
-  char dartScriptPath[256], packagePath[256];
-  sprintf_s(dartScriptPath, "%s/src/main.dart", basedir_path);
-  sprintf_s(packagePath, "%s/src/.dart_tool/package_config.json", basedir_path);
-  Dart_Isolate isolate = DartDll_LoadScript(dartScriptPath, packagePath);
-  if(isolate == nullptr) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (Failed to load script)");
-    return;
-  }
-
-  Dart_EnterIsolate(isolate);
-  Dart_EnterScope();
-
-  Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
-  Dart_Handle godot_dart_library = Dart_LookupLibrary(godot_dart_package_name);
-  if (Dart_IsError(godot_dart_library)) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (Could not find the `godot_dart` package)");
-    return;
-  }
+  char dart_script_path[256], package_path[256];
+  sprintf_s(dart_script_path, "%s/src/main.dart", basedir_path);
+  sprintf_s(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
   
-  {
-    Dart_Handle args[] = {
-      Dart_NewInteger((int64_t)gdeInterface)
-    };
-    Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_register_godot"), 1, args);
-    if (Dart_IsError(result)) {
-      GD_PRINT_ERROR("GodotDart: Error calling `_register_godot`");
-      GD_PRINT_ERROR(Dart_GetError(result));
-      return;
-    }
+  dart_bindings = new DartBindings(gdeInterface);
+  if (!dart_bindings->initialize(dart_script_path, package_path)) {
+    delete dart_bindings;
+    dart_bindings = nullptr;
   }
-  
-  {
-    Dart_Handle library = Dart_RootLibrary();
-    Dart_Handle mainFunctionName = Dart_NewStringFromCString("main");
-    Dart_Handle result = Dart_Invoke(library, mainFunctionName, 0, nullptr);
-    if (Dart_IsError(result)) {
-      GD_PRINT_ERROR("GodotDart: Error calling `main`");
-      GD_PRINT_ERROR(Dart_GetError(result));
-    }
-  }
-
-  Dart_ExitScope();
 }
 
 void deinitialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
@@ -165,7 +130,11 @@ void deinitialize_level(void* userdata, GDExtensionInitializationLevel p_level) 
     return;
   }
 
-  DartDll_Shutdown();
+  if (dart_bindings) {
+    dart_bindings->shutdown();
+    delete dart_bindings;
+    dart_bindings = nullptr;
+  }
 }
 
 }
