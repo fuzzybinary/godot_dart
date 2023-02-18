@@ -4,16 +4,16 @@ import 'package:ffi/ffi.dart';
 
 import 'gdextension_bindings.dart';
 
-GodotDartExtensionInterface get gde => GodotDartExtensionInterface.instance!;
+GodotDart get gde => GodotDart.instance!;
 
 /// This is a wrapper around the [GDExtensionInterface] generated FFI
 /// code to make calling the extension easier.
-class GodotDartExtensionInterface {
+class GodotDart {
   final Pointer<GDExtensionInterface> interface;
 
-  static GodotDartExtensionInterface? instance;
+  static GodotDart? instance;
 
-  GodotDartExtensionInterface(this.interface) {
+  GodotDart(this.interface) {
     instance = this;
   }
 
@@ -28,28 +28,34 @@ class GodotDartExtensionInterface {
 
   // Variant Type
 
-  GDExtensionPtrConstructor variantGetPtrConstructor(
-      int variantType, int index) {
-    return interface.ref.variant_get_ptr_constructor
-            .asFunction<GDExtensionPtrConstructor Function(int, int)>()(
-        variantType, index);
+  GDExtensionPtrConstructor variantGetConstructor(
+    int variantType,
+    int index,
+  ) {
+    GDExtensionPtrConstructor Function(int, int) func = interface
+        .ref.variant_get_ptr_constructor
+        .asFunction<GDExtensionPtrConstructor Function(int, int)>();
+    return func(variantType, index);
   }
 
-  GDExtensionPtrDestructor variantGetPtrDestructor(int variantType) {
+  GDExtensionPtrDestructor variantGetDestructor(int variantType) {
     return interface.ref.variant_get_ptr_destructor
         .asFunction<GDExtensionPtrDestructor Function(int)>()(variantType);
   }
 
-  void callBuiltinConstructor(GDExtensionPtrConstructor constructor,
-      GDExtensionTypePtr base, List<GDExtensionConstTypePtr> args) {
+  void callBuiltinConstructor(
+    GDExtensionPtrConstructor constructor,
+    GDExtensionTypePtr base,
+    List<GDExtensionConstTypePtr> args,
+  ) {
     final array = malloc<GDExtensionConstTypePtr>(args.length);
     for (int i = 0; i < args.length; ++i) {
       array[i] = args[i];
     }
 
-    constructor.asFunction<
-        void Function(GDExtensionTypePtr,
-            Pointer<GDExtensionConstTypePtr>)>()(base, array);
+    void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>) c =
+        constructor.asFunction();
+    c(base, array);
 
     malloc.free(array);
   }

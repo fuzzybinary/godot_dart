@@ -2,20 +2,18 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
-import 'gdextension.dart';
-import 'gen/string.dart';
-import 'gen/string_name.dart';
-
-// TODO: This has to come from the generator
-const int variantSize = 24;
-
 class Variant {
-  final Pointer<Uint8> opaque = malloc<Uint8>(variantSize);
+  static final Finalizer<Pointer<Uint8>> _finalizer =
+      Finalizer((mem) => calloc.free(mem));
 
-  static void registerVariantTypes() {
-    final gde = GodotDartExtensionInterface.instance!;
+  // TODO: This is supposed to come from the generator, but we
+  // may just need to take the max size
+  static const int _size = 24;
 
-    StringName.initBindingsConstructorDestructor(gde);
-    GDString.initBindingsConstructorDestructor(gde);
+  static final _opaque = calloc<Uint8>(_size);
+  Pointer<Uint8> get opaque => _opaque;
+
+  Variant() {
+    _finalizer.attach(this, _opaque);
   }
 }

@@ -10,13 +10,17 @@ export 'src/gdextension_bindings.dart';
 export 'src/gen/string.dart';
 export 'src/gen/string_name.dart';
 
-late GodotDartExtensionInterface _globalExtension;
+// ignore: unused_element
+late GodotDart _globalExtension;
 
-void _register_godot(int gdeAddress) {
-  final gde = Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
+// ignore: unused_element
+void _registerGodot(int gdeAddress) {
+  final extensionInterface =
+      Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
 
   // TODO: Assert everything is how we expect..
-  _globalExtension = GodotDartExtensionInterface(gde);
-  GDString.initBindingsConstructorDestructor(_globalExtension);
-  StringName.initBindingsConstructorDestructor(_globalExtension);
+  _globalExtension = GodotDart(extensionInterface);
+
+  GDString.initBindingsConstructorDestructor();
+  StringName.initBindingsConstructorDestructor();
 }

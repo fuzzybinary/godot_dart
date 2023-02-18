@@ -31,7 +31,7 @@ class Simple {
   late GDExtensionObjectPtr owner;
 
   Simple() {
-    final gde = GodotDartExtensionInterface.instance!.interface;
+    final gde = GodotDart.instance!.interface;
     owner = gde.ref.classdb_construct_object.asFunction<
         GDExtensionObjectPtr Function(
             GDExtensionConstStringNamePtr)>()(Simple.className.opaque.cast());

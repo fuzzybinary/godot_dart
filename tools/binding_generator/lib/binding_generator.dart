@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:binding_generator/src/gdstring_additional.dart';
 import 'package:binding_generator/src/type_helpers.dart';
-import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart' as path;
 
 const String templateLocation = 'lib/src/templates';
@@ -87,14 +87,18 @@ import 'package:ffi/ffi.dart';
 
 import '../gdextension_bindings.dart';
 import '../gdextension.dart';
-import '../variant.dart';
-import '../object.dart';
 
 ''');
 
     final usedClasses = getUsedTypes(builtinApi);
     for (var used in usedClasses) {
-      out.write("import '${used.toSnakeCase()}.dart';\n");
+      if (used != className) {
+        if (used == 'Object' || used == 'Variant') {
+          out.write("import '../${used.toSnakeCase()}.dart';\n");
+        } else {
+          out.write("import '${used.toSnakeCase()}.dart';\n");
+        }
+      }
     }
 
     out.write('''
@@ -106,20 +110,17 @@ class $correctedName {
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   Pointer<Uint8> get opaque => _opaque;
 
-  static void initBindingsConstructorDestructor(
-    GodotDartExtensionInterface gde,
-  ) {
+  static void initBindingsConstructorDestructor() {
 ''');
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
       int index = constructor['index'];
-      out.write(
-          '''    _bindings.constructor_$index = gde.variantGetPtrConstructor(
+      out.write('''    _bindings.constructor_$index = gde.variantGetConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, $index);
 ''');
     }
     if (builtinApi['has_destructor'] == true) {
-      out.write('''    _bindings.destructor = gde.variantGetPtrDestructor(
+      out.write('''    _bindings.destructor = gde.variantGetDestructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
 ''');
     }
@@ -152,8 +153,7 @@ class $correctedName {
 
       // Method call
       out.write('''
-    final gde = GodotDartExtensionInterface.instance;
-    gde?.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
+    gde.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
 ''');
 
       for (Map<String, dynamic> argument in arguments) {
@@ -175,6 +175,10 @@ class $correctedName {
       }
 
       out.write('  }\n');
+    }
+
+    if (className == 'String') {
+      out.write(gdStringFromString());
     }
 
     out.write('}\n');
@@ -219,17 +223,6 @@ String getArgumentDeclaration(Map<String, dynamic> argument) {
   return '$correctedType ${name.toLowerCamelCase()}';
 }
 
-Template? getPartial(String partial) {
-  final partialPath = path.join(templateLocation, '$partial.mustache');
-  final partialFile = File(partialPath);
-  if (!partialFile.existsSync()) {
-    return null;
-  }
-
-  final templateString = partialFile.readAsStringSync();
-  return Template(templateString, partialResolver: getPartial);
-}
-
 /// Generate a constructor name from arguments types. In the case
 /// of a single argument constructor of the same type, the constructor
 /// is called 'copy'. Otherwise it is named '.from{ArgType1}{ArgType2}'
@@ -268,7 +261,6 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   // TODO Members
 
   usedTypes.removeAll(dartTypes);
-  usedTypes.removeAll(['Variant', 'Object']);
 
   return usedTypes.toList();
 }
