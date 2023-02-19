@@ -40,7 +40,7 @@ const uint32_t kGetBaseDirHash = 3942272618;
 const GDExtensionInterface* gdeInterface = nullptr;
 GDExtensionClassLibraryPtr library = nullptr;
 void* token = nullptr;
-DartBindings* dart_bindings = nullptr;
+GodotDartBindings* dart_bindings = nullptr;
 
 void gd_string_name_new(GDExtensionStringNamePtr out, const char* cstr) {
   uint8_t as_gdstring[GD_STRING_MAX_SIZE];
@@ -118,7 +118,7 @@ void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
   sprintf_s(dart_script_path, "%s/src/main.dart", basedir_path);
   sprintf_s(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
   
-  dart_bindings = new DartBindings(gdeInterface);
+  dart_bindings = new GodotDartBindings(gdeInterface, library);
   if (!dart_bindings->initialize(dart_script_path, package_path)) {
     delete dart_bindings;
     dart_bindings = nullptr;

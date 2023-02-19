@@ -14,12 +14,13 @@ export 'src/gen/string_name.dart';
 late GodotDart _globalExtension;
 
 // ignore: unused_element
-void _registerGodot(int gdeAddress) {
+void _registerGodot(int gdeAddress, int libraryAddress) {
   final extensionInterface =
       Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
+  final libraryPtr = GDExtensionClassLibraryPtr.fromAddress(libraryAddress);
 
   // TODO: Assert everything is how we expect..
-  _globalExtension = GodotDart(extensionInterface);
+  _globalExtension = GodotDart(extensionInterface, libraryPtr);
 
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();

@@ -2,16 +2,11 @@ include: package:lints/recommended.yaml
 
 # Uncomment the following section to specify additional rules.
 
-# linter:
-#   rules:
-#     - camel_case_types
-
 analyzer:
   exclude:
     - lib/src/gdextension_bindings.dart
-
-# For more information about the core and recommended set of lints, see
-# https://dart.dev/go/core-lints
-
-# For additional information about configuring this file, see
-# https://dart.dev/guides/language/analysis-options
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+  errors:
+    native_function_body_in_non_sdk_code: ignore
