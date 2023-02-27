@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:nativewrappers';
 
 import 'package:ffi/ffi.dart';
 import 'package:godot_dart/godot_dart.dart';
@@ -8,11 +9,14 @@ class Simple {
   late GDExtensionObjectPtr owner;
 
   Simple() {
-    owner = gde
-        .constructObject(StringName.fromString(GDString.fromString("Object")));
+    owner = gde.constructObject(StringName.fromString('Object'));
   }
 
   Simple.fromOwner(this.owner);
+
+  Variant myMethod() {
+    return convertToVariant('Hello from Dart!');
+  }
 }
 
 GDExtensionObjectPtr createSimple(Pointer<Void> data) {
@@ -25,7 +29,7 @@ GDExtensionObjectPtr createSimple(Pointer<Void> data) {
 void destroySimple(Pointer<Void> data, GDExtensionObjectPtr ptr) {}
 
 void main() {
-  Simple.className = StringName.fromString(GDString.fromString('Simple'));
+  Simple.className = StringName.fromString('Simple');
 
   final classInfo = calloc<GDExtensionClassCreationInfo>();
   classInfo.ref
@@ -34,7 +38,11 @@ void main() {
 
   gde.registerExtensionClass(
     Simple.className,
-    StringName.fromString(GDString.fromString('Object')),
+    StringName.fromString('Object'),
     classInfo,
   );
+
+  calloc.free(classInfo);
+
+  gde.dartBindings.bindMethod("Simple", "myMethod", String, []);
 }

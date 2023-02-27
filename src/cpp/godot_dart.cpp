@@ -15,34 +15,38 @@
 #define GD_STRING_MAX_SIZE 8
 #define GD_STRING_NAME_MAX_SIZE 8
 
-#define GD_PRINT_ERROR(msg) { \
-    gdeInterface->print_error(msg, __func__, __FILE__, __LINE__); \
-}
+#define GD_PRINT_ERROR(msg)                                                                                            \
+  {                                                                                                                    \
+    gdeInterface->print_error(msg, __func__, __FILE__, __LINE__);                                                      \
+  }
 
-#define GD_PRINT_WARNING(msg) { \
-    gdeInterface->print_warning(msg, __func__, __FILE__, __LINE__); \
-}
+#define GD_PRINT_WARNING(msg)                                                                                          \
+  {                                                                                                                    \
+    gdeInterface->print_warning(msg, __func__, __FILE__, __LINE__);                                                    \
+  }
 
 // GDExtension interface uses GDStringName everywhere a name should be passed,
 // however it is very cumbersome to create it !
 
-static GDExtensionPtrConstructor gdstring_constructor = NULL;
-static GDExtensionPtrDestructor gdstring_destructor = NULL;
-static GDExtensionPtrConstructor gdstringname_from_gdstring_constructor = NULL;
-static GDExtensionPtrDestructor gdstringname_destructor = NULL;
+GDExtensionPtrConstructor gdstring_constructor = NULL;
+GDExtensionPtrDestructor gdstring_destructor = NULL;
+GDExtensionPtrConstructor gdstringname_from_gdstring_constructor = NULL;
+GDExtensionPtrDestructor gdstringname_destructor = NULL;
 
-namespace godot_dart {
+namespace godot_dart
+{
 
 // Hashes from the extension_api.json. Since we don't generate all of the
 // bindings for C++ and only use the ones we need, these are just copied
 const uint32_t kGetBaseDirHash = 3942272618;
 
-const GDExtensionInterface* gdeInterface = nullptr;
+const GDExtensionInterface *gdeInterface = nullptr;
 GDExtensionClassLibraryPtr library = nullptr;
-void* token = nullptr;
-GodotDartBindings* dart_bindings = nullptr;
+void *token = nullptr;
+GodotDartBindings *dart_bindings = nullptr;
 
-void gd_string_name_new(GDExtensionStringNamePtr out, const char* cstr) {
+void gd_string_name_new(GDExtensionStringNamePtr out, const char *cstr)
+{
   uint8_t as_gdstring[GD_STRING_MAX_SIZE];
   gdeInterface->string_new_with_utf8_chars(&as_gdstring, cstr);
 
@@ -51,43 +55,54 @@ void gd_string_name_new(GDExtensionStringNamePtr out, const char* cstr) {
   gdstring_destructor(&as_gdstring);
 }
 
-void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
+void initialize_level(void *userdata, GDExtensionInitializationLevel p_level)
+{
   // TODO - Should we setup different types at different times?
-  if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
+  if (p_level != GDEXTENSION_INITIALIZATION_SERVERS)
+  {
     return;
   }
 
   gdstring_constructor = gdeInterface->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
-  if (gdstring_constructor == NULL) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `String` constructor)");
+  if (gdstring_constructor == NULL)
+  {
+    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `String` "
+                   "constructor)");
     return;
   }
 
   gdstring_destructor = gdeInterface->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
-  if (gdstring_destructor == NULL) {
+  if (gdstring_destructor == NULL)
+  {
     GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `String` destructor)");
     return;
   }
 
-  gdstringname_from_gdstring_constructor = gdeInterface->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
-  if (gdstringname_from_gdstring_constructor == NULL) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `StringName` constructor)");
+  gdstringname_from_gdstring_constructor =
+      gdeInterface->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
+  if (gdstringname_from_gdstring_constructor == NULL)
+  {
+    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `StringName` "
+                   "constructor)");
     return;
   }
   gdstringname_destructor = gdeInterface->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
-  if (gdstringname_destructor == NULL) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `StringName` destructor)");
+  if (gdstringname_destructor == NULL)
+  {
+    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `StringName` "
+                   "destructor)");
     return;
   }
 
   uint8_t gdsn_method_name[GD_STRING_NAME_MAX_SIZE];
   gd_string_name_new(&gdsn_method_name, "get_base_dir");
-  GDExtensionPtrBuiltInMethod get_base_dir = gdeInterface->variant_get_ptr_builtin_method(
-    GDEXTENSION_VARIANT_TYPE_STRING, gdsn_method_name, kGetBaseDirHash
-  );
+  GDExtensionPtrBuiltInMethod get_base_dir =
+      gdeInterface->variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_STRING, gdsn_method_name, kGetBaseDirHash);
   gdstringname_destructor(gdsn_method_name);
-  if (get_base_dir == nullptr) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrieve `String.get_base_dir` method)");
+  if (get_base_dir == nullptr)
+  {
+    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrieve "
+                   "`String.get_base_dir` method)");
     return;
   }
 
@@ -104,8 +119,9 @@ void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
 
   // basedir_path to c string
   GDExtensionInt basedir_path_size = gdeInterface->string_to_utf8_chars(gd_basedir_path, NULL, 0);
-  char* basedir_path = reinterpret_cast<char*>(gdeInterface->mem_alloc(basedir_path_size + 1));
-  if(basedir_path == NULL) {
+  char *basedir_path = reinterpret_cast<char *>(gdeInterface->mem_alloc(basedir_path_size + 1));
+  if (basedir_path == NULL)
+  {
     GD_PRINT_ERROR("GodotDart: Initialization Error (Memory allocation failure)");
     return;
   }
@@ -117,53 +133,57 @@ void initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
   char dart_script_path[256], package_path[256];
   sprintf_s(dart_script_path, "%s/src/main.dart", basedir_path);
   sprintf_s(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
-  
+
   dart_bindings = new GodotDartBindings(gdeInterface, library);
-  if (!dart_bindings->initialize(dart_script_path, package_path)) {
+  if (!dart_bindings->initialize(dart_script_path, package_path))
+  {
     delete dart_bindings;
     dart_bindings = nullptr;
   }
 }
 
-void deinitialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
-  if(p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
+void deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level)
+{
+  if (p_level != GDEXTENSION_INITIALIZATION_SERVERS)
+  {
     return;
   }
 
-  if (dart_bindings) {
+  if (dart_bindings)
+  {
     dart_bindings->shutdown();
     delete dart_bindings;
     dart_bindings = nullptr;
   }
 }
 
-}
+} // namespace godot_dart
 
-extern "C" {
+extern "C"
+{
 
-void GDE_EXPORT initialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
-  godot_dart::initialize_level(userdata, p_level);
-}
+  void GDE_EXPORT initialize_level(void *userdata, GDExtensionInitializationLevel p_level)
+  {
+    godot_dart::initialize_level(userdata, p_level);
+  }
 
-void GDE_EXPORT deinitialize_level(void* userdata, GDExtensionInitializationLevel p_level) {
-  godot_dart::deinitialize_level(userdata, p_level);
-}
+  void GDE_EXPORT deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level)
+  {
+    godot_dart::deinitialize_level(userdata, p_level);
+  }
 
-GDExtensionBool GDE_EXPORT godot_dart_init(
-  const GDExtensionInterface* p_interface, 
-  GDExtensionClassLibraryPtr p_library, 
-  GDExtensionInitialization *r_initialization
-) {
+  GDExtensionBool GDE_EXPORT godot_dart_init(const GDExtensionInterface *p_interface,
+                                             GDExtensionClassLibraryPtr p_library,
+                                             GDExtensionInitialization *r_initialization)
+  {
+    godot_dart::gdeInterface = p_interface;
+    godot_dart::library = p_library;
+    godot_dart::token = p_library;
 
-  godot_dart::gdeInterface = p_interface;
-  godot_dart::library = p_library;
-  godot_dart::token = p_library;
+    r_initialization->initialize = initialize_level;
+    r_initialization->deinitialize = deinitialize_level;
+    r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SERVERS;
 
-  r_initialization->initialize = initialize_level;
-  r_initialization->deinitialize = deinitialize_level;
-  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SERVERS;
-  
-  return true;
-}
-
+    return true;
+  }
 }

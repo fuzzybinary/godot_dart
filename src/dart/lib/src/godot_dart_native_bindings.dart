@@ -24,4 +24,8 @@ class GodotDartNativeBindings {
       GDExtensionObjectPtr gdOwner, StringName className, Object instance) {
     _setInstance(gdOwner, className.opaque.cast(), instance);
   }
+
+  @pragma('vm:external-name', 'GodotDartNativeBindings::bindMethod')
+  external void bindMethod(String className, String methodName, Type returnType,
+      List<Type> argTypes);
 }

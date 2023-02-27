@@ -115,7 +115,8 @@ class $correctedName {
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
       int index = constructor['index'];
-      out.write('''    _bindings.constructor_$index = gde.variantGetConstructor(
+      out.write(
+          '''    _bindings.constructor_$index = gde.variantGetConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, $index);
 ''');
     }
@@ -179,6 +180,8 @@ class $correctedName {
 
     if (className == 'String') {
       out.write(gdStringFromString());
+    } else if (className == 'StringName') {
+      out.write(stringNameFromString());
     }
 
     out.write('}\n');
@@ -231,8 +234,11 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
   if (arguments != null) {
     if (arguments.length == 1) {
       var argument = arguments[0] as Map<String, dynamic>;
-      if (argument['type'] == type) {
+      final argType = argument['type'] as String;
+      if (argType == type) {
         return '.copy';
+      } else if (argType == 'String') {
+        return '.fromGDString';
       }
       return '.from${argument['type']}';
     } else {

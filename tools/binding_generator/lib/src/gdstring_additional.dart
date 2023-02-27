@@ -16,3 +16,14 @@ String gdStringFromString() {
   }
 ''';
 }
+
+String stringNameFromString() {
+  return '''
+  StringName.fromString(String string) {
+    final gdString = GDString.fromString(string);
+    gde.callBuiltinConstructor(_bindings.constructor_2!, opaque.cast(), [
+      gdString.opaque.cast(),
+    ]);
+  }
+''';
+}

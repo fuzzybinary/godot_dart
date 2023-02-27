@@ -7,6 +7,7 @@ environment:
   sdk: '>=2.18.2 <3.0.0'
 
 dependencies:
+  ffi: ^2.0.1
   godot_dart:
     path: ../../src/dart
 

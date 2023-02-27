@@ -1,0 +1,10 @@
+include: package:lints/recommended.yaml
+
+# Uncomment the following section to specify additional rules.
+
+analyzer:
+  exclude:
+    - lib/src/gdextension_bindings.dart
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false

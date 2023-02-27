@@ -9,6 +9,7 @@ export 'src/gdextension.dart';
 export 'src/gdextension_bindings.dart';
 export 'src/gen/string.dart';
 export 'src/gen/string_name.dart';
+export 'src/variant.dart';
 
 // ignore: unused_element
 late GodotDart _globalExtension;
@@ -22,6 +23,7 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   // TODO: Assert everything is how we expect..
   _globalExtension = GodotDart(extensionInterface, libraryPtr);
 
+  initVariantBindings(extensionInterface.ref);
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();
 }
