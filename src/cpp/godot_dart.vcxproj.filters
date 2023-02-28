@@ -3,9 +3,11 @@
   <ItemGroup>
     <ClCompile Include="godot_dart.cpp" />
     <ClCompile Include="dart_bindings.cpp" />
+    <ClCompile Include="gde_wrapper..cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
+    <ClInclude Include="gde_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

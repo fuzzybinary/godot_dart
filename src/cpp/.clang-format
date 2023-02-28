@@ -4,6 +4,8 @@ BasedOnStyle: Microsoft
 
 IndentWidth: 2
 
+BreakBeforeBraces: Attach
+
 # clang-format doesn't seem to do a good job of this for longer comments.
 ReflowComments: 'false'
 
