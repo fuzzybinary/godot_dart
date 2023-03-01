@@ -1,7 +1,9 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:godot_dart/godot_dart.dart';
+
+import '../../godot_dart.dart';
+import '../core/gdextension_ffi_bindings.dart';
 
 typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
@@ -89,7 +91,7 @@ Variant convertToVariant(Object? obj) {
       // TODO: All the other variant types
       default:
         // If we got here, return nil variant
-        gde.interface.ref.variant_new_nil
+        GodotDart.instance!.interface.ref.variant_new_nil
             .asFunction<void Function(GDExtensionVariantPtr)>(
                 isLeaf: true)(ret.opaque.cast());
     }

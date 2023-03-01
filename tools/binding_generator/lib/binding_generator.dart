@@ -32,7 +32,7 @@ Future<void> generate(GenerationOptions options) async {
   }
   var directory = Directory(options.outputDirectory);
   if (!directory.existsSync()) {
-    directory.create(recursive: true);
+    await directory.create(recursive: true);
   }
 
   var jsonString = await file.readAsString();
@@ -49,6 +49,12 @@ Future<void> generateBuiltinBindings(
   String targetDir,
   String buildConfig,
 ) async {
+  targetDir = path.join(targetDir, 'variant');
+  var directory = Directory(targetDir);
+  if (!directory.existsSync()) {
+    await directory.create(recursive: true);
+  }
+
   var builtinSizes = <String, int>{};
 
   for (Map<String, dynamic> sizeList in api['builtin_class_sizes']) {
@@ -85,16 +91,18 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
-import '../gdextension_bindings.dart';
-import '../gdextension.dart';
+import '../../core/gdextension_ffi_bindings.dart';
+import '../../core/gdextension.dart';
 
 ''');
 
     final usedClasses = getUsedTypes(builtinApi);
     for (var used in usedClasses) {
       if (used != className) {
-        if (used == 'Object' || used == 'Variant') {
-          out.write("import '../${used.toSnakeCase()}.dart';\n");
+        if (used == 'Object') {
+          out.write("import '../../core/object.dart';\n");
+        } else if (used == 'Variant') {
+          out.write("import '../../variant/variant.dart';\n");
         } else {
           out.write("import '${used.toSnakeCase()}.dart';\n");
         }
@@ -115,8 +123,7 @@ class $correctedName {
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
       int index = constructor['index'];
-      out.write(
-          '''    _bindings.constructor_$index = gde.variantGetConstructor(
+      out.write('''    _bindings.constructor_$index = gde.variantGetConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, $index);
 ''');
     }

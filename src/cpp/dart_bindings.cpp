@@ -52,7 +52,7 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   // Find the DartBindings "library" (just the file) and set us as the native callback handler
   {
     Dart_Handle native_bindings_library_name =
-        Dart_NewStringFromCString("package:godot_dart/src/godot_dart_native_bindings.dart");
+        Dart_NewStringFromCString("package:godot_dart/src/core/godot_dart_native_bindings.dart");
     Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
     if (!Dart_IsError(library)) {
       Dart_SetNativeResolver(library, native_resolver, nullptr);
@@ -138,22 +138,25 @@ void GodotDartBindings::bind_method(const char *classname, const char *method_na
   GDE->classdb_register_extension_class_method(gde->lib(), gd_class_name, &method_info);
 }
 
-/* Static Functions */
-
-void bind_method(Dart_NativeArguments args) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
-    return;
+void *get_opaque_address(Dart_Handle variant_handle) {
+  // TODO: Look for a better way convert the variant.
+  Dart_Handle opaque = Dart_GetField(variant_handle, Dart_NewStringFromCString("_opaque"));
+  if (Dart_IsError(opaque)) {
+    GD_PRINT_ERROR(Dart_GetError(opaque));
+    return nullptr;
   }
+  Dart_Handle address = Dart_GetField(opaque, Dart_NewStringFromCString("address"));
+  if (Dart_IsError(address)) {
+    GD_PRINT_ERROR(Dart_GetError(address));
+    return nullptr;
+  }
+  uint64_t variantDataPtr = 0;
+  Dart_IntegerToUint64(address, &variantDataPtr);
 
-  const char *class_name = nullptr;
-  const char *method_name = nullptr;
-  Dart_StringToCString(Dart_GetNativeArgument(args, 1), &class_name);
-  Dart_StringToCString(Dart_GetNativeArgument(args, 2), &method_name);
-
-  bindings->bind_method(class_name, method_name);
+  return reinterpret_cast<void *>(variantDataPtr);
 }
+
+/* Static Callbacks from Godot */
 
 void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,
                                   const GDExtensionConstVariantPtr *args, GDExtensionInt argument_count,
@@ -177,19 +180,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     GD_PRINT_ERROR("GodotDart: Error calling function: ");
     GD_PRINT_ERROR(Dart_GetError(handle));
   } else {
-    // TODO: Look for a better way convert the variant.
-    Dart_Handle opaque = Dart_GetField(handle, Dart_NewStringFromCString("_opaque"));
-    if (Dart_IsError(opaque)) {
-      GD_PRINT_ERROR(Dart_GetError(handle));
-      goto fail;
-    }
-    Dart_Handle address = Dart_GetField(opaque, Dart_NewStringFromCString("address"));
-    if (Dart_IsError(address)) {
-      GD_PRINT_ERROR(Dart_GetError(handle));
-      goto fail;
-    }
-    uint64_t variantDataPtr = 0;
-    Dart_IntegerToUint64(address, &variantDataPtr);
+    void *variantDataPtr = get_opaque_address(handle);
     if (variantDataPtr) {
       GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
     }
@@ -234,6 +225,105 @@ void GodotDartBindings::ptr_call(void *method_userdata, GDExtensionClassInstance
   Dart_ExitScope();
 }
 
+GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) {
+  Dart_EnterScope();
+
+  Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
+
+  Dart_Handle class_name = Dart_GetField(type, Dart_NewStringFromCString("className"));
+  if (Dart_IsError(class_name)) {
+    GD_PRINT_ERROR("GodotDart: Error finding class name on object: ");
+    GD_PRINT_ERROR(Dart_GetError(class_name));
+    Dart_ExitScope();
+    return nullptr;
+  }
+  void *opaque_class_name = get_opaque_address(class_name);
+
+  Dart_Handle new_object = Dart_New(type, Dart_Null(), 0, nullptr);
+  if (Dart_IsError(new_object)) {
+    GD_PRINT_ERROR("GodotDart: Error creating object: ");
+    GD_PRINT_ERROR(Dart_GetError(new_object));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  Dart_Handle owner = Dart_GetField(new_object, Dart_NewStringFromCString("owner"));
+  if (Dart_IsError(owner)) {
+    GD_PRINT_ERROR("GodotDart: Error finding owner member for object: ");
+    GD_PRINT_ERROR(Dart_GetError(owner));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  Dart_Handle owner_address = Dart_GetField(owner, Dart_NewStringFromCString("address"));
+  if (Dart_IsError(owner_address)) {
+    GD_PRINT_ERROR("GodotDart: Error getting address for object: ");
+    GD_PRINT_ERROR(Dart_GetError(owner_address));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  uint64_t real_address = 0;
+  Dart_IntegerToUint64(owner_address, &real_address);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(new_object);
+  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), opaque_class_name,
+                           reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
+
+  Dart_ExitScope();
+
+  return reinterpret_cast<GDExtensionObjectPtr>(real_address);
+}
+
+void GodotDartBindings::class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance) {
+  Dart_DeletePersistentHandle(reinterpret_cast<Dart_PersistentHandle>(p_instance));
+}
+
+/* Static Functions From Dart */
+
+void bind_class(Dart_NativeArguments args) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
+    return;
+  }
+
+  Dart_Handle type_arg = Dart_GetNativeArgument(args, 1);
+  Dart_Handle name = Dart_GetNativeArgument(args, 2);
+  Dart_Handle parent = Dart_GetNativeArgument(args, 3);
+
+  // Name and Parent are StringNames and we can get their opaque addresses
+  void *sn_name = get_opaque_address(name);
+  if (sn_name == nullptr) {
+    return;
+  }
+  void *sn_parent = get_opaque_address(parent);
+  if (sn_parent == nullptr) {
+    return;
+  }
+
+  GDExtensionClassCreationInfo info = {0};
+  info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
+  info.create_instance_func = GodotDartBindings::class_create_instance;
+  info.free_instance_func = GodotDartBindings::class_free_instance;
+
+  GDE->classdb_register_extension_class(GDEWrapper::instance()->lib(), sn_name, sn_parent, &info);
+}
+
+void bind_method(Dart_NativeArguments args) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
+    return;
+  }
+
+  const char *class_name = nullptr;
+  const char *method_name = nullptr;
+  Dart_StringToCString(Dart_GetNativeArgument(args, 1), &class_name);
+  Dart_StringToCString(Dart_GetNativeArgument(args, 2), &method_name);
+
+  bindings->bind_method(class_name, method_name);
+}
+
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
   Dart_EnterScope();
 
@@ -243,23 +333,10 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   if (0 == strcmp(c_name, "GodotDartNativeBindings::bindMethod")) {
     *auto_setup_scope = true;
     return bind_method;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::bindClass")) {
+    *auto_setup_scope = true;
+    return bind_class;
   }
 
   return nullptr;
-}
-
-/* Native C Functions */
-
-extern "C" {
-
-void GDE_EXPORT godot_dart_set_instance(GDExtensionObjectPtr object, GDExtensionConstStringNamePtr classname,
-                                        Dart_Handle instance) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
-    return;
-  }
-
-  bindings->set_instance(object, classname, instance);
-}
 }

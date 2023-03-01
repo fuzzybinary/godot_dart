@@ -4,12 +4,13 @@ library godot_dart;
 import 'dart:ffi';
 
 import 'godot_dart.dart';
+import 'src/core/gdextension_ffi_bindings.dart';
 
-export 'src/gdextension.dart';
-export 'src/gdextension_bindings.dart';
-export 'src/gen/string.dart';
-export 'src/gen/string_name.dart';
-export 'src/variant.dart';
+export 'src/core/gdextension.dart';
+export 'src/core/wrapped.dart';
+export 'src/gen/variant/string.dart';
+export 'src/gen/variant/string_name.dart';
+export 'src/variant/variant.dart';
 
 // ignore: unused_element
 late GodotDart _globalExtension;

@@ -15,7 +15,7 @@ dev_dependencies:
   lints: ^2.0.0
 
 ffigen:
-  output: 'lib/src/gdextension_bindings.dart'
+  output: 'lib/src/core/gdextension_ffi_bindings.dart'
   name: GDExtension
   headers:
     entry-points:
