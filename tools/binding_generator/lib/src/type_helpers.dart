@@ -43,28 +43,40 @@ final typeToFFIType = {
   'uint64_t': 'Uint64',
 };
 
-String getFFIType(String type) {
+String? getFFIType(String type) {
   if (typeToFFIType.containsKey(type)) {
     return typeToFFIType[type]!;
   }
 
-  return type;
+  return null;
 }
 
-String getCorrectedType(String type) {
-  switch (type) {
-    case 'String':
-    case 'Object':
-      return 'GD$type';
+final defaultValueForType = {'bool': 'true', 'double': '0.0', 'int': '0'};
 
-    case 'float':
-    case 'real_t':
-      return 'double';
+String getDefaultValueForType(String type) {
+  return defaultValueForType[type] ?? '$type()';
+}
+
+String getCorrectedType(String type, {String? meta}) {
+  const typeConversion = {
+    'float': 'double',
+    'Nil': 'Variant',
+    'String': 'GDString',
+    'Object': 'GDObject',
+    'real_t': 'double',
+  };
+  if (meta != null) {
+    if (meta.contains('int')) {
+      return 'int';
+    } else if (typeConversion.containsKey(meta)) {
+      return typeConversion[meta]!;
+    }
+  }
+  if (typeConversion.containsKey(type)) {
+    return typeConversion[type]!;
   }
 
-  if (type.startsWith('int') || type.startsWith('uint')) {
-    return 'int';
-  }
+  // TODO: TypedArray and other special cases
 
   return type;
 }

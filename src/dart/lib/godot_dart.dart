@@ -25,6 +25,6 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   _globalExtension = GodotDart(extensionInterface, libraryPtr);
 
   initVariantBindings(extensionInterface.ref);
-  GDString.initBindingsConstructorDestructor();
-  StringName.initBindingsConstructorDestructor();
+  GDString.initBindings();
+  StringName.initBindings();
 }

@@ -66,6 +66,33 @@ class GodotDart {
     malloc.free(array);
   }
 
+  void callBuiltinMethodPtr(
+    GDExtensionPtrBuiltInMethod? method,
+    GDExtensionTypePtr base,
+    GDExtensionTypePtr ret,
+    List<GDExtensionConstTypePtr> args,
+  ) {
+    if (method == null) return;
+
+    final array = malloc<GDExtensionConstTypePtr>(args.length);
+    for (int i = 0; i < args.length; ++i) {
+      array[i] = args[i];
+    }
+    void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>,
+        GDExtensionTypePtr, int) m = method.asFunction();
+    m(base, array, ret, args.length);
+  }
+
+  GDExtensionPtrBuiltInMethod variantGetBuiltinMethod(
+    int variantType,
+    StringName name,
+    int hash,
+  ) {
+    return interface.ref.variant_get_ptr_builtin_method.asFunction<
+        GDExtensionPtrBuiltInMethod Function(int, GDExtensionConstStringNamePtr,
+            int)>()(variantType, name.opaque.cast(), hash);
+  }
+
   void bindMethod(
     String className,
     String methodName,

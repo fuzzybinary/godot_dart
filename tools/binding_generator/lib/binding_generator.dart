@@ -93,6 +93,7 @@ import 'package:ffi/ffi.dart';
 
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
+import 'string_name.dart';
 
 ''');
 
@@ -118,7 +119,7 @@ class $correctedName {
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   Pointer<Uint8> get opaque => _opaque;
 
-  static void initBindingsConstructorDestructor() {
+  static void initBindings() {
 ''');
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
@@ -130,6 +131,18 @@ class $correctedName {
     if (builtinApi['has_destructor'] == true) {
       out.write('''    _bindings.destructor = gde.variantGetDestructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
+''');
+    }
+    out.write('    StringName name;\n');
+    for (Map<String, dynamic> method in builtinApi['methods']) {
+      var methodName = method['name'] as String;
+      out.write('''    name = StringName.fromString('$methodName');\n''');
+      out.write(
+          '''    _bindings.method${methodName.toUpperCamelCase()} = gde.variantGetBuiltinMethod(
+      GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, 
+      name, 
+      ${method['hash']},
+    );
 ''');
     }
 
@@ -154,33 +167,22 @@ class $correctedName {
         out.write(') {\n');
       }
 
-      // Allocations
-      for (Map<String, dynamic> argument in arguments) {
-        argumentAllocation(argument, out);
-      }
-
-      // Method call
-      out.write('''
-    gde.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
+      withAllocationBlock(arguments, null, out, (ei) {
+        out.write('''
+    ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
 ''');
-
-      for (Map<String, dynamic> argument in arguments) {
-        final name = argument['name'] as String;
-        if (argumentNeedsAllocation(argument)) {
-          out.write('      ${name.toLowerCamelCase()}Ptr.cast(),\n');
-        } else {
-          out.write('      ${name.toLowerCamelCase()}.opaque.cast(),\n');
+        for (Map<String, dynamic> argument in arguments) {
+          final name = argument['name'] as String;
+          if (argumentNeedsAllocation(argument)) {
+            out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
+          } else {
+            out.write('      $ei${name.toLowerCamelCase()}.opaque.cast(),\n');
+          }
         }
-      }
-
-      out.write('''
-    ]); 
+        out.write('''
+    $ei]); 
 ''');
-
-      // Deallocations
-      for (Map<String, dynamic> argument in arguments) {
-        argumentFree(argument, out);
-      }
+      });
 
       out.write('  }\n');
     }
@@ -189,6 +191,56 @@ class $correctedName {
       out.write(gdStringFromString());
     } else if (className == 'StringName') {
       out.write(stringNameFromString());
+    }
+
+    // Methods
+    for (Map<String, dynamic> method in builtinApi['methods']) {
+      final methodName = (method['name'] as String);
+      final signature = makeSignature(method, forBuiltin: true);
+      out.write('''
+  $signature {
+''');
+
+      List<dynamic> arguments = method['arguments'] ?? <Map<String, dynamic>>[];
+
+      final dartReturnType = getDartReturnType(method);
+      if (dartReturnType != null) {
+        out.write(
+            '    $dartReturnType retVal = ${getDefaultValueForType(dartReturnType)};\n');
+      }
+      withAllocationBlock(arguments, dartReturnType, out, (ei) {
+        bool extractReturnValue = false;
+        if (dartReturnType != null) {
+          extractReturnValue = writeReturnAllocation(dartReturnType, out);
+        }
+        final retParam = dartReturnType != null ? 'retPtr.cast()' : 'nullptr';
+        final thisParam =
+            method['is_static'] == true ? 'nullptr' : 'opaque.cast()';
+        out.write('''
+    ${ei}gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [
+''');
+        for (Map<String, dynamic> argument in arguments) {
+          final name = argument['name'] as String;
+          if (argumentNeedsAllocation(argument)) {
+            out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
+          } else {
+            out.write('      $ei${name.toLowerCamelCase()}.opaque.cast(),\n');
+          }
+        }
+
+        out.write('''
+    $ei]);
+''');
+        if (dartReturnType != null && extractReturnValue) {
+          out.write('      retVal = retPtr.value;\n');
+        }
+      });
+
+      if (dartReturnType != null) {
+        out.write('    return retVal;\n');
+      }
+
+      out.write('  }\n\n');
     }
 
     out.write('}\n');
@@ -204,6 +256,11 @@ class _${className}Bindings {\n''');
     if (builtinApi['has_destructor'] == true) {
       out.write('''  GDExtensionPtrDestructor? destructor;\n''');
     }
+    for (Map<String, dynamic> method in builtinApi['methods']) {
+      var methodName = method['name'] as String;
+      methodName = methodName.toUpperCamelCase();
+      out.write('''  GDExtensionPtrBuiltInMethod? method$methodName;\n''');
+    }
     out.write('}\n');
 
     out.close();
@@ -217,7 +274,45 @@ void argumentAllocation(Map<String, dynamic> argument, IOSink out) {
   var name = argument['name'] as String;
   var ffiType = getFFIType(type);
   out.write(
-      '    final Pointer<$ffiType> ${name.toLowerCamelCase()}Ptr = malloc<$ffiType>(sizeOf<$ffiType>())..value = ${name.toLowerCamelCase()};\n');
+      '      final ${name.toLowerCamelCase()}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${name.toLowerCamelCase()};\n');
+}
+
+bool writeReturnAllocation(String returnType, IOSink out) {
+  final nativeType = getFFIType(returnType);
+  String indent = '      ';
+  out.write(indent);
+  if (nativeType == null) {
+    out.write('final retPtr = retVal.opaque.cast();\n');
+    return false;
+  } else {
+    out.write(
+        'final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());\n');
+    return true;
+  }
+}
+
+void withAllocationBlock(
+  List<dynamic> arguments,
+  String? dartReturnType,
+  IOSink out,
+  void Function(String indent) writeBlock,
+) {
+  var indent = '';
+  var needsArena = dartReturnType != null ||
+      arguments.any((dynamic arg) => argumentNeedsAllocation(arg));
+  if (needsArena) {
+    indent = '  ';
+    out.write('''
+    using((arena) {
+''');
+    for (Map<String, dynamic> arg in arguments) {
+      argumentAllocation(arg, out);
+    }
+  }
+  writeBlock(indent);
+  if (needsArena) {
+    out.write('    });\n');
+  }
 }
 
 void argumentFree(Map<String, dynamic> argument, IOSink out) {
@@ -261,6 +356,42 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
   return '';
 }
 
+String makeSignature(
+  Map<String, dynamic> functionData, {
+  bool forBuiltin = true,
+}) {
+  var modifiers = '';
+  var returnType = getDartReturnType(functionData) ?? 'void';
+  String? returnMeta;
+
+  if (functionData['is_static'] == true) {
+    modifiers = 'static ';
+  }
+
+  var methodName = (functionData['name'] as String).toLowerCamelCase();
+
+  var signature = '$modifiers$returnType $methodName(';
+
+  final List<dynamic>? parameters = functionData['arguments'];
+  if (parameters != null) {
+    List<String> paramSignature = [];
+
+    for (int i = 0; i < parameters.length; ++i) {
+      Map<String, dynamic> parameter = parameters[i];
+      final type = getCorrectedType(parameter['type'], meta: parameter['meta']);
+
+      // TODO: Default values
+      var paramName = (parameter['name'] as String).toLowerCamelCase();
+      paramSignature.add('$type $paramName');
+    }
+    signature += paramSignature.join(', ');
+  }
+
+  signature += ')';
+
+  return signature;
+}
+
 List<String> getUsedTypes(Map<String, dynamic> api) {
   var usedTypes = <String>{};
   for (Map<String, dynamic> constructor in api['constructors']) {
@@ -270,12 +401,65 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
       }
     }
   }
-  // TODO methods
-  // TODO Members
+
+  for (Map<String, dynamic> method in api['methods']) {
+    if (method.containsKey('arguments')) {
+      for (Map<String, dynamic> arg in method['arguments']) {
+        usedTypes.add(arg['type']);
+      }
+    }
+    if (method.containsKey('return_type')) {
+      usedTypes.add(method['return_type']);
+    } else if (method.containsKey('return_value')) {
+      usedTypes.add(getTypeFromArgument(method['return_value']));
+    }
+  }
+
+  if (api.containsKey('members')) {
+    for (Map<String, dynamic> member in api['members']) {
+      usedTypes.add(member['type']);
+    }
+  }
 
   usedTypes.removeAll(dartTypes);
+  // Already included
+  usedTypes.remove('StringName');
 
   return usedTypes.toList();
+}
+
+String getTypeFromArgument(Map<String, dynamic> argument) {
+  String type = argument['type'];
+  String? meta = argument['meta'];
+
+  type = type.replaceFirst('const ', '');
+  if (type.endsWith('*')) {
+    type = type.substring(0, type.length - 1);
+  }
+
+  // Handle typed arrays?
+  type = getCorrectedType(type, meta: meta);
+
+  return type;
+}
+
+String? getDartReturnType(Map<String, dynamic> method) {
+  String? returnType;
+  String? returnMeta;
+
+  if (method.containsKey('return_type')) {
+    returnType = getCorrectedType(method['return_type']);
+  } else if (method.containsKey('return_value')) {
+    final returnValue = method['return_value'] as Map<String, dynamic>;
+    returnType = returnValue['type'];
+    if (returnValue.containsKey('meta')) {
+      returnMeta = method['return_value']['meta'];
+    }
+
+    returnType = getCorrectedType(returnType!, meta: returnMeta);
+  }
+
+  return returnType;
 }
 
 extension StringHelpers on String {
@@ -299,5 +483,11 @@ extension StringHelpers on String {
     return replaceAllMapped(RegExp('(.)_([a-z])'), (match) {
       return '${match.group(1)}${match.group(2)?.toUpperCase()}';
     });
+  }
+
+  String toUpperCamelCase() {
+    var lowerCamel = toLowerCamelCase();
+    return lowerCamel.replaceRange(
+        0, 1, lowerCamel[0].toUpperCase().toString());
   }
 }
