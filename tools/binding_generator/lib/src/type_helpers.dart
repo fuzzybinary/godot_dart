@@ -80,3 +80,19 @@ String getCorrectedType(String type, {String? meta}) {
 
   return type;
 }
+
+/// Fix any names that might be reserved words in dart
+String escapeName(String name) {
+  const map = {
+    'with': 'withVal',
+    'class': 'klass',
+    'bool': 'boolVal',
+    'int': 'intVal',
+    'default': 'defaultVal',
+    'case': '_case',
+    'switch': 'switchVal',
+    'new': 'newVal',
+  };
+
+  return map[name] ?? name;
+}

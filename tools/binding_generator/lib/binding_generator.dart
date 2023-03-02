@@ -5,6 +5,8 @@ import 'package:binding_generator/src/gdstring_additional.dart';
 import 'package:binding_generator/src/type_helpers.dart';
 import 'package:path/path.dart' as path;
 
+import 'src/string_extensions.dart';
+
 const String templateLocation = 'lib/src/templates';
 
 const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
@@ -172,7 +174,7 @@ class $correctedName {
     ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
 ''');
         for (Map<String, dynamic> argument in arguments) {
-          final name = argument['name'] as String;
+          final name = escapeName(argument['name'] as String);
           if (argumentNeedsAllocation(argument)) {
             out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
           } else {
@@ -220,7 +222,7 @@ class $correctedName {
     ${ei}gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [
 ''');
         for (Map<String, dynamic> argument in arguments) {
-          final name = argument['name'] as String;
+          final name = escapeName(argument['name'] as String);
           if (argumentNeedsAllocation(argument)) {
             out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
           } else {
@@ -271,7 +273,7 @@ void argumentAllocation(Map<String, dynamic> argument, IOSink out) {
   if (!argumentNeedsAllocation(argument)) return;
 
   var type = argument['type'] as String;
-  var name = argument['name'] as String;
+  var name = escapeName(argument['name'] as String);
   var ffiType = getFFIType(type);
   out.write(
       '      final ${name.toLowerCamelCase()}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${name.toLowerCamelCase()};\n');
@@ -318,13 +320,13 @@ void withAllocationBlock(
 void argumentFree(Map<String, dynamic> argument, IOSink out) {
   if (!argumentNeedsAllocation(argument)) return;
 
-  var name = argument['name'] as String;
+  var name = escapeName(argument['name'] as String);
   out.write('    malloc.free(${name.toLowerCamelCase()}Ptr);\n');
 }
 
 String getArgumentDeclaration(Map<String, dynamic> argument) {
   final correctedType = getCorrectedType(argument['type'] as String);
-  final name = argument['name'] as String;
+  final name = escapeName(argument['name'] as String);
   return '$correctedType ${name.toLowerCamelCase()}';
 }
 
@@ -346,7 +348,7 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
     } else {
       var name = '.from';
       for (final arg in arguments) {
-        var argName = (arg['name'] as String).toLowerCamelCase();
+        var argName = escapeName((arg['name'] as String)).toLowerCamelCase();
         name += argName[0].toUpperCase() + argName.substring(1);
       }
       return name;
@@ -381,7 +383,8 @@ String makeSignature(
       final type = getCorrectedType(parameter['type'], meta: parameter['meta']);
 
       // TODO: Default values
-      var paramName = (parameter['name'] as String).toLowerCamelCase();
+      var paramName =
+          escapeName((parameter['name'] as String)).toLowerCamelCase();
       paramSignature.add('$type $paramName');
     }
     signature += paramSignature.join(', ');
@@ -460,34 +463,4 @@ String? getDartReturnType(Map<String, dynamic> method) {
   }
 
   return returnType;
-}
-
-extension StringHelpers on String {
-  String toSnakeCase() {
-    return replaceAllMapped(RegExp('(.)([A-Z][a-z]+)'), (match) {
-      return '${match.group(1)}_${match.group(2)}';
-    })
-        .replaceAllMapped(RegExp('([a-z0-9])([A-Z])'), (match) {
-          return '${match.group(1)}_${match.group(2)}';
-        })
-        .replaceAll('2_D', '2d')
-        .replaceAll('3_D', '3d')
-        .toLowerCase();
-  }
-
-  String toUpperSnakeCase() {
-    return toSnakeCase().toUpperCase();
-  }
-
-  String toLowerCamelCase() {
-    return replaceAllMapped(RegExp('(.)_([a-z])'), (match) {
-      return '${match.group(1)}${match.group(2)?.toUpperCase()}';
-    });
-  }
-
-  String toUpperCamelCase() {
-    var lowerCamel = toLowerCamelCase();
-    return lowerCamel.replaceRange(
-        0, 1, lowerCamel[0].toUpperCase().toString());
-  }
 }
