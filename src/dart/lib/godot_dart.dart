@@ -7,15 +7,15 @@ import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
 
 export 'src/core/gdextension.dart';
+export 'src/core/type_info.dart';
 export 'src/core/wrapped.dart';
-export 'src/gen/variant/string.dart';
-export 'src/gen/variant/string_name.dart';
+export 'src/gen/variant/builtins.dart';
 export 'src/variant/variant.dart';
 
 // ignore: unused_element
 late GodotDart _globalExtension;
 
-// ignore: unused_element
+@pragma('vm:entry-point')
 void _registerGodot(int gdeAddress, int libraryAddress) {
   final extensionInterface =
       Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
@@ -25,6 +25,5 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   _globalExtension = GodotDart(extensionInterface, libraryPtr);
 
   initVariantBindings(extensionInterface.ref);
-  GDString.initBindings();
-  StringName.initBindings();
+  TypeInfo.initTypeMappings();
 }

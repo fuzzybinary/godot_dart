@@ -57,6 +57,11 @@ Future<void> generateBuiltinBindings(
     await directory.create(recursive: true);
   }
 
+  // Holds all the exports an initializations for the builtins, written as
+  // 'builtins.dart' at the end of generation
+  var exportsString = '';
+  var initBindingsString = '';
+
   var builtinSizes = <String, int>{};
 
   for (Map<String, dynamic> sizeList in api['builtin_class_sizes']) {
@@ -69,18 +74,13 @@ Future<void> generateBuiltinBindings(
 
   for (Map<String, dynamic> builtinApi in api['builtin_classes']) {
     String className = builtinApi['name'];
-    String correctedName = className;
+    String correctedName = getCorrectedType(className);
     if (hasDartType(className)) {
       continue;
     }
     // Check for types we've implemented ourselves
 
     final size = builtinSizes[className]!;
-
-    // Rename anything with name conflicts
-    if (className == 'String' || className == 'Object') {
-      correctedName = 'GD$className';
-    }
 
     final destPath = path.join(targetDir, '${className.toSnakeCase()}.dart');
     final out = File(destPath).openWrite();
@@ -95,6 +95,7 @@ import 'package:ffi/ffi.dart';
 
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
+import '../../core/type_info.dart';
 import 'string_name.dart';
 
 ''');
@@ -117,11 +118,12 @@ import 'string_name.dart';
 class $correctedName {
   static const int _size = $size;
   static final _${className}Bindings _bindings = _${className}Bindings();
+  static late TypeInfo typeInfo;
 
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   Pointer<Uint8> get opaque => _opaque;
 
-  static void initBindings() {
+  static void initBindingsConstructorDestructor() {
 ''');
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
@@ -135,6 +137,16 @@ class $correctedName {
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
 ''');
     }
+
+    out.write('''
+}
+
+  static void initBindings() {
+    initBindingsConstructorDestructor();
+
+    typeInfo = TypeInfo(StringName.fromString('$className'), 
+      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
+''');
     out.write('    StringName name;\n');
     for (Map<String, dynamic> method in builtinApi['methods']) {
       var methodName = method['name'] as String;
@@ -266,7 +278,17 @@ class _${className}Bindings {\n''');
     out.write('}\n');
 
     out.close();
+
+    exportsString += "export '${className.toSnakeCase()}.dart';\n";
+    initBindingsString += '  $correctedName.initBindings();\n';
   }
+
+  var exportsFile = File(path.join(targetDir, 'builtins.dart'));
+  var out = exportsFile.openWrite();
+  out.write(header);
+  out.write(exportsString);
+
+  out.close();
 }
 
 void argumentAllocation(Map<String, dynamic> argument, IOSink out) {

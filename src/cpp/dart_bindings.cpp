@@ -55,6 +55,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
         Dart_NewStringFromCString("package:godot_dart/src/core/godot_dart_native_bindings.dart");
     Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
     if (!Dart_IsError(library)) {
+      // Retrain for future calls to convert variants
+      _native_library = Dart_NewPersistentHandle(library);
       Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
   }
@@ -93,31 +95,27 @@ void GodotDartBindings::set_instance(GDExtensionObjectPtr gd_object, GDExtension
   GDE->object_set_instance(gd_object, classname, persist);
 }
 
-void GodotDartBindings::bind_method(const char *classname, const char *method_name) {
+void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
+                                    const std::vector<TypeInfo> &arg_list) {
   // TODO: How do we pass types to this?
   MethodInfo *info = new MethodInfo();
   info->method_name = method_name;
 
   GDEWrapper *gde = GDEWrapper::instance();
-  uint8_t gd_ret_class_name[GD_STRING_NAME_MAX_SIZE];
-  uint8_t gd_ret_name[GD_STRING_NAME_MAX_SIZE];
-  gde->gd_string_name_new(&gd_ret_class_name, "String");
-  gde->gd_string_name_new(&gd_ret_name, "");
 
   uint8_t gd_empty_string[GD_STRING_NAME_MAX_SIZE];
   GDE->string_new_with_utf8_chars(&gd_empty_string, "");
+
   GDExtensionPropertyInfo ret_info = {
-      GDEXTENSION_VARIANT_TYPE_STRING,
-      gd_ret_class_name,
-      gd_ret_name,
+      ret_type_info.variant_type,
+      ret_type_info.type_name,
+      gd_empty_string,
       0, // Hint - String
       gd_empty_string,
       6, // Usage - PROPERTY_USAGE_DEFAULT,
   };
 
-  uint8_t gd_class_name[GD_STRING_NAME_MAX_SIZE];
   uint8_t gd_method_name[GD_STRING_NAME_MAX_SIZE];
-  gde->gd_string_name_new(&gd_class_name, classname);
   gde->gd_string_name_new(&gd_method_name, method_name);
   GDExtensionClassMethodInfo method_info = {
       gd_method_name,
@@ -135,7 +133,7 @@ void GodotDartBindings::bind_method(const char *classname, const char *method_na
       nullptr,
   };
 
-  GDE->classdb_register_extension_class_method(gde->lib(), gd_class_name, &method_info);
+  GDE->classdb_register_extension_class_method(gde->lib(), bind_type.type_name, &method_info);
 }
 
 void *get_opaque_address(Dart_Handle variant_handle) {
@@ -154,6 +152,26 @@ void *get_opaque_address(Dart_Handle variant_handle) {
   Dart_IntegerToUint64(address, &variantDataPtr);
 
   return reinterpret_cast<void *>(variantDataPtr);
+}
+
+void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
+  Dart_EnterScope();
+
+  Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
+  Dart_Handle parent_class = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentClass"));
+  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
+
+  type_info->type_name = get_opaque_address(class_name);
+  if (Dart_IsNull(parent_class)) {
+    type_info->parent_name = nullptr;
+  } else {
+    type_info->parent_name = get_opaque_address(parent_class);
+  }
+  int64_t temp;
+  Dart_IntegerToInt64(variant_type, &temp);
+  type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
+
+  Dart_ExitScope();
 }
 
 /* Static Callbacks from Godot */
@@ -175,18 +193,26 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
   MethodInfo *method_info = reinterpret_cast<MethodInfo *>(method_userdata);
   Dart_Handle dart_method_name = Dart_NewStringFromCString(method_info->method_name.c_str());
 
-  Dart_Handle handle = Dart_Invoke(dart_instance, dart_method_name, 0, nullptr);
-  if (Dart_IsError(handle)) {
+  Dart_Handle result = Dart_Invoke(dart_instance, dart_method_name, 0, nullptr);
+  if (Dart_IsError(result)) {
     GD_PRINT_ERROR("GodotDart: Error calling function: ");
-    GD_PRINT_ERROR(Dart_GetError(handle));
+    GD_PRINT_ERROR(Dart_GetError(result));
   } else {
-    void *variantDataPtr = get_opaque_address(handle);
-    if (variantDataPtr) {
-      GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+    // Call back into Dart to convert to Variant. This may get moved back into C at some point but
+    // the logic and type checking is easier in Dart.
+    Dart_Handle native_library = Dart_HandleFromPersistent(bindings->_native_library);
+    Dart_Handle args[] = {result};
+    Dart_Handle variant_result = Dart_Invoke(native_library, Dart_NewStringFromCString("_convertToVariant"), 1, args);
+    if (Dart_IsError(variant_result)) {
+      GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
+      GD_PRINT_ERROR(Dart_GetError(result));
+    } else {
+      void *variantDataPtr = get_opaque_address(variant_result);
+      if (variantDataPtr) {
+        GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+      }
     }
   }
-
-fail:
 
   Dart_ExitScope();
 }
@@ -230,14 +256,15 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
 
   Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
-  Dart_Handle class_name = Dart_GetField(type, Dart_NewStringFromCString("className"));
-  if (Dart_IsError(class_name)) {
-    GD_PRINT_ERROR("GodotDart: Error finding class name on object: ");
-    GD_PRINT_ERROR(Dart_GetError(class_name));
+  Dart_Handle d_class_type_info = Dart_GetField(type, Dart_NewStringFromCString("typeInfo"));
+  if (Dart_IsError(d_class_type_info)) {
+    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
+    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
     Dart_ExitScope();
     return nullptr;
   }
-  void *opaque_class_name = get_opaque_address(class_name);
+  TypeInfo class_type_info;
+  type_info_from_dart(&class_type_info, d_class_type_info);
 
   Dart_Handle new_object = Dart_New(type, Dart_Null(), 0, nullptr);
   if (Dart_IsError(new_object)) {
@@ -266,7 +293,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
   uint64_t real_address = 0;
   Dart_IntegerToUint64(owner_address, &real_address);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(new_object);
-  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), opaque_class_name,
+  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
                            reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
 
   Dart_ExitScope();
@@ -288,10 +315,16 @@ void bind_class(Dart_NativeArguments args) {
   }
 
   Dart_Handle type_arg = Dart_GetNativeArgument(args, 1);
-  Dart_Handle name = Dart_GetNativeArgument(args, 2);
-  Dart_Handle parent = Dart_GetNativeArgument(args, 3);
+  Dart_Handle type_info = Dart_GetNativeArgument(args, 2);
 
   // Name and Parent are StringNames and we can get their opaque addresses
+  Dart_Handle name = Dart_GetField(type_info, Dart_NewStringFromCString("className"));
+  Dart_Handle parent = Dart_GetField(type_info, Dart_NewStringFromCString("parentClass"));
+  if (Dart_IsNull(parent)) {
+    Dart_ThrowException(Dart_NewStringFromCString("Passed null reference for parent in bindClass."));
+    return;
+  }
+
   void *sn_name = get_opaque_address(name);
   if (sn_name == nullptr) {
     return;
@@ -316,12 +349,34 @@ void bind_method(Dart_NativeArguments args) {
     return;
   }
 
-  const char *class_name = nullptr;
+  Dart_Handle d_bind_type_info = Dart_GetNativeArgument(args, 1);
+
   const char *method_name = nullptr;
-  Dart_StringToCString(Dart_GetNativeArgument(args, 1), &class_name);
   Dart_StringToCString(Dart_GetNativeArgument(args, 2), &method_name);
 
-  bindings->bind_method(class_name, method_name);
+  Dart_Handle d_return_type_info = Dart_GetNativeArgument(args, 3);
+  Dart_Handle d_argument_list = Dart_GetNativeArgument(args, 4);
+
+  TypeInfo bind_type_info;
+  type_info_from_dart(&bind_type_info, d_bind_type_info);
+
+  TypeInfo return_type_info;
+  type_info_from_dart(&return_type_info, d_return_type_info);
+
+  intptr_t arg_length = 0;
+  Dart_ListLength(d_argument_list, &arg_length);
+
+  std::vector<TypeInfo> argument_list;
+  argument_list.reserve(arg_length);
+  for (intptr_t i = 0; i < arg_length; ++i) {
+    Dart_Handle d_arg = Dart_ListGetAt(d_argument_list, i);
+    TypeInfo arg;
+
+    type_info_from_dart(&arg, d_arg);
+    argument_list.push_back(arg);
+  }
+
+  bindings->bind_method(bind_type_info, method_name, return_type_info, argument_list);
 }
 
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {

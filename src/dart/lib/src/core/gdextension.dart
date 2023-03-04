@@ -93,16 +93,6 @@ class GodotDart {
             int)>()(variantType, name.opaque.cast(), hash);
   }
 
-  void bindMethod(
-    String className,
-    String methodName,
-    Type returnType,
-    List<Type> argTypes,
-  ) {
-    // Sanity checks before sending onto native bindings (all args must be asignable to Variant, for example)
-    dartBindings.bindMethod(className, methodName, returnType, argTypes);
-  }
-
   GDExtensionObjectPtr constructObject(StringName className) {
     final func = interface.ref.classdb_construct_object.asFunction<
         GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();

@@ -1,21 +1,34 @@
 import 'package:godot_dart/godot_dart.dart';
 
 class Simple extends Wrapped {
-  static late StringName className;
+  static late TypeInfo typeInfo;
+  static void initTypeInfo() => typeInfo = TypeInfo(
+        StringName.fromString('Simple'),
+        parentClass: StringName.fromString('Object'),
+      );
 
   Simple() {
     owner = gde.constructObject(StringName.fromString('Object'));
   }
 
-  Variant myMethod() {
-    return convertToVariant('Hello from Dart!');
+  String myMethod() {
+    return 'Hello from Dart!';
+  }
+
+  double paramMethod(Vector3 vector) {
+    double length = vector.length();
+    print('Got a vector of length $length}');
+
+    return length;
   }
 }
 
 void main() {
-  Simple.className = StringName.fromString('Simple');
-  final objectName = StringName.fromString('Object');
+  Simple.initTypeInfo();
 
-  gde.dartBindings.bindClass(Simple, Simple.className, objectName);
-  gde.dartBindings.bindMethod('Simple', 'myMethod', String, []);
+  gde.dartBindings.bindClass(Simple, Simple.typeInfo);
+  gde.dartBindings
+      .bindMethod(Simple.typeInfo, 'myMethod', TypeInfo.forType(String)!, []);
+  gde.dartBindings.bindMethod(Simple.typeInfo, 'paramMethod',
+      TypeInfo.forType(double)!, [Vector3.typeInfo]);
 }
