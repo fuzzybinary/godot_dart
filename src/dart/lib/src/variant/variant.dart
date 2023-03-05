@@ -11,8 +11,6 @@ typedef GDExtensionVariantFromType = void Function(
 late List<GDExtensionVariantFromType?> _fromTypeConstructor;
 late List<GDExtensionTypeFromVariantConstructorFunc?> _toTypeConstructor;
 
-Map<Type, GDExtensionVariantFromTypeConstructorFunc> _dartTypeToVariant = {};
-
 void initVariantBindings(GDExtensionInterface gdeInterface) {
   _fromTypeConstructor = List.generate(
     GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
@@ -39,7 +37,7 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
   );
 
   // String and String name need their constructors bound before anything else
-  // because everything else relies onthem being done.
+  // because everything else relies on them being done.
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();
   GDString.initBindings();
@@ -87,11 +85,20 @@ class Variant {
   // may just need to take the max size
   static const int _size = 24;
 
-  final _opaque = calloc<Uint8>(_size);
+  final Pointer<Uint8> _opaque;
   Pointer<Uint8> get opaque => _opaque;
 
-  Variant() {
+  Variant() : _opaque = calloc<Uint8>(_size) {
     _finalizer.attach(this, _opaque);
+  }
+
+  // Godot manages this pointer, don't free it
+  Variant.fromPointer(Pointer<void> ptr) : _opaque = ptr.cast();
+
+  int getType() {
+    int Function(Pointer<Void>) getType =
+        gde.interface.ref.variant_get_type.asFunction();
+    return getType(_opaque.cast());
   }
 }
 
@@ -151,5 +158,53 @@ Variant convertToVariant(Object? obj) {
     });
   }
 
+  return ret;
+}
+
+Object? convertFromVariant(Variant variant) {
+  Object? ret;
+  int variantType = variant.getType();
+  void Function(GDExtensionTypePtr, GDExtensionVariantPtr)? c;
+  if (variantType > 0 && variantType < _toTypeConstructor.length) {
+    c = _toTypeConstructor[variantType]?.asFunction();
+  }
+
+  if (c == null) {
+    // TODO: Output an error message
+    return null;
+  }
+
+  using((arena) {
+    switch (variantType) {
+      // Built-in types
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL:
+        Pointer<GDExtensionBool> ptr =
+            arena.allocate(sizeOf<GDExtensionBool>());
+        c!(ptr.cast(), variant.opaque.cast());
+        ret = ptr.value != 0;
+        break;
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT:
+        Pointer<GDExtensionInt> ptr = arena.allocate(sizeOf<GDExtensionInt>());
+        c!(ptr.cast(), variant.opaque.cast());
+        ret = ptr.value;
+        break;
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT:
+        Pointer<Double> ptr = arena.allocate(sizeOf<Double>());
+        c!(ptr.cast(), variant.opaque.cast());
+        ret = ptr.value;
+        break;
+
+      // Other variant types
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
+        var vector3 = Vector3();
+        c!(vector3.opaque.cast(), variant.opaque.cast());
+        ret = vector3;
+        break;
+
+      // TODO: all the other variant types
+      default:
+        ret = null;
+    }
+  });
   return ret;
 }

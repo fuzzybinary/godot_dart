@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import '../../godot_dart.dart';
 
 class GodotDartNativeBindings {
@@ -16,4 +18,15 @@ class GodotDartNativeBindings {
 @pragma('vm:entry-point')
 Variant _convertToVariant(Object? object) {
   return convertToVariant(object);
+}
+
+@pragma('vm:entry-point')
+List<Object?> _variantsToDart(Pointer<Pointer<Void>> variants, int count) {
+  var result = <Object?>[];
+  for (int i = 0; i < count; ++i) {
+    var variant = Variant.fromPointer(variants.elementAt(i).value);
+    result.add(convertFromVariant(variant));
+  }
+
+  return result;
 }

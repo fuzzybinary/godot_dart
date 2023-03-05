@@ -42,4 +42,8 @@ private:
 
   Dart_Isolate _isolate;
   Dart_PersistentHandle _native_library;
+
+  // Some things we need often
+  Dart_PersistentHandle _void_pointer_type;
+  Dart_PersistentHandle _void_pointer_pointer_type;
 };

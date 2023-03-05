@@ -6,6 +6,9 @@ func _ready():
 	var _simple = Simple.new()
 	var ret = _simple.myMethod()
 	print(ret)
+	var vec = Vector3(1.0, 3.2, 1.0)
+	var ret2 = _simple.paramMethod(vec)
+	print(ret2)
 	pass # Replace with function body.
 
 
