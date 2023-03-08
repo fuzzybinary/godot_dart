@@ -1,5 +1,5 @@
 import 'dart:ffi';
 
-class GDObject {
+class GodotObject {
   Pointer<Void> opaque = Pointer.fromAddress(0);
 }

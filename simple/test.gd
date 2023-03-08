@@ -9,6 +9,7 @@ func _ready():
 	var vec = Vector3(1.0, 3.2, 1.0)
 	var ret2 = _simple.paramMethod(vec)
 	print(ret2)
+	_simple.isSame(_simple)
 	pass # Replace with function body.
 
 

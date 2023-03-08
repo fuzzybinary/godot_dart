@@ -62,7 +62,7 @@ String getCorrectedType(String type, {String? meta}) {
     'float': 'double',
     'Nil': 'Variant',
     'String': 'GDString',
-    'Object': 'GDObject',
+    'Object': 'GodotObject',
     'real_t': 'double',
   };
   if (meta != null) {

@@ -11,6 +11,25 @@
 
 #define GDE GDEWrapper::instance()->gde()
 
+/* Binding callbacks (not sure what these are for?) */
+
+static void *__binding_create_callback(void *p_token, void *p_instance) {
+  return nullptr;
+}
+
+static void __binding_free_callback(void *p_token, void *p_instance, void *p_binding) {
+}
+
+static GDExtensionBool __binding_reference_callback(void *p_token, void *p_instance, GDExtensionBool p_reference) {
+  return true;
+}
+
+static constexpr GDExtensionInstanceBindingCallbacks __binding_callbacks = {
+    __binding_create_callback,
+    __binding_free_callback,
+    __binding_reference_callback,
+};
+
 struct MethodInfo {
   std::string method_name;
   TypeInfo return_type;
@@ -134,13 +153,6 @@ void GodotDartBindings::shutdown() {
   DartDll_Shutdown();
 
   _instance = nullptr;
-}
-
-void GodotDartBindings::set_instance(GDExtensionObjectPtr gd_object, GDExtensionConstStringNamePtr classname,
-                                     Dart_Handle instance) {
-  // Persist the handle, as Godot will be holding onto it.
-  Dart_PersistentHandle persist = Dart_NewPersistentHandle(instance);
-  GDE->object_set_instance(gd_object, classname, persist);
 }
 
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -372,11 +384,17 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
     return nullptr;
   }
 
+  GDEWrapper *gde = GDEWrapper::instance();
+
   uint64_t real_address = 0;
   Dart_IntegerToUint64(owner_address, &real_address);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(new_object);
+  // TODO: This is serving as "_postInitialize" from th cpp example, but is only being used for Dart created
+  // types at the moment. Need to generalize to allow Engine types (which shouldn't call object_set_instance)
   GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
                            reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
+  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), gde->lib(), persistent_handle,
+                                   &__binding_callbacks);
 
   Dart_ExitScope();
 
@@ -461,6 +479,59 @@ void bind_method(Dart_NativeArguments args) {
   bindings->bind_method(bind_type_info, method_name, return_type_info, argument_list);
 }
 
+void gd_string_to_dart_string(Dart_NativeArguments args) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
+    return;
+  }
+
+  Dart_Handle dart_gd_string = Dart_GetNativeArgument(args, 1);
+  GDExtensionConstStringPtr gd_string = get_opaque_address(dart_gd_string);
+
+  char16_t length = GDE->string_to_utf16_chars(gd_string, nullptr, 0);
+  char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * length);
+  GDE->string_to_utf16_chars(gd_string, temp, length);
+  temp[length] = 0;
+
+  Dart_Handle dart_string = Dart_NewStringFromUTF16((uint16_t *)temp, length);
+  if (Dart_IsError(dart_string)) {
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(dart_string)));
+    return;
+  }
+
+  Dart_SetReturnValue(args, dart_string);
+}
+
+void gd_object_to_dart_object(Dart_NativeArguments args) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
+    return;
+  }
+
+  Dart_Handle dart_gd_object = Dart_GetNativeArgument(args, 1);
+  Dart_Handle address = Dart_GetField(dart_gd_object, Dart_NewStringFromCString("address"));
+  if (Dart_IsError(address)) {
+    GD_PRINT_ERROR(Dart_GetError(address));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(address)));
+    return;
+  }
+  uint64_t object_ptr = 0;
+  Dart_IntegerToUint64(address, &object_ptr);
+
+  GDEWrapper *gde = GDEWrapper::instance();
+
+  // TODO: What's up with instance_binding?
+  Dart_PersistentHandle dart_persistent = (Dart_PersistentHandle)GDE->object_get_instance_binding(
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), gde->lib(), &__binding_callbacks);
+  if (dart_persistent == nullptr) {
+    Dart_SetReturnValue(args, Dart_Null());
+  } else {
+    Dart_SetReturnValue(args, Dart_HandleFromPersistent(dart_persistent));
+  }
+}
+
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
   Dart_EnterScope();
 
@@ -475,6 +546,12 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::bindClass")) {
     *auto_setup_scope = true;
     ret = bind_class;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::gdStringToString")) {
+    *auto_setup_scope = true;
+    ret = gd_string_to_dart_string;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::gdObjectToDartObject")) {
+    *auto_setup_scope = true;
+    ret = gd_object_to_dart_object;
   }
 
   Dart_ExitScope();

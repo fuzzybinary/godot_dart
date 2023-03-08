@@ -7,6 +7,8 @@ class Simple extends Wrapped {
         parentClass: StringName.fromString('Object'),
       );
 
+  final double _doubleValue = 12.0;
+
   Simple() {
     owner = gde.constructObject(StringName.fromString('Object'));
   }
@@ -21,6 +23,12 @@ class Simple extends Wrapped {
 
     return length;
   }
+
+  bool isSame(Simple simple) {
+    print("Got a simple back... it's value is ${simple._doubleValue}");
+    print('Our owners are: ${simple.owner.address} - ${simple.owner.address}');
+    return simple == this;
+  }
 }
 
 void main() {
@@ -31,4 +39,6 @@ void main() {
       .bindMethod(Simple.typeInfo, 'myMethod', TypeInfo.forType(String)!, []);
   gde.dartBindings.bindMethod(Simple.typeInfo, 'paramMethod',
       TypeInfo.forType(double)!, [Vector3.typeInfo]);
+  gde.dartBindings.bindMethod(
+      Simple.typeInfo, 'isSame', TypeInfo.forType(bool)!, [Simple.typeInfo]);
 }

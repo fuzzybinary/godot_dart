@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import '../../godot_dart.dart';
+import '../core/core_types.dart';
 import '../core/gdextension_ffi_bindings.dart';
 
 typedef GDExtensionVariantFromType = void Function(
@@ -10,6 +11,9 @@ typedef GDExtensionVariantFromType = void Function(
 
 late List<GDExtensionVariantFromType?> _fromTypeConstructor;
 late List<GDExtensionTypeFromVariantConstructorFunc?> _toTypeConstructor;
+
+typedef BuiltinConstructor = BuiltinType Function();
+Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
 void initVariantBindings(GDExtensionInterface gdeInterface) {
   _fromTypeConstructor = List.generate(
@@ -41,40 +45,82 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();
   GDString.initBindings();
+
   StringName.initBindings();
+  _dartBuiltinConstructors[StringName.typeInfo.variantType] = StringName.new;
 
   // Generate this?
   Vector2.initBindings();
+  _dartBuiltinConstructors[Vector2.typeInfo.variantType] = Vector2.new;
   Vector2i.initBindings();
+  _dartBuiltinConstructors[Vector2i.typeInfo.variantType] = Vector2i.new;
   Vector3.initBindings();
+  _dartBuiltinConstructors[Vector3.typeInfo.variantType] = Vector3.new;
   Vector3i.initBindings();
+  _dartBuiltinConstructors[Vector3i.typeInfo.variantType] = Vector3i.new;
   Vector4.initBindings();
+  _dartBuiltinConstructors[Vector4.typeInfo.variantType] = Vector4.new;
   Vector4i.initBindings();
+  _dartBuiltinConstructors[Vector4i.typeInfo.variantType] = Vector4i.new;
   Quaternion.initBindings();
+  _dartBuiltinConstructors[Quaternion.typeInfo.variantType] = Quaternion.new;
   Rect2.initBindings();
+  _dartBuiltinConstructors[Rect2.typeInfo.variantType] = Rect2.new;
   Rect2i.initBindings();
+  _dartBuiltinConstructors[Rect2i.typeInfo.variantType] = Rect2i.new;
   Transform2D.initBindings();
+  _dartBuiltinConstructors[Transform2D.typeInfo.variantType] = Transform2D.new;
   Plane.initBindings();
+  _dartBuiltinConstructors[Plane.typeInfo.variantType] = Plane.new;
   AABB.initBindings();
+  _dartBuiltinConstructors[AABB.typeInfo.variantType] = AABB.new;
   Basis.initBindings();
+  _dartBuiltinConstructors[Basis.typeInfo.variantType] = Basis.new;
   Transform3D.initBindings();
+  _dartBuiltinConstructors[Transform3D.typeInfo.variantType] = Transform3D.new;
   Projection.initBindings();
+  _dartBuiltinConstructors[Projection.typeInfo.variantType] = Projection.new;
   Color.initBindings();
+  _dartBuiltinConstructors[Color.typeInfo.variantType] = Color.new;
   NodePath.initBindings();
+  _dartBuiltinConstructors[NodePath.typeInfo.variantType] = NodePath.new;
   RID.initBindings();
+  _dartBuiltinConstructors[RID.typeInfo.variantType] = RID.new;
   Callable.initBindings();
+  _dartBuiltinConstructors[Callable.typeInfo.variantType] = Callable.new;
   Signal.initBindings();
+  _dartBuiltinConstructors[Signal.typeInfo.variantType] = Signal.new;
   Dictionary.initBindings();
+  _dartBuiltinConstructors[Dictionary.typeInfo.variantType] = Dictionary.new;
   Array.initBindings();
+  _dartBuiltinConstructors[Array.typeInfo.variantType] = Array.new;
   PackedByteArray.initBindings();
+  _dartBuiltinConstructors[PackedByteArray.typeInfo.variantType] =
+      PackedByteArray.new;
   PackedInt32Array.initBindings();
+  _dartBuiltinConstructors[PackedInt32Array.typeInfo.variantType] =
+      PackedInt32Array.new;
   PackedInt64Array.initBindings();
+  _dartBuiltinConstructors[PackedInt64Array.typeInfo.variantType] =
+      PackedInt64Array.new;
   PackedFloat32Array.initBindings();
+  _dartBuiltinConstructors[PackedFloat32Array.typeInfo.variantType] =
+      PackedFloat32Array.new;
   PackedFloat64Array.initBindings();
+  _dartBuiltinConstructors[PackedFloat64Array.typeInfo.variantType] =
+      PackedFloat64Array.new;
   PackedStringArray.initBindings();
+  _dartBuiltinConstructors[PackedStringArray.typeInfo.variantType] =
+      PackedStringArray.new;
   PackedVector2Array.initBindings();
+  _dartBuiltinConstructors[PackedVector2Array.typeInfo.variantType] =
+      PackedVector2Array.new;
   PackedVector3Array.initBindings();
+  _dartBuiltinConstructors[PackedVector3Array.typeInfo.variantType] =
+      PackedVector3Array.new;
   PackedColorArray.initBindings();
+  _dartBuiltinConstructors[PackedColorArray.typeInfo.variantType] =
+      PackedColorArray.new;
 }
 
 class Variant {
@@ -113,10 +159,15 @@ Variant convertToVariant(Object? obj) {
         .asFunction<void Function(GDExtensionVariantPtr)>(
             isLeaf: true)(ret.opaque.cast());
   } else if (obj is Wrapped) {
-    // Are we an Object already? (For now we check Wrapped)
+    // Already an Object
     c = _fromTypeConstructor[
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
     c?.call(ret.opaque.cast(), obj.owner.cast());
+  } else if (obj is BuiltinType) {
+    // Builtin type
+    var typeInfo = obj.staticTypeInfo;
+    c = _fromTypeConstructor[typeInfo.variantType];
+    c?.call(ret.opaque.cast(), obj.opaque.cast());
   } else {
     // Convert built in types
     using((arena) {
@@ -174,6 +225,15 @@ Object? convertFromVariant(Variant variant) {
     return null;
   }
 
+  // To we have a CoreType that we can use to match?
+  final builtinConstructor = _dartBuiltinConstructors[variantType];
+  if (builtinConstructor != null) {
+    var builtin = builtinConstructor();
+    c(builtin.opaque.cast(), variant.opaque.cast());
+    return builtin;
+  }
+
+  // Else, it's probably a dart native type
   using((arena) {
     switch (variantType) {
       // Built-in types
@@ -193,12 +253,18 @@ Object? convertFromVariant(Variant variant) {
         c!(ptr.cast(), variant.opaque.cast());
         ret = ptr.value;
         break;
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
+        var gdString = GDString();
+        c!(gdString.opaque.cast(), variant.opaque.cast());
+        ret = gde.dartBindings.gdStringToString(gdString);
+        break;
 
-      // Other variant types
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
-        var vector3 = Vector3();
-        c!(vector3.opaque.cast(), variant.opaque.cast());
-        ret = vector3;
+      // Or a wrapped object
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
+        Pointer<GDExtensionObjectPtr> ptr =
+            arena.allocate(sizeOf<GDExtensionObjectPtr>());
+        c!(ptr.cast(), variant.opaque.cast());
+        ret = gde.dartBindings.gdObjectToDartObject(ptr.value);
         break;
 
       // TODO: all the other variant types

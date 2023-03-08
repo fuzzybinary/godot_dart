@@ -24,7 +24,6 @@ public:
   bool initialize(const char *script_path, const char *package_config);
   void shutdown();
 
-  void set_instance(GDExtensionObjectPtr gd_object, GDExtensionConstStringNamePtr classname, Dart_Handle instance);
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                    const std::vector<TypeInfo> &arg_list);
 

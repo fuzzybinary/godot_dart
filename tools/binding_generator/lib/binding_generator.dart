@@ -93,6 +93,7 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
+import '../../core/core_types.dart';
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
 import '../../core/type_info.dart';
@@ -115,12 +116,16 @@ import 'string_name.dart';
 
     out.write('''
 
-class $correctedName {
+class $correctedName extends BuiltinType {
   static const int _size = $size;
   static final _${className}Bindings _bindings = _${className}Bindings();
   static late TypeInfo typeInfo;
-
+  
+  @override
+  TypeInfo get staticTypeInfo => typeInfo;
+  
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
+  @override
   Pointer<Uint8> get opaque => _opaque;
 
   static void initBindingsConstructorDestructor() {
