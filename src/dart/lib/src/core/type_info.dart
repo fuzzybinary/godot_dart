@@ -1,3 +1,4 @@
+import '../../godot_dart.dart';
 import '../gen/variant/string_name.dart';
 import 'gdextension_ffi_bindings.dart';
 
@@ -27,9 +28,13 @@ class TypeInfo {
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
   });
 
-  static late Map<Type, TypeInfo> _typeMapping;
+  static late Map<Type?, TypeInfo> _typeMapping;
   static void initTypeMappings() {
     _typeMapping = {
+      null: TypeInfo(
+        StringName.fromString('void'),
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL,
+      ),
       bool: TypeInfo(
         StringName.fromString('bool'),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL,
@@ -49,7 +54,7 @@ class TypeInfo {
     };
   }
 
-  static TypeInfo? forType(Type type) {
+  static TypeInfo? forType(Type? type) {
     return _typeMapping[type];
   }
 }

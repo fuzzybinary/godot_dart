@@ -76,9 +76,28 @@ String getCorrectedType(String type, {String? meta}) {
     return typeConversion[type]!;
   }
 
-  // TODO: TypedArray and other special cases
+  if (type.startsWith('typedarray::')) {
+    return '${type.replaceFirst('typedarray::', 'TypedArray<')}>';
+  }
+  if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
+    return getEnumName(type, null);
+  }
 
   return type;
+}
+
+// Also works for bitfields
+String getEnumName(String enumName, String? className) {
+  final name = (className ?? '') +
+      enumName
+          .replaceFirst('enum::', '')
+          .replaceAll('bitfield::', '')
+          .replaceAll('.', '');
+  // Special case replacements
+  if (name == 'Error') {
+    return 'GDError';
+  }
+  return name;
 }
 
 /// Fix any names that might be reserved words in dart
@@ -92,7 +111,19 @@ String escapeName(String name) {
     'case': '_case',
     'switch': 'switchVal',
     'new': 'newVal',
+    'enum': 'enumVal',
+    'in': 'inVal',
+    'var': 'variant',
+    'final': 'finalVal',
   };
 
   return map[name] ?? name;
+}
+
+String escapeMethodName(String name) {
+  if (name == 'new') {
+    return 'create';
+  }
+
+  return name;
 }

@@ -1,6 +1,6 @@
 import 'package:godot_dart/godot_dart.dart';
 
-class Simple extends Wrapped {
+class Simple extends ExtensionType {
   static late TypeInfo typeInfo;
   static void initTypeInfo() => typeInfo = TypeInfo(
         StringName.fromString('Simple'),

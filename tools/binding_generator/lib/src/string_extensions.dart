@@ -16,8 +16,8 @@ extension StringHelpers on String {
   }
 
   String toLowerCamelCase() {
-    return replaceAllMapped(RegExp('(.)_([a-z])'), (match) {
-      return '${match.group(1)}${match.group(2)?.toUpperCase()}';
+    return toLowerCase().replaceAllMapped(RegExp('_([a-z])'), (match) {
+      return '${match.group(1)?.toUpperCase()}';
     });
   }
 

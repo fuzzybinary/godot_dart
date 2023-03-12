@@ -8,3 +8,5 @@ linter:
   rules:
     - prefer_single_quotes
     - camel_case_types
+    - prefer_relative_imports
+    - unawaited_futures

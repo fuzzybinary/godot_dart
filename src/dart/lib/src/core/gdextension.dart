@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 
-import '../gen/variant/string_name.dart';
+import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
 import 'godot_dart_native_bindings.dart';
 
@@ -29,7 +29,7 @@ class GodotDart {
     } else if (Platform.isWindows) {
       libraryPath = path.join(Directory.current.path, 'godot_dart.dll');
     }
-    dartBindings = GodotDartNativeBindings();
+    dartBindings = GodotDartNativeBindings(libraryPath);
   }
 
   // Variant Type
@@ -47,6 +47,20 @@ class GodotDart {
   GDExtensionPtrDestructor variantGetDestructor(int variantType) {
     return interface.ref.variant_get_ptr_destructor
         .asFunction<GDExtensionPtrDestructor Function(int)>()(variantType);
+  }
+
+  GDExtensionObjectPtr globalGetSingleton(StringName name) {
+    return interface.ref.global_get_singleton.asFunction<
+        GDExtensionObjectPtr Function(
+            GDExtensionConstStringNamePtr)>(isLeaf: true)(name.opaque.cast());
+  }
+
+  GDExtensionMethodBindPtr classDbGetMethodBind(
+      StringName className, StringName methodName, int hash) {
+    return interface.ref.classdb_get_method_bind.asFunction<
+            GDExtensionMethodBindPtr Function(GDExtensionConstStringNamePtr,
+                GDExtensionConstStringNamePtr, int)>(isLeaf: true)(
+        className.opaque.cast(), methodName.opaque.cast(), hash);
   }
 
   void callBuiltinConstructor(
@@ -81,6 +95,60 @@ class GodotDart {
     void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>,
         GDExtensionTypePtr, int) m = method.asFunction();
     m(base, array, ret, args.length);
+  }
+
+  void callNativeMethodBindPtrCall(
+    GDExtensionMethodBindPtr function,
+    ExtensionType? instance,
+    Pointer<Void> ret,
+    List<GDExtensionConstTypePtr> args,
+  ) {
+    final callFunc = interface.ref.object_method_bind_ptrcall.asFunction<
+        void Function(GDExtensionMethodBindPtr, GDExtensionObjectPtr,
+            Pointer<GDExtensionConstTypePtr>, GDExtensionTypePtr)>();
+
+    using((arena) {
+      final argArray = arena.allocate<GDExtensionConstTypePtr>(
+          sizeOf<GDExtensionConstTypePtr>() * args.length);
+      for (int i = 0; i < args.length; ++i) {
+        argArray.elementAt(i).value = args[i];
+      }
+
+      callFunc(function, instance?.owner ?? nullptr, argArray, ret);
+    });
+  }
+
+  Variant callNativeMethodBind(
+    GDExtensionMethodBindPtr function,
+    ExtensionType? instance,
+    List<Variant> args,
+  ) {
+    final callFunc = interface.ref.object_method_bind_call.asFunction<
+        void Function(
+            GDExtensionMethodBindPtr,
+            GDExtensionObjectPtr,
+            Pointer<GDExtensionConstVariantPtr>,
+            int,
+            GDExtensionVariantPtr,
+            Pointer<GDExtensionCallError>)>();
+    final ret = Variant();
+    using((arena) {
+      final errorPtr =
+          arena.allocate<GDExtensionCallError>(sizeOf<GDExtensionCallError>());
+      final argArray = arena.allocate<GDExtensionConstTypePtr>(
+          sizeOf<GDExtensionConstVariantPtr>() * args.length);
+      for (int i = 0; i < args.length; ++i) {
+        argArray.elementAt(i).value = args[i].opaque.cast();
+      }
+      callFunc(function, instance?.owner.cast() ?? nullptr.cast(), argArray,
+          args.length, ret.opaque.cast(), errorPtr.cast());
+      if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
+        throw Exception(
+            'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
+      }
+    });
+
+    return ret;
   }
 
   GDExtensionPtrBuiltInMethod variantGetBuiltinMethod(

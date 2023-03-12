@@ -3,7 +3,6 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import '../../godot_dart.dart';
-import '../core/core_types.dart';
 import '../core/gdextension_ffi_bindings.dart';
 
 typedef GDExtensionVariantFromType = void Function(
@@ -158,7 +157,7 @@ Variant convertToVariant(Object? obj) {
     GodotDart.instance!.interface.ref.variant_new_nil
         .asFunction<void Function(GDExtensionVariantPtr)>(
             isLeaf: true)(ret.opaque.cast());
-  } else if (obj is Wrapped) {
+  } else if (obj is ExtensionType) {
     // Already an Object
     c = _fromTypeConstructor[
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];

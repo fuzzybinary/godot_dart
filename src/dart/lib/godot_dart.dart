@@ -6,9 +6,9 @@ import 'dart:ffi';
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
 
+export 'src/core/core_types.dart';
 export 'src/core/gdextension.dart';
 export 'src/core/type_info.dart';
-export 'src/core/wrapped.dart';
 export 'src/gen/variant/builtins.dart';
 export 'src/variant/variant.dart';
 
