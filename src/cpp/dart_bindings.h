@@ -10,6 +10,8 @@ struct TypeInfo {
   // Can be null
   GDExtensionStringNamePtr parent_name;
   GDExtensionVariantType variant_type;
+  // Can be null
+  GDExtensionInstanceBindingCallbacks* binding_callbacks;
 };
 
 class GodotDartBindings {
@@ -44,5 +46,6 @@ private:
 
   // Some things we need often
   Dart_PersistentHandle _void_pointer_type;
+  Dart_PersistentHandle _void_pointer_optional_type;
   Dart_PersistentHandle _void_pointer_pointer_type;
 };

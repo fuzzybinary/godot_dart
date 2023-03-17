@@ -13,7 +13,7 @@ GodotDartBindings *dart_bindings = nullptr;
 
 void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
   // TODO - Should we setup different types at different times?
-  if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
+  if (p_level != GDEXTENSION_INITIALIZATION_SCENE) {
     return;
   }
 
@@ -69,7 +69,7 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
 }
 
 void deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
-  if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
+  if (p_level != GDEXTENSION_INITIALIZATION_SCENE) {
     return;
   }
 
@@ -99,7 +99,7 @@ GDExtensionBool GDE_EXPORT godot_dart_init(const GDExtensionInterface *p_interfa
 
   r_initialization->initialize = initialize_level;
   r_initialization->deinitialize = deinitialize_level;
-  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SERVERS;
+  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
 
   return true;
 }

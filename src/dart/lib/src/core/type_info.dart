@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import '../../godot_dart.dart';
 import '../gen/variant/string_name.dart';
 import 'gdextension_ffi_bindings.dart';
@@ -22,10 +24,15 @@ class TypeInfo {
   /// is usually correct for most user created classes
   final int variantType;
 
+  /// Callbacks that create the proper Dart type from the C type. Mostly
+  /// only used by core engine classes. Pass null to use the default.
+  final Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks;
+
   TypeInfo(
     this.className, {
     this.parentClass,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
+    this.bindingCallbacks,
   });
 
   static late Map<Type?, TypeInfo> _typeMapping;

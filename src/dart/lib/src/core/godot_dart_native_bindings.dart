@@ -4,23 +4,23 @@ import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
 
 class GodotDartNativeBindings {
-  late final DynamicLibrary dylib;
+  late final DynamicLibrary dartDylib;
 
-  late final _newPersistentHandle = dylib
+  late final _newPersistentHandle = dartDylib
       .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
           'Dart_NewPersistentHandle')
       .asFunction<Pointer<Void> Function(Object)>();
-  late final _handleFromPersistent = dylib
+  late final _handleFromPersistent = dartDylib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'Dart_HandleFromPersistent')
       .asFunction<Object? Function(Pointer<Void>)>();
-  late final _deletePersistentHandle = dylib
+  late final _deletePersistentHandle = dartDylib
       .lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'Dart_DeletePersistentHandle')
       .asFunction<void Function(Pointer<Void>)>();
 
-  GodotDartNativeBindings(String libraryPath) {
-    dylib = DynamicLibrary.open(libraryPath);
+  GodotDartNativeBindings(String dartDllLibraryPath) {
+    dartDylib = DynamicLibrary.open(dartDllLibraryPath);
   }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
@@ -37,7 +37,8 @@ class GodotDartNativeBindings {
   external String gdStringToString(GDString string);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::gdObjectToDartObject')
-  external Object gdObjectToDartObject(GDExtensionObjectPtr object);
+  external Object? gdObjectToDartObject(GDExtensionObjectPtr object,
+      Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks);
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _newPersistentHandle(instance);
@@ -63,11 +64,12 @@ Variant _convertToVariant(Object? object) {
 }
 
 @pragma('vm:entry-point')
-List<Object?> _variantsToDart(Pointer<Pointer<Void>> variants, int count) {
+List<Object?> _variantsToDart(Pointer<Pointer<Void>> variants, int count,
+    List<Pointer<Void>?> bindingCallbacks) {
   var result = <Object?>[];
   for (int i = 0; i < count; ++i) {
     var variant = Variant.fromPointer(variants.elementAt(i).value);
-    result.add(convertFromVariant(variant));
+    result.add(convertFromVariant(variant, bindingCallbacks[i]?.cast()));
   }
 
   return result;

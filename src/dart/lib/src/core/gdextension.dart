@@ -23,11 +23,11 @@ class GodotDart {
   GodotDart(this.interface, this.libraryPtr) {
     instance = this;
 
-    var libraryPath = path.join(Directory.current.path, 'libgodot_dart.so');
+    var libraryPath = path.join(Directory.current.path, 'dart_dll.so');
     if (Platform.isMacOS) {
-      libraryPath = path.join(Directory.current.path, 'libgodot_dart.dylib');
+      libraryPath = path.join(Directory.current.path, 'dart_dll.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(Directory.current.path, 'godot_dart.dll');
+      libraryPath = path.join(Directory.current.path, 'dart_dll.dll');
     }
     dartBindings = GodotDartNativeBindings(libraryPath);
   }
@@ -51,8 +51,8 @@ class GodotDart {
 
   GDExtensionObjectPtr globalGetSingleton(StringName name) {
     return interface.ref.global_get_singleton.asFunction<
-        GDExtensionObjectPtr Function(
-            GDExtensionConstStringNamePtr)>(isLeaf: true)(name.opaque.cast());
+            GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>(
+        isLeaf: true)(name.nativePtr.cast());
   }
 
   GDExtensionMethodBindPtr classDbGetMethodBind(
@@ -60,7 +60,7 @@ class GodotDart {
     return interface.ref.classdb_get_method_bind.asFunction<
             GDExtensionMethodBindPtr Function(GDExtensionConstStringNamePtr,
                 GDExtensionConstStringNamePtr, int)>(isLeaf: true)(
-        className.opaque.cast(), methodName.opaque.cast(), hash);
+        className.nativePtr.cast(), methodName.nativePtr.cast(), hash);
   }
 
   void callBuiltinConstructor(
@@ -114,7 +114,7 @@ class GodotDart {
         argArray.elementAt(i).value = args[i];
       }
 
-      callFunc(function, instance?.owner ?? nullptr, argArray, ret);
+      callFunc(function, instance?.nativePtr ?? nullptr, argArray, ret);
     });
   }
 
@@ -138,10 +138,10 @@ class GodotDart {
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
           sizeOf<GDExtensionConstVariantPtr>() * args.length);
       for (int i = 0; i < args.length; ++i) {
-        argArray.elementAt(i).value = args[i].opaque.cast();
+        argArray.elementAt(i).value = args[i].nativePtr.cast();
       }
-      callFunc(function, instance?.owner.cast() ?? nullptr.cast(), argArray,
-          args.length, ret.opaque.cast(), errorPtr.cast());
+      callFunc(function, instance?.nativePtr.cast() ?? nullptr.cast(), argArray,
+          args.length, ret.nativePtr.cast(), errorPtr.cast());
       if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
         throw Exception(
             'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
@@ -158,12 +158,12 @@ class GodotDart {
   ) {
     return interface.ref.variant_get_ptr_builtin_method.asFunction<
         GDExtensionPtrBuiltInMethod Function(int, GDExtensionConstStringNamePtr,
-            int)>()(variantType, name.opaque.cast(), hash);
+            int)>()(variantType, name.nativePtr.cast(), hash);
   }
 
   GDExtensionObjectPtr constructObject(StringName className) {
     final func = interface.ref.classdb_construct_object.asFunction<
         GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
-    return func(className.opaque.cast());
+    return func(className.nativePtr.cast());
   }
 }

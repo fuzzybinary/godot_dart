@@ -131,7 +131,7 @@ class Variant {
   static const int _size = 24;
 
   final Pointer<Uint8> _opaque;
-  Pointer<Uint8> get opaque => _opaque;
+  Pointer<Uint8> get nativePtr => _opaque;
 
   Variant() : _opaque = calloc<Uint8>(_size) {
     _finalizer.attach(this, _opaque);
@@ -150,23 +150,29 @@ class Variant {
 Variant convertToVariant(Object? obj) {
   final ret = Variant();
   final objectType = obj?.runtimeType;
+  print('Converting ${objectType.toString()} to Variant');
   void Function(GDExtensionVariantPtr, GDExtensionTypePtr)? c;
 
   // First easy checks, are we null?
   if (obj == null) {
     GodotDart.instance!.interface.ref.variant_new_nil
         .asFunction<void Function(GDExtensionVariantPtr)>(
-            isLeaf: true)(ret.opaque.cast());
+            isLeaf: true)(ret.nativePtr.cast());
   } else if (obj is ExtensionType) {
-    // Already an Object
+    // Already an Object, but constructor expects a pointer to the object
+    Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
+    ptrToObj.value = obj.nativePtr;
     c = _fromTypeConstructor[
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-    c?.call(ret.opaque.cast(), obj.owner.cast());
+    print(
+        'Objects native pointer is ${obj.nativePtr.address.toRadixString(16)}');
+    c?.call(ret.nativePtr.cast(), ptrToObj.cast());
+    malloc.free(ptrToObj);
   } else if (obj is BuiltinType) {
     // Builtin type
     var typeInfo = obj.staticTypeInfo;
     c = _fromTypeConstructor[typeInfo.variantType];
-    c?.call(ret.opaque.cast(), obj.opaque.cast());
+    c?.call(ret.nativePtr.cast(), obj.nativePtr.cast());
   } else {
     // Convert built in types
     using((arena) {
@@ -176,34 +182,34 @@ Variant convertToVariant(Object? obj) {
           b.value = (obj as bool) ? 1 : 0;
           c = _fromTypeConstructor[
               GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL];
-          c?.call(ret.opaque.cast(), b.cast());
+          c?.call(ret.nativePtr.cast(), b.cast());
           break;
         case int:
           final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
           i.value = obj as int;
           c = _fromTypeConstructor[
               GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
-          c?.call(ret.opaque.cast(), i.cast());
+          c?.call(ret.nativePtr.cast(), i.cast());
           break;
         case double:
           final d = arena.allocate<Double>(sizeOf<Double>());
           d.value = obj as double;
           c = _fromTypeConstructor[
               GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT];
-          c?.call(ret.opaque.cast(), d.cast());
+          c?.call(ret.nativePtr.cast(), d.cast());
           break;
         case String:
           final gdString = GDString.fromString(obj as String);
           c = _fromTypeConstructor[
               GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
-          c?.call(ret.opaque.cast(), gdString.opaque.cast());
+          c?.call(ret.nativePtr.cast(), gdString.nativePtr.cast());
           break;
         // TODO: All the other variant types (dictionary? List?)
         default:
           // If we got here, return nil variant
           GodotDart.instance!.interface.ref.variant_new_nil
               .asFunction<void Function(GDExtensionVariantPtr)>(
-                  isLeaf: true)(ret.opaque.cast());
+                  isLeaf: true)(ret.nativePtr.cast());
       }
     });
   }
@@ -211,7 +217,10 @@ Variant convertToVariant(Object? obj) {
   return ret;
 }
 
-Object? convertFromVariant(Variant variant) {
+Object? convertFromVariant(
+  Variant variant,
+  Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks,
+) {
   Object? ret;
   int variantType = variant.getType();
   void Function(GDExtensionTypePtr, GDExtensionVariantPtr)? c;
@@ -228,7 +237,7 @@ Object? convertFromVariant(Variant variant) {
   final builtinConstructor = _dartBuiltinConstructors[variantType];
   if (builtinConstructor != null) {
     var builtin = builtinConstructor();
-    c(builtin.opaque.cast(), variant.opaque.cast());
+    c(builtin.nativePtr.cast(), variant.nativePtr.cast());
     return builtin;
   }
 
@@ -239,22 +248,22 @@ Object? convertFromVariant(Variant variant) {
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL:
         Pointer<GDExtensionBool> ptr =
             arena.allocate(sizeOf<GDExtensionBool>());
-        c!(ptr.cast(), variant.opaque.cast());
+        c!(ptr.cast(), variant.nativePtr.cast());
         ret = ptr.value != 0;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT:
         Pointer<GDExtensionInt> ptr = arena.allocate(sizeOf<GDExtensionInt>());
-        c!(ptr.cast(), variant.opaque.cast());
+        c!(ptr.cast(), variant.nativePtr.cast());
         ret = ptr.value;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT:
         Pointer<Double> ptr = arena.allocate(sizeOf<Double>());
-        c!(ptr.cast(), variant.opaque.cast());
+        c!(ptr.cast(), variant.nativePtr.cast());
         ret = ptr.value;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
-        c!(gdString.opaque.cast(), variant.opaque.cast());
+        c!(gdString.nativePtr.cast(), variant.nativePtr.cast());
         ret = gde.dartBindings.gdStringToString(gdString);
         break;
 
@@ -262,8 +271,11 @@ Object? convertFromVariant(Variant variant) {
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
-        c!(ptr.cast(), variant.opaque.cast());
-        ret = gde.dartBindings.gdObjectToDartObject(ptr.value);
+        c!(ptr.cast(), variant.nativePtr.cast());
+        ret = gde.dartBindings.gdObjectToDartObject(
+          ptr.value,
+          bindingCallbacks,
+        );
         break;
 
       // TODO: all the other variant types

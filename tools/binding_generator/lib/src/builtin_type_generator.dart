@@ -21,7 +21,6 @@ Future<void> generateBuiltinBindings(
   // Holds all the exports an initializations for the builtins, written as
   // 'builtins.dart' at the end of generation
   var exportsString = '';
-  // var initBindingsString = '';
 
   var builtinSizes = <String, int>{};
 
@@ -64,7 +63,7 @@ class $correctedName extends BuiltinType {
   
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   @override
-  Pointer<Uint8> get opaque => _opaque;
+  Pointer<Uint8> get nativePtr => _opaque;
 
   static void initBindingsConstructorDestructor() {
 ''');
@@ -128,14 +127,15 @@ class $correctedName extends BuiltinType {
 
       withAllocationBlock(arguments, null, out, (ei) {
         out.write('''
-    ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, opaque.cast(), [
+    ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, nativePtr.cast(), [
 ''');
         for (Map<String, dynamic> argument in arguments) {
           final name = escapeName(argument['name'] as String);
           if (argumentNeedsAllocation(argument)) {
             out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
           } else {
-            out.write('      $ei${name.toLowerCamelCase()}.opaque.cast(),\n');
+            out.write(
+                '      $ei${name.toLowerCamelCase()}.nativePtr.cast(),\n');
           }
         }
         out.write('''
@@ -170,11 +170,11 @@ class $correctedName extends BuiltinType {
       withAllocationBlock(arguments, dartReturnType, out, (ei) {
         bool extractReturnValue = false;
         if (dartReturnType != null) {
-          extractReturnValue = writeReturnAllocation(dartReturnType, out);
+          extractReturnValue = writeReturnAllocation(api, dartReturnType, out);
         }
         final retParam = dartReturnType != null ? 'retPtr.cast()' : 'nullptr';
         final thisParam =
-            method['is_static'] == true ? 'nullptr' : 'opaque.cast()';
+            method['is_static'] == true ? 'nullptr' : 'nativePtr.cast()';
         out.write('''
     ${ei}gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [
 ''');
@@ -183,7 +183,8 @@ class $correctedName extends BuiltinType {
           if (argumentNeedsAllocation(argument)) {
             out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
           } else {
-            out.write('      $ei${name.toLowerCamelCase()}.opaque.cast(),\n');
+            out.write(
+                '      $ei${name.toLowerCamelCase()}.nativePtr.cast(),\n');
           }
         }
 
@@ -231,7 +232,6 @@ class _${className}Bindings {\n''');
     await out.close();
 
     exportsString += "export '${className.toSnakeCase()}.dart';\n";
-    //initBindingsString += '  $correctedName.initBindings();\n';
   }
 
   var exportsFile = File(path.join(targetDir, 'builtins.dart'));

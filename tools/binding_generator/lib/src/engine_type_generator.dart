@@ -20,7 +20,6 @@ Future<void> generateEngineBindings(
   // Holds all the exports an initializations for the builtins, written as
   // 'classes.dart' at the end of generation
   var exportsString = '';
-  var initBindingsString = '';
 
   for (Map<String, dynamic> classApi in api.engineClasses.values) {
     String className = classApi['name'];
@@ -37,13 +36,28 @@ Future<void> generateEngineBindings(
 
     writeImports(out, api, classApi, false);
 
+    final inherits = (classApi['inherits'] as String?) ?? 'ExtensionType';
+    final correctedInherits = getCorrectedType(inherits);
+
     out.write('''
 
-class $correctedName extends ExtensionType {
-  static late TypeInfo typeInfo;
+class $correctedName extends $correctedInherits {
+  static TypeInfo? _typeInfo;
   static final _bindings = _${className}Bindings();
+
+  static TypeInfo get typeInfo {
+    _typeInfo ??= TypeInfo(
+      StringName.fromString('$className'),
+      parentClass: StringName.fromString('$inherits'),
+      bindingCallbacks: bindingCallbacks,
+    );
+    return _typeInfo!;
+  }
+  @override
+  TypeInfo get staticTypeInfo => typeInfo;
 ''');
 
+    // Singleton
     if (api.singletons.contains(className)) {
       out.write('''
   
@@ -53,14 +67,19 @@ class $correctedName extends ExtensionType {
   static $correctedName get singleton {
     if (_singletonPtr == null) {
       _singletonPtr = gde.globalGetSingleton(typeInfo.className);
-      _singletonObj = gde.dartBindings.gdObjectToDartObject(_singletonPtr!.cast()) as $correctedName;
+      _singletonObj = gde.dartBindings.gdObjectToDartObject(
+          _singletonPtr!.cast(), bindingCallbacks) as $correctedName;
     }
     return _singletonObj!;
   }
 ''');
     }
 
+    // Constructors
     out.write('''
+  $correctedName() : super.forType(typeInfo.className);
+  
+  $correctedName.forType(StringName type) : super.forType(type);
   $correctedName.fromOwner(Pointer<Void> owner) : super.fromOwner(owner);
 
 ''');
@@ -97,11 +116,6 @@ class $correctedName extends ExtensionType {
       for (Map<String, dynamic> argument in arguments) {
         final name = escapeName(argument['name'] as String);
         out.write('      convertToVariant(${name.toLowerCamelCase()}),\n');
-        // if (argumentNeedsAllocation(argument)) {
-        //   out.write('      ${name.toLowerCamelCase()}Ptr.cast(),\n');
-        // } else {
-        //   out.write('      ${name.toLowerCamelCase()}.opaque.cast(),\n');
-        // }
       }
 
       out.write('''
@@ -110,7 +124,13 @@ class $correctedName extends ExtensionType {
 
       if (hasReturn) {
         final dartReturnType = getDartReturnType(method);
-        out.write('    return convertFromVariant(ret) as $dartReturnType;\n');
+        var bindingCallbacks = 'null';
+        if (api.engineClasses.containsKey(dartReturnType)) {
+          bindingCallbacks = '$dartReturnType.bindingCallbacks';
+        }
+
+        out.write(
+            '    return convertFromVariant(ret, $bindingCallbacks) as $dartReturnType;\n');
       }
 
       out.write('  }\n\n');
@@ -118,7 +138,13 @@ class $correctedName extends ExtensionType {
 
     out.write('''
   // Binding callbacks
-  static late Pointer<GDExtensionInstanceBindingCallbacks> _bindingCallbacks;
+  static Pointer<GDExtensionInstanceBindingCallbacks>? _bindingCallbacks;
+  static Pointer<GDExtensionInstanceBindingCallbacks>? get bindingCallbacks {
+    if (_bindingCallbacks == null) {
+      _initBindings();
+    }
+    return _bindingCallbacks!;
+  }
 
   static Pointer<Void> _bindingCreateCallback(
       Pointer<Void> token, Pointer<Void> instance) {
@@ -136,12 +162,9 @@ class $correctedName extends ExtensionType {
     return 1;
   }
 
-  static void initBindings() {
-    typeInfo = TypeInfo(StringName.fromString('$className'), 
-      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT);
-
+  static void _initBindings() {
     _bindingCallbacks = malloc<GDExtensionInstanceBindingCallbacks>();
-    _bindingCallbacks.ref
+    _bindingCallbacks!.ref
       ..create_callback = Pointer.fromFunction(_bindingCreateCallback)
       ..free_callback = Pointer.fromFunction(_bindingFreeCallback)
       ..reference_callback = Pointer.fromFunction(_bindingReferenceCallback, 1);
@@ -170,5 +193,14 @@ class _${className}Bindings {\n''');
     out.write('}\n');
 
     await out.close();
+
+    exportsString += "export '${className.toSnakeCase()}.dart';\n";
   }
+
+  var exportsFile = File(path.join(targetDir, 'engine_classes.dart'));
+  var out = exportsFile.openWrite();
+  out.write(header);
+  out.write(exportsString);
+
+  await out.close();
 }

@@ -10,7 +10,7 @@ String gdStringFromString() {
 
     final f = gde.interface.ref.string_new_with_utf8_chars
       .asFunction<void Function(GDExtensionStringPtr, Pointer<Char>)>();
-    f(opaque.cast(), native.cast());
+    f(nativePtr.cast(), native.cast());
 
     malloc.free(native);
   }
@@ -21,8 +21,8 @@ String stringNameFromString() {
   return '''
   StringName.fromString(String string) {
     final gdString = GDString.fromString(string);
-    gde.callBuiltinConstructor(_bindings.constructor_2!, opaque.cast(), [
-      gdString.opaque.cast(),
+    gde.callBuiltinConstructor(_bindings.constructor_2!, nativePtr.cast(), [
+      gdString.nativePtr.cast(),
     ]);
   }
 ''';

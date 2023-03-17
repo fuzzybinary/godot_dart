@@ -16,7 +16,7 @@ dev_dependencies:
 
 ffigen:
   output: 'lib/src/core/gdextension_ffi_bindings.dart'
-  name: GDExtension
+  name: GDExtensionFFI
   headers:
     entry-points:
       - '../../godot-headers/godot/gdextension_interface.h'

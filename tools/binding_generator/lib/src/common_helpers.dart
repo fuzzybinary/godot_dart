@@ -65,22 +65,22 @@ ${forVariant ? '' : "import '../../variant/variant.dart';"}
 
 ''');
 
+  final builtinPreface = forVariant ? '' : '../variant/';
+  final enginePreface = forVariant ? '../classes/' : '';
+
   final usedClasses = getUsedTypes(classApi);
   for (var used in usedClasses) {
     if (used != className) {
-      if (used == 'Object') {
-        out.write("import '../../core/object.dart';\n");
-      } else if (used == 'Variant') {
+      if (used == 'Variant') {
         out.write("import '../../variant/variant.dart';\n");
       } else if (used == 'TypedArray') {
         out.write("import '../../variant/typed_array.dart';\n");
       } else if (used == 'GlobalConstants') {
         out.write("import '../global_constants.dart';\n");
       } else {
-        var prefix = '';
-        if (!forVariant && api.builtinClasses.containsKey(used)) {
-          prefix = '../variant/';
-        }
+        var prefix = api.builtinClasses.containsKey(used)
+            ? builtinPreface
+            : enginePreface;
         out.write("import '$prefix${used.toSnakeCase()}.dart';\n");
       }
     }
@@ -97,12 +97,12 @@ void argumentAllocation(Map<String, dynamic> argument, IOSink out) {
       '      final ${name.toLowerCamelCase()}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${name.toLowerCamelCase()};\n');
 }
 
-bool writeReturnAllocation(String returnType, IOSink out) {
+bool writeReturnAllocation(GodotApiInfo info, String returnType, IOSink out) {
   final nativeType = getFFIType(returnType);
   String indent = '      ';
   out.write(indent);
   if (nativeType == null) {
-    out.write('final retPtr = retVal.opaque.cast();\n');
+    out.write('final retPtr = retVal.nativePtr;\n');
     return false;
   } else {
     out.write(
@@ -212,6 +212,11 @@ String makeSignature(Map<String, dynamic> functionData) {
 
 List<String> getUsedTypes(Map<String, dynamic> api) {
   var usedTypes = <String>{};
+  var inherits = api['inherits'] as String?;
+  if (inherits != null) {
+    usedTypes.add(inherits);
+  }
+
   if (api.containsKey('constructors')) {
     for (Map<String, dynamic> constructor in api['constructors']) {
       if (constructor.containsKey('arguments')) {
@@ -289,7 +294,6 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   usedTypes.removeAll(dartTypes);
   // Already included
   usedTypes.remove('StringName');
-  usedTypes.remove('GodotObject');
 
   return usedTypes.toList();
 }

@@ -11,19 +11,23 @@ abstract class BuiltinType {
       Finalizer((mem) => calloc.free(mem));
 
   TypeInfo get staticTypeInfo;
-  Pointer<Uint8> get opaque;
+  Pointer<Uint8> get nativePtr;
 
   BuiltinType() {
-    _finalizer.attach(this, opaque);
+    _finalizer.attach(this, nativePtr);
   }
 }
 
 /// Core interface for engine classes
 abstract class ExtensionType {
-  late GDExtensionObjectPtr owner = Pointer.fromAddress(0);
+  late GDExtensionObjectPtr _owner = Pointer.fromAddress(0);
+  GDExtensionObjectPtr get nativePtr => _owner;
 
-  // TODO
-  ExtensionType();
+  ExtensionType.forType(StringName typeName) {
+    _owner = gde.constructObject(typeName);
+  }
 
-  ExtensionType.fromOwner(this.owner);
+  ExtensionType.fromOwner(this._owner);
+
+  TypeInfo get staticTypeInfo;
 }
