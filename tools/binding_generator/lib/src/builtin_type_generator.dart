@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 
 import 'common_helpers.dart';
 import 'gdstring_additional.dart';
+import 'godot_api_info.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
 
@@ -70,8 +71,7 @@ class $correctedName extends BuiltinType {
 
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
       int index = constructor['index'];
-      out.write(
-          '''    _bindings.constructor_$index = gde.variantGetConstructor(
+      out.write('''    _bindings.constructor_$index = gde.variantGetConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, $index);
 ''');
     }
@@ -90,15 +90,14 @@ class $correctedName extends BuiltinType {
     typeInfo = TypeInfo(StringName.fromString('$className'), 
       variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
 ''');
-    out.write('    StringName name;\n');
+
     for (Map<String, dynamic> method in builtinApi['methods']) {
       var methodName = method['name'] as String;
       var dartMethodName = escapeMethodName(methodName);
-      out.write('''    name = StringName.fromString('$methodName');\n''');
       out.write(
           '''    _bindings.method${dartMethodName.toUpperCamelCase()} = gde.variantGetBuiltinMethod(
       GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()}, 
-      name, 
+      StringName.fromString('$methodName'), 
       ${method['hash']},
     );
 ''');
@@ -112,13 +111,14 @@ class $correctedName extends BuiltinType {
       final constructorName = getConstructorName(className, constructor);
       out.write('\n  $correctedName$constructorName(');
       final arguments =
-          constructor['arguments'] as List<dynamic>? ?? <dynamic>[];
+          (constructor['arguments'] as List<dynamic>? ?? <dynamic>[])
+              .map((dynamic e) => TypeInfo.fromArgument(api, e))
+              .toList();
       if (arguments.isNotEmpty) {
         out.write('\n');
         // Parameter list
-        for (Map<String, dynamic> argument in arguments) {
-          final argumentDecl = getArgumentDeclaration(argument);
-          out.write('    final $argumentDecl,\n');
+        for (final argument in arguments) {
+          out.write('    final ${argument.fullType} ${argument.name},\n');
         }
         out.write('  ) {\n');
       } else {
@@ -129,13 +129,14 @@ class $correctedName extends BuiltinType {
         out.write('''
     ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, nativePtr.cast(), [
 ''');
-        for (Map<String, dynamic> argument in arguments) {
-          final name = escapeName(argument['name'] as String);
+        for (final argument in arguments) {
           if (argumentNeedsAllocation(argument)) {
-            out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
-          } else {
+            out.write('      $ei${argument.name}Ptr.cast(),\n');
+          } else if (argument.isOptional) {
             out.write(
-                '      $ei${name.toLowerCamelCase()}.nativePtr.cast(),\n');
+                '      $ei${argument.name}?.nativePtr.cast() ?? nullptr,\n');
+          } else {
+            out.write('      $ei${argument.name}.nativePtr.cast(),\n');
           }
         }
         out.write('''
@@ -148,6 +149,7 @@ class $correctedName extends BuiltinType {
 
     if (className == 'String') {
       out.write(gdStringFromString());
+      out.write(gdStringToDartString());
     } else if (className == 'StringName') {
       out.write(stringNameFromString());
     }
@@ -155,49 +157,65 @@ class $correctedName extends BuiltinType {
     // Methods
     for (Map<String, dynamic> method in builtinApi['methods']) {
       var methodName = escapeMethodName(method['name'] as String);
-      final signature = makeSignature(method);
+      final signature = makeSignature(api, method);
       out.write('''
   $signature {
 ''');
 
-      List<dynamic> arguments = method['arguments'] ?? <Map<String, dynamic>>[];
+      final arguments = (method['arguments'] as List<dynamic>? ?? <dynamic>[])
+          .map((dynamic e) => TypeInfo.fromArgument(api, e))
+          .toList();
 
-      final dartReturnType = getDartReturnType(method);
-      if (dartReturnType != null) {
-        out.write(
-            '    $dartReturnType retVal = ${getDefaultValueForType(dartReturnType)};\n');
-      }
-      withAllocationBlock(arguments, dartReturnType, out, (ei) {
-        bool extractReturnValue = false;
-        if (dartReturnType != null) {
-          extractReturnValue = writeReturnAllocation(api, dartReturnType, out);
+      final retInfo = TypeInfo.forReturnType(api, method);
+      if (!retInfo.isVoid) {
+        if (retInfo.godotType == 'String') {
+          out.write('    GDString retVal = GDString();\n');
+        } else {
+          out.write(
+              '    ${retInfo.fullType} retVal = ${getDefaultValueForType(retInfo)};\n');
         }
-        final retParam = dartReturnType != null ? 'retPtr.cast()' : 'nullptr';
+      }
+      withAllocationBlock(arguments, retInfo, out, (ei) {
+        bool extractReturnValue = false;
+        if (!retInfo.isVoid) {
+          extractReturnValue = writeReturnAllocation(api, retInfo, out);
+        }
+        final retParam = retInfo.isVoid ? 'nullptr' : 'retPtr.cast()';
         final thisParam =
             method['is_static'] == true ? 'nullptr' : 'nativePtr.cast()';
         out.write('''
     ${ei}gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [
 ''');
-        for (Map<String, dynamic> argument in arguments) {
-          final name = escapeName(argument['name'] as String);
+        for (final argument in arguments) {
           if (argumentNeedsAllocation(argument)) {
-            out.write('      $ei${name.toLowerCamelCase()}Ptr.cast(),\n');
-          } else {
+            out.write('      $ei${argument.name}Ptr.cast(),\n');
+          } else if (argument.isOptional) {
             out.write(
-                '      $ei${name.toLowerCamelCase()}.nativePtr.cast(),\n');
+                '      $ei${argument.name}?.nativePtr.cast() ?? nullptr,\n');
+          } else {
+            out.write('      $ei${argument.name}.nativePtr.cast(),\n');
           }
         }
 
         out.write('''
     $ei]);
 ''');
-        if (dartReturnType != null && extractReturnValue) {
-          out.write('      retVal = retPtr.value;\n');
+        if (!retInfo.isVoid && extractReturnValue) {
+          if (retInfo.isEngineClass) {
+            out.write(
+                '      retVal = retPtr == nullptr ? null : ${retInfo.dartType}.fromOwner(retPtr.value);\n');
+          } else {
+            out.write('      retVal = retPtr.value;\n');
+          }
         }
       });
 
-      if (dartReturnType != null) {
-        out.write('    return retVal;\n');
+      if (!retInfo.isVoid) {
+        if (retInfo.godotType == 'String') {
+          out.write('    return retVal.toDartString();\n');
+        } else {
+          out.write('    return retVal;\n');
+        }
       }
 
       out.write('  }\n\n');

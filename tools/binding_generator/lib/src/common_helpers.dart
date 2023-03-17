@@ -1,41 +1,8 @@
 import 'dart:io';
 
+import 'godot_api_info.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
-
-class GodotApiInfo {
-  Map<String, dynamic> raw = <String, dynamic>{};
-
-  Map<String, Map<String, dynamic>> builtinClasses = {};
-  Map<String, Map<String, dynamic>> engineClasses = {};
-  Set<String> singletons = {};
-  Map<String, Map<String, dynamic>> nativeStructures = {};
-
-  GodotApiInfo.fromJson(Map<String, dynamic> api) {
-    raw = api;
-
-    for (Map<String, dynamic> builtin in api['builtin_classes']) {
-      final String name = builtin['name'];
-      builtinClasses[name] = builtin;
-    }
-
-    for (Map<String, dynamic> engine in api['classes']) {
-      final String name = engine['name'];
-      engineClasses[name] = engine;
-    }
-
-    for (Map<String, dynamic> singleton in api['singletons']) {
-      final String name = singleton['name'];
-      singletons.add(name);
-    }
-
-    for (Map<String, dynamic> nativeStructure in api['native_structures']) {
-      // TODO: These probably need special processing
-      final String name = nativeStructure['name'];
-      nativeStructures[name] = nativeStructure;
-    }
-  }
-}
 
 const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 //
@@ -87,45 +54,52 @@ ${forVariant ? '' : "import '../../variant/variant.dart';"}
   }
 }
 
-void argumentAllocation(Map<String, dynamic> argument, IOSink out) {
-  if (!argumentNeedsAllocation(argument)) return;
+void argumentAllocation(TypeInfo typeInfo, IOSink out) {
+  if (!argumentNeedsAllocation(typeInfo)) return;
 
-  var type = argument['type'] as String;
-  var name = escapeName(argument['name'] as String);
-  var ffiType = getFFIType(type);
+  var type = typeInfo.godotType;
+  var ffiType = getFFIType(typeInfo);
   out.write(
-      '      final ${name.toLowerCamelCase()}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${name.toLowerCamelCase()};\n');
+      '      final ${typeInfo.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${typeInfo.name};\n');
 }
 
-bool writeReturnAllocation(GodotApiInfo info, String returnType, IOSink out) {
-  final nativeType = getFFIType(returnType);
+bool writeReturnAllocation(GodotApiInfo info, TypeInfo returnType, IOSink out) {
+  // TODO This is specialized for builtin returns... need to revisit if it's actually correct
   String indent = '      ';
   out.write(indent);
-  if (nativeType == null) {
-    out.write('final retPtr = retVal.nativePtr;\n');
-    return false;
-  } else {
+  if (returnType.isEngineClass) {
+    // Need a pointer to a pointer
     out.write(
-        'final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());\n');
+        'final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());\n');
     return true;
+  } else {
+    final nativeType = getFFIType(returnType);
+    if (nativeType == null) {
+      out.write('final retPtr = retVal.nativePtr;\n');
+      return false;
+    } else {
+      out.write(
+          'final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());\n');
+      return true;
+    }
   }
 }
 
 void withAllocationBlock(
-  List<dynamic> arguments,
-  String? dartReturnType,
+  List<TypeInfo> arguments,
+  TypeInfo? retInfo,
   IOSink out,
   void Function(String indent) writeBlock,
 ) {
   var indent = '';
-  var needsArena = dartReturnType != null ||
+  var needsArena = !(retInfo?.isVoid ?? true) ||
       arguments.any((dynamic arg) => argumentNeedsAllocation(arg));
   if (needsArena) {
     indent = '  ';
     out.write('''
     using((arena) {
 ''');
-    for (Map<String, dynamic> arg in arguments) {
+    for (final arg in arguments) {
       argumentAllocation(arg, out);
     }
   }
@@ -135,17 +109,10 @@ void withAllocationBlock(
   }
 }
 
-void argumentFree(Map<String, dynamic> argument, IOSink out) {
+void argumentFree(TypeInfo argument, IOSink out) {
   if (!argumentNeedsAllocation(argument)) return;
 
-  var name = escapeName(argument['name'] as String);
-  out.write('    malloc.free(${name.toLowerCamelCase()}Ptr);\n');
-}
-
-String getArgumentDeclaration(Map<String, dynamic> argument) {
-  final correctedType = getCorrectedType(argument['type'] as String);
-  final name = escapeName(argument['name'] as String);
-  return '$correctedType ${name.toLowerCamelCase()}';
+  out.write('    malloc.free(${argument.name!.toLowerCamelCase()}Ptr);\n');
 }
 
 /// Generate a constructor name from arguments types. In the case
@@ -176,9 +143,9 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
   return '';
 }
 
-String makeSignature(Map<String, dynamic> functionData) {
+String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
   var modifiers = '';
-  var returnType = getDartReturnType(functionData) ?? 'void';
+  var returnType = TypeInfo.forReturnType(api, functionData);
 
   if (functionData['is_static'] == true) {
     modifiers = 'static ';
@@ -187,7 +154,7 @@ String makeSignature(Map<String, dynamic> functionData) {
   var methodName =
       escapeMethodName((functionData['name'] as String).toLowerCamelCase());
 
-  var signature = '$modifiers$returnType $methodName(';
+  var signature = '$modifiers${returnType.fullType} $methodName(';
 
   final List<dynamic>? parameters = functionData['arguments'];
   if (parameters != null) {
@@ -195,12 +162,10 @@ String makeSignature(Map<String, dynamic> functionData) {
 
     for (int i = 0; i < parameters.length; ++i) {
       Map<String, dynamic> parameter = parameters[i];
-      final type = getCorrectedType(parameter['type'], meta: parameter['meta']);
+      final type = TypeInfo.fromArgument(api, parameter);
 
       // TODO: Default values
-      var paramName =
-          escapeName((parameter['name'] as String)).toLowerCamelCase();
-      paramSignature.add('$type $paramName');
+      paramSignature.add('${type.fullType} ${type.name}');
     }
     signature += paramSignature.join(', ');
   }
@@ -296,43 +261,6 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   usedTypes.remove('StringName');
 
   return usedTypes.toList();
-}
-
-String getTypeFromArgument(Map<String, dynamic> argument) {
-  String type = argument['type'];
-  String? meta = argument['meta'];
-
-  type = type.replaceFirst('const ', '');
-  if (type.endsWith('*')) {
-    type = type.substring(0, type.length - 1);
-  }
-
-  // Handle typed arrays?
-  type = getCorrectedType(type, meta: meta);
-
-  return type;
-}
-
-String? getDartReturnType(Map<String, dynamic> method) {
-  String? returnType;
-  String? returnMeta;
-
-  if (method.containsKey('return_type')) {
-    returnType = getCorrectedType(method['return_type']);
-  } else if (method.containsKey('return_value')) {
-    final returnValue = method['return_value'] as Map<String, dynamic>;
-    returnType = returnValue['type'];
-    if (returnValue.containsKey('meta')) {
-      returnMeta = method['return_value']['meta'];
-    }
-
-    returnType = getCorrectedType(returnType!, meta: returnMeta);
-    if (returnType == 'GDString') {
-      returnType = 'String';
-    }
-  }
-
-  return returnType;
 }
 
 void writeEnum(Map<String, dynamic> godotEnum, String? inClass, IOSink out) {

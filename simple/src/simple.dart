@@ -36,7 +36,7 @@ class Simple extends Control {
     if (isInsideTree()) {
       final viewport = getViewport();
       print(
-          'Physics Process Delta Time? ${viewport.getPhysicsProcessDeltaTime()}');
+          'Physics Process Delta Time? ${viewport?.getPhysicsProcessDeltaTime()}');
       return viewport;
     }
 

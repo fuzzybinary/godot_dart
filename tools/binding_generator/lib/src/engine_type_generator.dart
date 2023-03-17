@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 
 import 'common_helpers.dart';
+import 'godot_api_info.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
 
@@ -92,16 +93,18 @@ class $correctedName extends $correctedInherits {
 
     for (Map<String, dynamic> method in methods) {
       final methodName = escapeMethodName(method['name'] as String);
-      final hasReturn = method.containsKey('return_value') &&
-          method['return_value']!['type'] != 'void';
+      final returnInfo = TypeInfo.forReturnType(api, method);
+      final hasReturn = returnInfo.godotType != 'Void';
       final isStatic = method['is_static'] as bool;
-      final signature = makeSignature(method);
+      final signature = makeSignature(api, method);
 
       out.write('''
   $signature {
 ''');
 
-      List<dynamic> arguments = method['arguments'] ?? <Map<String, dynamic>>[];
+      final arguments = (method['arguments'] as List<dynamic>? ?? <dynamic>[])
+          .map((dynamic e) => TypeInfo.fromArgument(api, e))
+          .toList();
 
       // TODO: Research if we can do ptrCalls
       out.write('''
@@ -113,9 +116,8 @@ class $correctedName extends $correctedInherits {
     }
     ${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(method!, ${isStatic ? 'null' : 'this'}, [
 ''');
-      for (Map<String, dynamic> argument in arguments) {
-        final name = escapeName(argument['name'] as String);
-        out.write('      convertToVariant(${name.toLowerCamelCase()}),\n');
+      for (final argument in arguments) {
+        out.write('      convertToVariant(${argument.name}),\n');
       }
 
       out.write('''
@@ -123,14 +125,13 @@ class $correctedName extends $correctedInherits {
 ''');
 
       if (hasReturn) {
-        final dartReturnType = getDartReturnType(method);
         var bindingCallbacks = 'null';
-        if (api.engineClasses.containsKey(dartReturnType)) {
-          bindingCallbacks = '$dartReturnType.bindingCallbacks';
+        if (returnInfo.isEngineClass) {
+          bindingCallbacks = '${returnInfo.dartType}.bindingCallbacks';
         }
 
         out.write(
-            '    return convertFromVariant(ret, $bindingCallbacks) as $dartReturnType;\n');
+            '    return convertFromVariant(ret, $bindingCallbacks) as ${returnInfo.fullType};\n');
       }
 
       out.write('  }\n\n');

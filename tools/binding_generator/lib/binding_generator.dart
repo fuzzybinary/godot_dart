@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'src/builtin_type_generator.dart';
 import 'src/common_helpers.dart';
 import 'src/engine_type_generator.dart';
+import 'src/godot_api_info.dart';
 import 'src/string_extensions.dart';
 import 'src/type_helpers.dart';
 

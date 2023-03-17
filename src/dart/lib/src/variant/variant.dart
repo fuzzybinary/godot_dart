@@ -150,7 +150,6 @@ class Variant {
 Variant convertToVariant(Object? obj) {
   final ret = Variant();
   final objectType = obj?.runtimeType;
-  print('Converting ${objectType.toString()} to Variant');
   void Function(GDExtensionVariantPtr, GDExtensionTypePtr)? c;
 
   // First easy checks, are we null?
@@ -164,8 +163,6 @@ Variant convertToVariant(Object? obj) {
     ptrToObj.value = obj.nativePtr;
     c = _fromTypeConstructor[
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-    print(
-        'Objects native pointer is ${obj.nativePtr.address.toRadixString(16)}');
     c?.call(ret.nativePtr.cast(), ptrToObj.cast());
     malloc.free(ptrToObj);
   } else if (obj is BuiltinType) {

@@ -27,3 +27,11 @@ String stringNameFromString() {
   }
 ''';
 }
+
+String gdStringToDartString() {
+  return '''
+  String toDartString() {
+    return gde.dartBindings.gdStringToString(this);
+  }
+''';
+}

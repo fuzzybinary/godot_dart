@@ -1,3 +1,5 @@
+import 'godot_api_info.dart';
+
 final dartTypes = [
   'Nil',
   'void',
@@ -22,9 +24,8 @@ bool hasDartType(String typeName) {
   return dartTypes.contains(typeName);
 }
 
-bool argumentNeedsAllocation(Map<String, dynamic> argument) {
-  final type = argument['type'] as String;
-  return dartTypes.contains(type);
+bool argumentNeedsAllocation(TypeInfo argument) {
+  return dartTypes.contains(argument.godotType);
 }
 
 final typeToFFIType = {
@@ -43,9 +44,9 @@ final typeToFFIType = {
   'uint64_t': 'Uint64',
 };
 
-String? getFFIType(String type) {
-  if (typeToFFIType.containsKey(type)) {
-    return typeToFFIType[type]!;
+String? getFFIType(TypeInfo type) {
+  if (typeToFFIType.containsKey(type.godotType)) {
+    return typeToFFIType[type.godotType]!;
   }
 
   return null;
@@ -53,8 +54,12 @@ String? getFFIType(String type) {
 
 final defaultValueForType = {'bool': 'true', 'double': '0.0', 'int': '0'};
 
-String getDefaultValueForType(String type) {
-  return defaultValueForType[type] ?? '$type()';
+String getDefaultValueForType(TypeInfo info) {
+  if (info.isOptional) {
+    return 'null';
+  } else {
+    return defaultValueForType[info.dartType] ?? '${info.dartType}()';
+  }
 }
 
 String getCorrectedType(String type, {String? meta}) {
