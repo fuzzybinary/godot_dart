@@ -91,6 +91,21 @@ class $correctedName extends BuiltinType {
       variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
 ''');
 
+    final members = builtinApi['members'] as List<dynamic>? ?? <dynamic>[];
+    for (Map<String, dynamic> member in members) {
+      var memberName = member['name'] as String;
+      out.write(
+          '''  _bindings.member${memberName.toUpperCamelCase()}Getter = gde.variantGetPtrGetter(
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()},
+        StringName.fromString('$memberName'),
+      );''');
+      out.write(
+          '''  _bindings.member${memberName.toUpperCamelCase()}Setter = gde.variantGetPtrSetter(
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()},
+        StringName.fromString('$memberName'),
+      );''');
+    }
+
     for (Map<String, dynamic> method in builtinApi['methods']) {
       var methodName = method['name'] as String;
       var dartMethodName = escapeMethodName(methodName);
@@ -152,6 +167,73 @@ class $correctedName extends BuiltinType {
       out.write(gdStringToDartString());
     } else if (className == 'StringName') {
       out.write(stringNameFromString());
+    }
+
+    // Members
+    for (Map<String, dynamic> member in members) {
+      final memberInfo = TypeInfo.forType(api, member['type'] as String);
+      final memberName = member['name'] as String;
+      final dartMemberName = escapeName(memberName);
+      out.write('''
+
+  ${memberInfo.dartType} get $memberName {
+''');
+      if (memberInfo.godotType == 'String') {
+        out.write('    GDString retVal = GDString();\n');
+      } else {
+        out.write(
+            '    ${memberInfo.fullType} retVal = ${getDefaultValueForType(memberInfo)};\n');
+      }
+      withAllocationBlock([], memberInfo, out, (ei) {
+        bool extractReturnValue = writeReturnAllocation(api, memberInfo, out);
+        out.write('''
+    ${ei}final f = _bindings.member${memberName.toUpperCamelCase()}Getter!.asFunction<void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>(isLeaf: true);
+    ${ei}f(nativePtr.cast(), retPtr.cast());
+''');
+        if (extractReturnValue) {
+          if (memberInfo.isEngineClass) {
+            out.write(
+                '      retVal = retPtr == nullptr ? null : ${memberInfo.dartType}.fromOwner(retPtr.value);\n');
+          } else {
+            out.write('      retVal = retPtr.value;\n');
+          }
+        }
+      });
+
+      if (memberInfo.godotType == 'String') {
+        out.write('    return retVal.toDartString();\n');
+      } else {
+        out.write('    return retVal;\n');
+      }
+      out.write('''
+  }
+''');
+
+      out.write('''
+
+  set $memberName(${memberInfo.dartType} value) {
+''');
+      withAllocationBlock([memberInfo], null, out, (ei) {
+        String valueCast;
+        if (argumentNeedsAllocation(memberInfo)) {
+          valueCast = '${memberInfo.name}Ptr.cast()';
+        } else if (memberInfo.godotType == 'String') {
+          valueCast =
+              'GDString.fromString(${memberInfo.name}).nativePtr.cast()';
+        } else if (memberInfo.isOptional) {
+          valueCast = '${memberInfo.name}?.nativePtr.cast() ?? nullptr';
+        } else {
+          valueCast = '${memberInfo.name}.nativePtr.cast()';
+        }
+        out.write('''
+    ${ei}final f = _bindings.member${memberName.toUpperCamelCase()}Setter!.asFunction<void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>(isLeaf: true);
+    ${ei}f(nativePtr.cast(), $valueCast);
+''');
+      });
+
+      out.write('''
+  }
+''');
     }
 
     // Methods
@@ -239,6 +321,12 @@ class _${className}Bindings {\n''');
     }
     if (builtinApi['has_destructor'] == true) {
       out.write('''  GDExtensionPtrDestructor? destructor;\n''');
+    }
+    for (Map<String, dynamic> member in members) {
+      var memberName = member['name'] as String;
+      memberName = memberName.toUpperCamelCase();
+      out.write('''  GDExtensionPtrGetter? member${memberName}Getter;\n''');
+      out.write('''  GDExtensionPtrSetter? member${memberName}Setter;\n''');
     }
     for (Map<String, dynamic> method in builtinApi['methods']) {
       var methodName = method['name'] as String;

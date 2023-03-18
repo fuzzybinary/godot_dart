@@ -50,6 +50,30 @@ class TypeInfo {
   // Type including optional
   String get fullType => '$dartType${isOptional ? '?' : ''}';
 
+  // Simple types, used by members
+  TypeInfo.forType(GodotApiInfo api, String type) {
+    isVoid = false;
+    godotType = type;
+    meta = null;
+    isOptional = false;
+
+    isEngineClass = api.engineClasses.containsKey(godotType);
+    isBuiltinClass = api.builtinClasses.containsKey(godotType);
+    isOptional = isEngineClass;
+
+    dartType = godotType.replaceFirst('const ', '');
+    if (dartType.endsWith('*')) {
+      isOptional = true;
+      dartType = dartType.substring(0, dartType.length - 1);
+    }
+
+    // Handle typed arrays?
+    dartType = getCorrectedType(dartType, meta: meta);
+
+    rawName = 'value';
+    name = 'value';
+  }
+
   TypeInfo.fromArgument(GodotApiInfo api, Map<String, dynamic> argument) {
     isVoid = false;
     godotType = argument['type'];

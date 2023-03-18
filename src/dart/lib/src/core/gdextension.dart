@@ -49,6 +49,18 @@ class GodotDart {
         .asFunction<GDExtensionPtrDestructor Function(int)>()(variantType);
   }
 
+  GDExtensionPtrGetter variantGetPtrGetter(int variantType, StringName name) {
+    return interface.ref.variant_get_ptr_getter.asFunction<
+            GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>(
+        isLeaf: true)(variantType, name.nativePtr.cast());
+  }
+
+  GDExtensionPtrGetter variantGetPtrSetter(int variantType, StringName name) {
+    return interface.ref.variant_get_ptr_setter.asFunction<
+            GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>(
+        isLeaf: true)(variantType, name.nativePtr.cast());
+  }
+
   GDExtensionObjectPtr globalGetSingleton(StringName name) {
     return interface.ref.global_get_singleton.asFunction<
             GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>(
