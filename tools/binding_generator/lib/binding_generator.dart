@@ -7,6 +7,7 @@ import 'src/builtin_type_generator.dart';
 import 'src/common_helpers.dart';
 import 'src/engine_type_generator.dart';
 import 'src/godot_api_info.dart';
+import 'src/native_structures_generator.dart';
 import 'src/string_extensions.dart';
 import 'src/type_helpers.dart';
 
@@ -41,16 +42,20 @@ Future<void> generate(GenerationOptions options) async {
 
   // TODO: Remove Output Directory
   final apiInfo = GodotApiInfo.fromJson(jsonApi);
-  print('Generating builtins...\n');
+  print('Generating builtins...');
   await generateBuiltinBindings(
       apiInfo, options.outputDirectory, options.buildConfig);
 
-  print('Generating engine bindings...\n');
+  print('Generating engine bindings...');
   await generateEngineBindings(
       apiInfo, options.outputDirectory, options.buildConfig);
 
-  print('Generating global constants...\n');
+  print('Generating global constants...');
   await generateGlobalConstants(
+      apiInfo, options.outputDirectory, options.buildConfig);
+
+  print('Generating native structures...');
+  await generateNativeStructures(
       apiInfo, options.outputDirectory, options.buildConfig);
 }
 

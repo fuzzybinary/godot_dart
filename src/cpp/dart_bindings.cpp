@@ -59,17 +59,6 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     return false;
   }
 
-  {
-    GDEWrapper *wrapper = GDEWrapper::instance();
-    Dart_Handle args[] = {Dart_NewInteger((int64_t)wrapper->gde()), Dart_NewInteger((int64_t)wrapper->lib())};
-    Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args);
-    if (Dart_IsError(result)) {
-      GD_PRINT_ERROR("GodotDart: Error calling `_registerGodot`");
-      GD_PRINT_ERROR(Dart_GetError(result));
-      return false;
-    }
-  }
-
   // Find the DartBindings "library" (just the file) and set us as the native callback handler
   {
     Dart_Handle native_bindings_library_name =
@@ -141,6 +130,19 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   // All set up, setup the instance
   _instance = this;
 
+  // Everything should be prepared, register Dart with Godot
+  {
+    GDEWrapper *wrapper = GDEWrapper::instance();
+    Dart_Handle args[] = {Dart_NewInteger((int64_t)wrapper->gde()), Dart_NewInteger((int64_t)wrapper->lib())};
+    Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args);
+    if (Dart_IsError(result)) {
+      GD_PRINT_ERROR("GodotDart: Error calling `_registerGodot`");
+      GD_PRINT_ERROR(Dart_GetError(result));
+      return false;
+    }
+  }
+
+  // And call the main function from the user supplied library
   {
     Dart_Handle library = Dart_RootLibrary();
     Dart_Handle mainFunctionName = Dart_NewStringFromCString("main");

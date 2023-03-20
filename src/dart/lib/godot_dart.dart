@@ -5,6 +5,7 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/script/dart_script_language.dart';
 
 export 'src/core/core_types.dart';
 export 'src/core/gdextension.dart';
@@ -15,6 +16,7 @@ export 'src/variant/variant.dart';
 
 // ignore: unused_element
 late GodotDart _globalExtension;
+DartScriptLanguage? _dartScriptLanguage;
 
 @pragma('vm:entry-point')
 void _registerGodot(int gdeAddress, int libraryAddress) {
@@ -27,4 +29,11 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
 
   initVariantBindings(extensionInterface.ref);
   TypeInfo.initTypeMappings();
+
+  DartScriptLanguage.initTypeInfo();
+  gde.dartBindings.bindClass(DartScriptLanguage, DartScriptLanguage.typeInfo);
+
+  _dartScriptLanguage = DartScriptLanguage();
+  
+  Engine.singleton.registerScriptLanguage(_dartScriptLanguage);
 }

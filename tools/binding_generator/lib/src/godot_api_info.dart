@@ -50,6 +50,26 @@ class TypeInfo {
   // Type including optional
   String get fullType => '$dartType${isOptional ? '?' : ''}';
 
+  static String? getPointerType(String type) {
+    int pointerCount = 0;
+    var dartType = type;
+    while (dartType.endsWith('*')) {
+      pointerCount++;
+      dartType = dartType.substring(0, dartType.length - 1);
+    }
+    dartType = dartType.trim();
+
+    final ffiType = getFFITypeFromString(dartType);
+    if (ffiType != null) {
+      dartType = 'Pointer<' * pointerCount;
+      dartType += ffiType;
+      dartType += '>' * pointerCount;
+    } else {
+      return null;
+    }
+    return dartType;
+  }
+
   // Simple types, used by members
   TypeInfo.forType(GodotApiInfo api, String type) {
     isVoid = false;
@@ -63,8 +83,13 @@ class TypeInfo {
 
     dartType = godotType.replaceFirst('const ', '');
     if (dartType.endsWith('*')) {
-      isOptional = true;
-      dartType = dartType.substring(0, dartType.length - 1);
+      final pointerType = getPointerType(dartType);
+      if (pointerType != null) {
+        dartType = pointerType;
+      } else {
+        isOptional = true;
+        dartType = dartType.substring(0, dartType.length - 1);
+      }
     }
 
     // Handle typed arrays?
@@ -86,8 +111,13 @@ class TypeInfo {
 
     dartType = godotType.replaceFirst('const ', '');
     if (dartType.endsWith('*')) {
-      isOptional = true;
-      dartType = dartType.substring(0, dartType.length - 1);
+      final pointerType = getPointerType(dartType);
+      if (pointerType != null) {
+        dartType = pointerType;
+      } else {
+        isOptional = true;
+        dartType = dartType.substring(0, dartType.length - 1);
+      }
     }
 
     // Handle typed arrays?
@@ -124,6 +154,20 @@ class TypeInfo {
       dartType = getCorrectedType(godotType, meta: meta);
       if (godotType == 'String') {
         dartType = 'String';
+      }
+
+      if (dartType.startsWith('const')) {
+        dartType = dartType.replaceFirst('const ', '');
+      }
+
+      if (dartType.endsWith('*')) {
+        final pointerType = getPointerType(dartType);
+        if (pointerType != null) {
+          dartType = pointerType;
+        } else {
+          isOptional = true;
+          dartType = dartType.substring(0, dartType.length - 1);
+        }
       }
     }
   }

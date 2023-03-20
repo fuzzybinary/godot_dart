@@ -150,9 +150,14 @@ String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
   if (functionData['is_static'] == true) {
     modifiers = 'static ';
   }
+  bool isVirtual = functionData['is_virtual'] ?? false;
+  var methodName = functionData['name'] as String;
 
-  var methodName =
-      escapeMethodName((functionData['name'] as String).toLowerCamelCase());
+  if (isVirtual && methodName.startsWith('_')) {
+    methodName = methodName.replaceFirst('_', 'v_');
+  }
+
+  methodName = escapeMethodName(methodName).toLowerCamelCase();
 
   var signature = '$modifiers${returnType.fullType} $methodName(';
 
@@ -175,6 +180,17 @@ String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
   return signature;
 }
 
+String nakedType(String type) {
+  if (type.startsWith('const')) {
+    type = type.replaceFirst('const', '');
+  }
+  while (type.endsWith('*')) {
+    type = type.substring(0, type.length - 1);
+  }
+
+  return type.trim();
+}
+
 List<String> getUsedTypes(Map<String, dynamic> api) {
   var usedTypes = <String>{};
   var inherits = api['inherits'] as String?;
@@ -186,7 +202,7 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
     for (Map<String, dynamic> constructor in api['constructors']) {
       if (constructor.containsKey('arguments')) {
         for (Map<String, dynamic> arg in constructor['arguments']) {
-          usedTypes.add(arg['type']);
+          usedTypes.add(nakedType(arg['type']));
         }
       }
     }
@@ -196,14 +212,14 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
     for (Map<String, dynamic> method in api['methods']) {
       if (method.containsKey('arguments')) {
         for (Map<String, dynamic> arg in method['arguments']) {
-          usedTypes.add(arg['type']);
+          usedTypes.add(nakedType(arg['type']));
         }
       }
       if (method.containsKey('return_type')) {
-        usedTypes.add(method['return_type']);
+        usedTypes.add(nakedType(method['return_type']));
       } else if (method.containsKey('return_value')) {
         final returnValue = method['return_value'] as Map<String, dynamic>;
-        usedTypes.add(returnValue['type']);
+        usedTypes.add(nakedType(returnValue['type']));
       }
     }
   }
@@ -211,7 +227,7 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   if (api.containsKey('members')) {
     if (api.containsKey('members')) {
       for (Map<String, dynamic> member in api['members']) {
-        usedTypes.add(member['type']);
+        usedTypes.add(nakedType(member['type']));
       }
     }
   }
@@ -253,8 +269,7 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
       .removeWhere((e) => e.startsWith('enum::') || e.startsWith('bitfield::'));
   usedTypes.addAll(enumAndBitfieldTypes);
 
-  // Remove pointer types for now
-  usedTypes.removeWhere((e) => e.endsWith('*'));
+  usedTypes.remove('void');
 
   usedTypes.removeAll(dartTypes);
   // Already included

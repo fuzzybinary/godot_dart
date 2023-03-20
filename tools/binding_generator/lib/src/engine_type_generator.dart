@@ -86,10 +86,6 @@ class $correctedName extends $correctedInherits {
 ''');
 
     List<dynamic> methods = classApi['methods'] ?? <Map<String, dynamic>>[];
-    // TODO: Virtual methods
-    methods = methods
-        .where((dynamic method) => !(method['is_virtual'] as bool))
-        .toList();
 
     for (Map<String, dynamic> method in methods) {
       final methodName = escapeMethodName(method['name'] as String);
@@ -102,12 +98,18 @@ class $correctedName extends $correctedInherits {
   $signature {
 ''');
 
-      final arguments = (method['arguments'] as List<dynamic>? ?? <dynamic>[])
-          .map((dynamic e) => TypeInfo.fromArgument(api, e))
-          .toList();
+      if (method['is_virtual'] as bool) {
+        if (!returnInfo.isVoid) {
+          final defaultValue = getDefaultValueForType(returnInfo);
+          out.write('    return $defaultValue;\n');
+        }
+      } else {
+        final arguments = (method['arguments'] as List<dynamic>? ?? <dynamic>[])
+            .map((dynamic e) => TypeInfo.fromArgument(api, e))
+            .toList();
 
-      // TODO: Research if we can do ptrCalls
-      out.write('''
+        // TODO: Research if we can do ptrCalls
+        out.write('''
     var method = _bindings.method${methodName.toUpperCamelCase()};
     if (method == null) {
       _bindings.method${methodName.toUpperCamelCase()} = gde.classDbGetMethodBind(
@@ -116,22 +118,23 @@ class $correctedName extends $correctedInherits {
     }
     ${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(method!, ${isStatic ? 'null' : 'this'}, [
 ''');
-      for (final argument in arguments) {
-        out.write('      convertToVariant(${argument.name}),\n');
-      }
+        for (final argument in arguments) {
+          out.write('      convertToVariant(${argument.name}),\n');
+        }
 
-      out.write('''
+        out.write('''
     ]);
 ''');
 
-      if (hasReturn) {
-        var bindingCallbacks = 'null';
-        if (returnInfo.isEngineClass) {
-          bindingCallbacks = '${returnInfo.dartType}.bindingCallbacks';
-        }
+        if (hasReturn) {
+          var bindingCallbacks = 'null';
+          if (returnInfo.isEngineClass) {
+            bindingCallbacks = '${returnInfo.dartType}.bindingCallbacks';
+          }
 
-        out.write(
-            '    return convertFromVariant(ret, $bindingCallbacks) as ${returnInfo.fullType};\n');
+          out.write(
+              '    return convertFromVariant(ret, $bindingCallbacks) as ${returnInfo.fullType};\n');
+        }
       }
 
       out.write('  }\n\n');
@@ -187,6 +190,10 @@ class $correctedName extends $correctedInherits {
 class _${className}Bindings {\n''');
 
     for (Map<String, dynamic> method in methods) {
+      if (method['is_virtual'] as bool) {
+        continue;
+      }
+
       var methodName = escapeMethodName(method['name'] as String);
       methodName = methodName.toUpperCamelCase();
       out.write('''  GDExtensionMethodBindPtr? method$methodName;\n''');

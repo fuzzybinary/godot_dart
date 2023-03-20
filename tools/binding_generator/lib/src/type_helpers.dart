@@ -42,14 +42,15 @@ final typeToFFIType = {
   'uint32_t': 'Uint32',
   'int64_t': 'Int64',
   'uint64_t': 'Uint64',
+  'void': 'Void',
 };
 
 String? getFFIType(TypeInfo type) {
-  if (typeToFFIType.containsKey(type.godotType)) {
-    return typeToFFIType[type.godotType]!;
-  }
+  return typeToFFIType[type.godotType];
+}
 
-  return null;
+String? getFFITypeFromString(String type) {
+  return typeToFFIType[type];
 }
 
 final defaultValueForType = {'bool': 'true', 'double': '0.0', 'int': '0'};
@@ -57,8 +58,18 @@ final defaultValueForType = {'bool': 'true', 'double': '0.0', 'int': '0'};
 String getDefaultValueForType(TypeInfo info) {
   if (info.isOptional) {
     return 'null';
+  } else if (defaultValueForType.containsKey(info.dartType)) {
+    return defaultValueForType[info.dartType]!;
+  } else if (info.dartType == 'String') {
+    return "''";
+  } else if (info.godotType.startsWith('enum::') ||
+      info.godotType.startsWith('bitfield::')) {
+    // TODO: I'd rather this gave a real value
+    return '${info.dartType}.values[0]';
+  } else if (info.dartType.contains('Pointer<')) {
+    return 'nullptr';
   } else {
-    return defaultValueForType[info.dartType] ?? '${info.dartType}()';
+    return '${info.dartType}()';
   }
 }
 
@@ -69,6 +80,14 @@ String getCorrectedType(String type, {String? meta}) {
     'String': 'GDString',
     'Object': 'GodotObject',
     'real_t': 'double',
+    'int8_t': 'int',
+    'uint8_t': 'int',
+    'int16_t': 'int',
+    'uint16_t': 'int',
+    'int32_t': 'int',
+    'uint32_t': 'int',
+    'int64_t': 'int',
+    'uint64_t': 'int',
   };
   if (meta != null) {
     if (meta.contains('int')) {
