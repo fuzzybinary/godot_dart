@@ -75,6 +75,8 @@ Future<void> generateNativeStructures(
     out.write('''
 import 'dart:ffi';
 
+import '../../variant/structs.dart';
+
 ''');
 
     Set<String> usedTypes = {};
@@ -89,7 +91,7 @@ import 'dart:ffi';
         out.write("import '${field.type.toSnakeCase()}.dart';\n");
       }
       if (api.builtinClasses.containsKey(field.type) &&
-          !dartTypes.contains(field.type)) {
+          !hasDartType(field.type)) {
         out.write("import '../variant/${field.type.toSnakeCase()}.dart';\n");
       }
     }
@@ -131,6 +133,9 @@ class $correctedName extends Struct {
       } else {
         if (ffiType != null) {
           out.write('@$ffiType() ');
+        } else if (!dartType.startsWith('Pointer')) {
+          // Add 'Struct' to the end of the DartType
+          dartType += 'Struct';
         }
 
         out.write('external $dartType ${field.name};\n');

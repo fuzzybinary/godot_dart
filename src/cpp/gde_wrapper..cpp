@@ -17,6 +17,13 @@ bool GDEWrapper::initialize() {
     return false;
   }
 
+  _gdstring_from_gdstringname_constructor = _gde_interface->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
+  if (_gdstring_from_gdstringname_constructor == nullptr) {
+    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `String(StringName &)` "
+                   "constructor)");
+    return false;
+  }
+
   _gdstring_destructor = _gde_interface->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
   if (_gdstring_destructor == nullptr) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrive `String` destructor)");
@@ -47,6 +54,12 @@ void GDEWrapper::gd_string_name_new(GDExtensionStringNamePtr out, const char *cs
   const GDExtensionConstTypePtr args[1] = {&as_gdstring};
   _gdstringname_from_gdstring_constructor(out, args);
   _gdstring_destructor(&as_gdstring);
+}
+
+void GDEWrapper::gd_string_from_string_name(GDExtensionConstStringNamePtr ptr, uint8_t* out) {
+  const GDExtensionConstTypePtr args[1] = {ptr};
+  
+  _gdstring_from_gdstringname_constructor(out, args);
 }
 
 void GDEWrapper::gd_string_name_destructor(GDExtensionStringNamePtr ptr) {

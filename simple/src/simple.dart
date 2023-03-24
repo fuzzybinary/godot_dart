@@ -12,7 +12,9 @@ class Simple extends Control {
 
   final double _doubleValue = 12.0;
 
-  Simple();
+  Simple() : super() {
+    postInitialize();
+  }
 
   String myMethod() {
     return 'Hello from Dart!';

@@ -1,10 +1,14 @@
 import 'dart:ffi';
+import 'dart:io';
+
+import 'package:path/path.dart' as path;
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
 
 class GodotDartNativeBindings {
   late final DynamicLibrary dartDylib;
+  late final DynamicLibrary godotDartDylib;
 
   late final _newPersistentHandle = dartDylib
       .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
@@ -19,8 +23,28 @@ class GodotDartNativeBindings {
           'Dart_DeletePersistentHandle')
       .asFunction<void Function(Pointer<Void>)>();
 
-  GodotDartNativeBindings(String dartDllLibraryPath) {
-    dartDylib = DynamicLibrary.open(dartDllLibraryPath);
+  late final _variantCopy = godotDartDylib
+      .lookup<
+          NativeFunction<
+              Void Function(
+                  Pointer<Void>, Pointer<Void>, Int32)>>('variant_copy')
+      .asFunction<void Function(Pointer<Void>, Pointer<Void>, int size)>(
+          isLeaf: true);
+
+  static DynamicLibrary openLibrary(String libName) {
+    var libraryPath = path.join(Directory.current.path, '$libName.so');
+    if (Platform.isMacOS) {
+      libraryPath = path.join(Directory.current.path, '$libName.dylib');
+    } else if (Platform.isWindows) {
+      libraryPath = path.join(Directory.current.path, '$libName.dll');
+    }
+
+    return DynamicLibrary.open(libraryPath);
+  }
+
+  GodotDartNativeBindings() {
+    dartDylib = DynamicLibrary.open('dart_dll');
+    godotDartDylib = DynamicLibrary.open('godot_dart');
   }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
@@ -54,6 +78,10 @@ class GodotDartNativeBindings {
       _deletePersistentHandle(handle);
     }
     return obj;
+  }
+
+  void variantCopy(Pointer<Void> dest, BuiltinType src) {
+    _variantCopy(dest, src.nativePtr.cast(), src.staticTypeInfo.size);
   }
 }
 

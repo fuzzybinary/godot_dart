@@ -30,10 +30,8 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   initVariantBindings(extensionInterface.ref);
   TypeInfo.initTypeMappings();
 
-  DartScriptLanguage.initTypeInfo();
-  gde.dartBindings.bindClass(DartScriptLanguage, DartScriptLanguage.typeInfo);
-
+  DartScriptLanguage.initBindings();
   _dartScriptLanguage = DartScriptLanguage();
-  
+
   Engine.singleton.registerScriptLanguage(_dartScriptLanguage);
 }

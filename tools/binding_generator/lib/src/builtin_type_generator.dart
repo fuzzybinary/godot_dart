@@ -87,8 +87,11 @@ class $correctedName extends BuiltinType {
   static void initBindings() {
     initBindingsConstructorDestructor();
 
-    typeInfo = TypeInfo(StringName.fromString('$className'), 
-      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()});
+    typeInfo = TypeInfo(
+      StringName.fromString('$className'), 
+      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${className.toUpperSnakeCase()},
+      size: _size,
+    );
 ''');
 
     final members = builtinApi['members'] as List<dynamic>? ?? <dynamic>[];

@@ -1,8 +1,6 @@
 import 'dart:ffi';
-import 'dart:io';
 
 import 'package:ffi/ffi.dart';
-import 'package:path/path.dart' as path;
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
@@ -23,13 +21,7 @@ class GodotDart {
   GodotDart(this.interface, this.libraryPtr) {
     instance = this;
 
-    var libraryPath = path.join(Directory.current.path, 'dart_dll.so');
-    if (Platform.isMacOS) {
-      libraryPath = path.join(Directory.current.path, 'dart_dll.dylib');
-    } else if (Platform.isWindows) {
-      libraryPath = path.join(Directory.current.path, 'dart_dll.dll');
-    }
-    dartBindings = GodotDartNativeBindings(libraryPath);
+    dartBindings = GodotDartNativeBindings();
   }
 
   // Variant Type

@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
@@ -30,4 +31,8 @@ abstract class ExtensionType {
   ExtensionType.fromOwner(this._owner);
 
   TypeInfo get staticTypeInfo;
+
+  @protected
+  @pragma('vm:external-name', 'ExtensionType::postInitialize')
+  external void postInitialize();
 }

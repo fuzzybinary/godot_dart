@@ -24,6 +24,9 @@ class TypeInfo {
   /// is usually correct for most user created classes
   final int variantType;
 
+  /// The size of the variant type. Zero for non-variants
+  final int size;
+
   /// Callbacks that create the proper Dart type from the C type. Mostly
   /// only used by core engine classes. Pass null to use the default.
   final Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks;
@@ -32,6 +35,7 @@ class TypeInfo {
     this.className, {
     this.parentClass,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
+    this.size = 0,
     this.bindingCallbacks,
   });
 

@@ -31,6 +31,7 @@ public:
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
+  static GDExtensionClassCallVirtual get_virtual_func(void *p_userdata, GDExtensionConstStringNamePtr p_name);
 
 private:
   static void bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,

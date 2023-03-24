@@ -71,6 +71,18 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     }
   }
 
+  // Find the DartBindings "library" (just the file) and set us as the native callback handler
+  {
+    Dart_Handle native_bindings_library_name =
+        Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
+    Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
+    if (!Dart_IsError(library)) {
+      // Retrain for future calls to convert variants
+      _native_library = Dart_NewPersistentHandle(library);
+      Dart_SetNativeResolver(library, native_resolver, nullptr);
+    }
+  }
+
   // Setup some types we need frequently
   {
     Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString("dart:ffi"));
@@ -201,6 +213,12 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
         arg_meta_info[i] = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
   }
 
+  int flags = GDEXTENSION_METHOD_FLAG_NORMAL;
+  // TODO: Pass in virtual flag
+  if (method_name[0] == '_') {
+    flags |= GDEXTENSION_METHOD_FLAG_VIRTUAL;
+  }
+
   uint8_t gd_method_name[GD_STRING_NAME_MAX_SIZE];
   gde->gd_string_name_new(&gd_method_name, method_name);
   GDExtensionClassMethodInfo method_info = {
@@ -208,8 +226,8 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
       info,
       GodotDartBindings::bind_call,
       GodotDartBindings::ptr_call,
-      GDEXTENSION_METHOD_FLAGS_DEFAULT,
-      true, /* has return value */
+      flags,
+      ret_type_info.variant_type != GDEXTENSION_VARIANT_TYPE_NIL,
       &ret_info,
       GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE,
       arg_list.size(),
@@ -386,6 +404,65 @@ void GodotDartBindings::ptr_call(void *method_userdata, GDExtensionClassInstance
   Dart_ExitScope();
 }
 
+GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata,
+                                                                GDExtensionConstStringNamePtr p_name) {
+  Dart_EnterScope();
+
+  Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
+
+  Dart_Handle vtable = Dart_GetField(type, Dart_NewStringFromCString("_vTable"));
+  if (Dart_IsError(vtable)) {
+    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
+    GD_PRINT_ERROR(Dart_GetError(vtable));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  if (Dart_IsNull(vtable)) {
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  // TODO: Maybe we can use StringNames directly instead of converting to Dart strings?
+  GDEWrapper *gde = GDEWrapper::instance();
+  uint8_t gd_string[GD_STRING_MAX_SIZE] = {0};
+  gde->gd_string_from_string_name(p_name, gd_string);
+
+  char16_t length = GDE->string_to_utf16_chars(gd_string, nullptr, 0);
+  char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * (length + 1));
+  GDE->string_to_utf16_chars(gd_string, temp, length);
+  temp[length] = 0;
+
+  gde->gd_string_destructor(gd_string);
+
+  Dart_Handle dart_string = Dart_NewStringFromUTF16((uint16_t *)temp, length);
+  if (Dart_IsError(dart_string)) {
+    GD_PRINT_ERROR("GodotDart: Error conveting StringName to Dart String: ");
+    GD_PRINT_ERROR(Dart_GetError(dart_string));
+    Dart_ExitScope();
+    return nullptr;
+  }
+  
+  Dart_Handle vtable_item = Dart_MapGetAt(vtable, dart_string);
+  if (Dart_IsError(vtable_item)) {
+    GD_PRINT_ERROR("GodotDart: Error looking for vtable item: ");
+    GD_PRINT_ERROR(Dart_GetError(vtable_item));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  if (Dart_IsNull(vtable_item)) {
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  Dart_Handle dart_address = Dart_GetField(vtable_item, Dart_NewStringFromCString("address"));
+  uint64_t address;
+  Dart_IntegerToUint64(dart_address, &address);
+
+  return reinterpret_cast<GDExtensionClassCallVirtual>(address);
+}
+
 GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) {
   Dart_EnterScope();
 
@@ -425,18 +502,9 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
     return nullptr;
   }
 
-  GDEWrapper *gde = GDEWrapper::instance();
-
   uint64_t real_address = 0;
   Dart_IntegerToUint64(owner_address, &real_address);
-  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(new_object);
-  // TODO: This is serving as "_postInitialize" from th cpp example, but is only being used for Dart created
-  // types at the moment. Need to generalize to allow Engine types (which shouldn't call object_set_instance)
-  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
-                           reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
-  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), gde->lib(), persistent_handle,
-                                   &__binding_callbacks);
-
+  
   Dart_ExitScope();
 
   return reinterpret_cast<GDExtensionObjectPtr>(real_address);
@@ -479,6 +547,7 @@ void bind_class(Dart_NativeArguments args) {
   info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
+  info.get_virtual_func = GodotDartBindings::get_virtual_func;
 
   GDE->classdb_register_extension_class(GDEWrapper::instance()->lib(), sn_name, sn_parent, &info);
 }
@@ -531,7 +600,7 @@ void gd_string_to_dart_string(Dart_NativeArguments args) {
   GDExtensionConstStringPtr gd_string = get_opaque_address(dart_gd_string);
 
   char16_t length = GDE->string_to_utf16_chars(gd_string, nullptr, 0);
-  char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * length);
+  char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * (length + 1));
   GDE->string_to_utf16_chars(gd_string, temp, length);
   temp[length] = 0;
 
@@ -591,6 +660,41 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 }
 
+void dart_object_post_initialize(Dart_NativeArguments args) {
+  Dart_Handle dart_self = Dart_GetNativeArgument(args, 0);
+  Dart_Handle d_class_type_info = Dart_GetField(dart_self, Dart_NewStringFromCString("staticTypeInfo"));
+  if (Dart_IsError(d_class_type_info)) {
+    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
+    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
+  }
+
+  TypeInfo class_type_info;
+  type_info_from_dart(&class_type_info, d_class_type_info);
+
+  Dart_Handle owner = Dart_GetField(dart_self, Dart_NewStringFromCString("nativePtr"));
+  if (Dart_IsError(owner)) {
+    GD_PRINT_ERROR("GodotDart: Error finding owner member for object: ");
+    GD_PRINT_ERROR(Dart_GetError(owner));
+  }
+
+  Dart_Handle owner_address = Dart_GetField(owner, Dart_NewStringFromCString("address"));
+  if (Dart_IsError(owner_address)) {
+    GD_PRINT_ERROR("GodotDart: Error getting address for object: ");
+    GD_PRINT_ERROR(Dart_GetError(owner_address));
+  }
+
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(dart_self);
+  GDEWrapper *gde = GDEWrapper::instance();
+
+  uint64_t real_address = 0;
+  Dart_IntegerToUint64(owner_address, &real_address);
+
+  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
+                           reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
+  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), gde->lib(), persistent_handle,
+                                   &__binding_callbacks);
+}
+
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
   Dart_EnterScope();
 
@@ -611,8 +715,15 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::gdObjectToDartObject")) {
     *auto_setup_scope = true;
     ret = gd_object_to_dart_object;
+  } else if (0 == strcmp(c_name, "ExtensionType::postInitialize")) {
+    *auto_setup_scope = true;
+    ret = dart_object_post_initialize;
   }
 
   Dart_ExitScope();
   return ret;
+}
+
+extern "C" void variant_copy(void *dest, void *src, int size) {
+  memcpy(dest, src, size);
 }
