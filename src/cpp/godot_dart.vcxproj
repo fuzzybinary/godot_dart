@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dart_bindings.cpp" />
+    <ClCompile Include="dart_vtable_wrapper.cpp" />
     <ClCompile Include="godot_dart.cpp" />
     <ClCompile Include="gde_wrapper..cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
+    <ClInclude Include="dart_vtable_wrapper.h" />
     <ClInclude Include="gde_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
@@ -134,6 +136,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,6 +155,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
