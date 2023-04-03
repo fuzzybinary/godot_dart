@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 
 import 'common_helpers.dart';
@@ -45,6 +46,13 @@ Future<void> generateEngineBindings(
 class $correctedName extends $correctedInherits {
   static TypeInfo? _typeInfo;
   static final _bindings = _${className}Bindings();
+  static Map<String, Pointer<GodotVirtualFunction>>? _vTable;
+  static Map<String, Pointer<GodotVirtualFunction>> get vTable {
+    if (_vTable == null) {
+      _initVTable();
+    }
+    return _vTable!;
+  }
 
   static TypeInfo get typeInfo {
     _typeInfo ??= TypeInfo(
@@ -56,6 +64,8 @@ class $correctedName extends $correctedInherits {
   }
   @override
   TypeInfo get staticTypeInfo => typeInfo;
+
+  Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;
 ''');
 
     // Singleton
@@ -81,7 +91,11 @@ class $correctedName extends $correctedInherits {
   $correctedName() : super.forType(typeInfo.className);
   
   $correctedName.forType(StringName type) : super.forType(type);
-  $correctedName.fromOwner(Pointer<Void> owner) : super.fromOwner(owner);
+  $correctedName.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  static $correctedName? fromOwner(Pointer<Void> owner) {
+    if (owner == nullptr) return null;
+    return $correctedName.withNonNullOwner(owner);
+  }
 
 ''');
 
@@ -90,7 +104,7 @@ class $correctedName extends $correctedInherits {
     for (Map<String, dynamic> method in methods) {
       final methodName = escapeMethodName(method['name'] as String);
       final returnInfo = TypeInfo.forReturnType(api, method);
-      final hasReturn = returnInfo.godotType != 'Void';
+      final hasReturn = returnInfo.typeCategory != TypeCategory.voidType;
       final isStatic = method['is_static'] as bool;
       final signature = makeSignature(api, method);
 
@@ -99,7 +113,7 @@ class $correctedName extends $correctedInherits {
 ''');
 
       if (method['is_virtual'] as bool) {
-        if (!returnInfo.isVoid) {
+        if (returnInfo.typeCategory != TypeCategory.voidType) {
           final defaultValue = getDefaultValueForType(returnInfo);
           out.write('    return $defaultValue;\n');
         }
@@ -128,7 +142,7 @@ class $correctedName extends $correctedInherits {
 
         if (hasReturn) {
           var bindingCallbacks = 'null';
-          if (returnInfo.isEngineClass) {
+          if (returnInfo.typeCategory == TypeCategory.engineClass) {
             bindingCallbacks = '${returnInfo.dartType}.bindingCallbacks';
           }
 
@@ -152,7 +166,7 @@ class $correctedName extends $correctedInherits {
 
   static Pointer<Void> _bindingCreateCallback(
       Pointer<Void> token, Pointer<Void> instance) {
-    final dartInstance = $correctedName.fromOwner(instance);
+    final dartInstance = $correctedName.withNonNullOwner(instance);
     return gde.dartBindings.toPersistentHandle(dartInstance);
   }
 
@@ -172,10 +186,65 @@ class $correctedName extends $correctedInherits {
       ..create_callback = Pointer.fromFunction(_bindingCreateCallback)
       ..free_callback = Pointer.fromFunction(_bindingFreeCallback)
       ..reference_callback = Pointer.fromFunction(_bindingReferenceCallback, 1);
+    _initVTable();
+  }
+
+  // Virtual functions
+  static void _initVTable() {
+    _vTable = {};
 ''');
+
+    if (correctedInherits != 'ExtensionType') {
+      out.write('    _vTable!.addAll($correctedInherits.vTable);\n');
+    }
+
+    for (Map<String, dynamic> method
+        in methods.where((dynamic m) => m['is_virtual'] == true)) {
+      var methodName = method['name'] as String;
+      methodName = escapeMethodName(methodName).toLowerCamelCase();
+      out.write('''
+    _vTable!['${method['name']}'] = Pointer.fromFunction(__$methodName);
+''');
+    }
 
     out.write('''
   }
+
+''');
+
+    for (Map<String, dynamic> method
+        in methods.where((dynamic m) => m['is_virtual'] == true)) {
+      var methodName = method['name'] as String;
+      methodName = escapeMethodName(methodName).toLowerCamelCase();
+      final dartMethodName = getDartMethodName(method);
+      final arguments = (method['arguments'] as List?)
+              ?.map((dynamic e) => TypeInfo.fromArgument(api, e)) ??
+          [];
+      final returnInfo = TypeInfo.forReturnType(api, method);
+      final hasReturn = returnInfo.typeCategory != TypeCategory.voidType;
+      out.write('''
+  static void __$methodName(GDExtensionClassInstancePtr instance,
+    Pointer<GDExtensionConstTypePtr> args, GDExtensionTypePtr retPtr) {
+    
+    final self = gde.dartBindings.fromPersistentHandle(instance) as $correctedName;
+''');
+      arguments.forEachIndexed((i, e) {
+        out.write(convertPtrArgument(i, e));
+      });
+      out.write('''
+    ${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => e.name).join(',')});
+''');
+      if (hasReturn) {
+        out.write(writePtrReturn(returnInfo));
+      }
+
+      out.write('''
+  }
+
+''');
+    }
+
+    out.write('''
 }
 
 ''');

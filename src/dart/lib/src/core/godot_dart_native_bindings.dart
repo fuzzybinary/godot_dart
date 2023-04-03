@@ -80,8 +80,12 @@ class GodotDartNativeBindings {
     return obj;
   }
 
-  void variantCopy(Pointer<Void> dest, BuiltinType src) {
+  void variantCopyToNative(Pointer<Void> dest, BuiltinType src) {
     _variantCopy(dest, src.nativePtr.cast(), src.staticTypeInfo.size);
+  }
+
+  void variantCopyFromNative(BuiltinType dest, Pointer<Void> src) {
+    _variantCopy(dest.nativePtr.cast(), src, dest.staticTypeInfo.size);
   }
 }
 

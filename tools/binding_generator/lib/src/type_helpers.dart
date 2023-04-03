@@ -24,10 +24,6 @@ bool hasDartType(String typeName) {
   return dartTypes.contains(typeName);
 }
 
-bool argumentNeedsAllocation(TypeInfo argument) {
-  return dartTypes.contains(argument.godotType);
-}
-
 final typeToFFIType = {
   'bool': 'Bool',
   'real_t': 'Float',
@@ -139,6 +135,7 @@ String escapeName(String name) {
     'in': 'inVal',
     'var': 'variant',
     'final': 'finalVal',
+    'args': 'argsParam',
   };
 
   return map[name] ?? name;

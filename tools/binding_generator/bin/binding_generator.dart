@@ -4,6 +4,6 @@ void main(List<String> arguments) {
   generate(GenerationOptions(
     apiJsonLocation: '../../godot-headers/godot/extension_api.json',
     outputDirectory: '../../src/dart/lib/src/gen',
-    buildConfig: 'float_32',
+    buildConfig: 'float_64',
   ));
 }

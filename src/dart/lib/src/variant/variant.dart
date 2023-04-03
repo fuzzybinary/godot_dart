@@ -122,15 +122,21 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
       PackedColorArray.new;
 }
 
-class Variant {
+// TODO: Variant probably shouldn't extend BuiltinType?
+class Variant extends BuiltinType {
   static final Finalizer<Pointer<Uint8>> _finalizer =
       Finalizer((mem) => calloc.free(mem));
 
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
+  static late final TypeInfo typeInfo;
+
+  @override
+  TypeInfo get staticTypeInfo => typeInfo;
 
   final Pointer<Uint8> _opaque;
+  @override
   Pointer<Uint8> get nativePtr => _opaque;
 
   Variant() : _opaque = calloc<Uint8>(_size) {
@@ -144,6 +150,14 @@ class Variant {
     int Function(Pointer<Void>) getType =
         gde.interface.ref.variant_get_type.asFunction();
     return getType(_opaque.cast());
+  }
+
+  static void initBindings() {
+    typeInfo = TypeInfo(
+      StringName.fromString('Variant'),
+      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+      size: _size,
+    );
   }
 }
 

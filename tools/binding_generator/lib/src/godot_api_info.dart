@@ -35,13 +35,61 @@ class GodotApiInfo {
   }
 }
 
+TypeCategory _getTypeCategory(GodotApiInfo api, String type) {
+  bool isPointer = false;
+  String trimmedType = type.replaceFirst('const ', '');
+  while (trimmedType.endsWith('*')) {
+    trimmedType = trimmedType.substring(0, trimmedType.length - 1);
+    isPointer = true;
+  }
+  trimmedType = trimmedType.trim();
+
+  if (trimmedType == 'void' && !isPointer) {
+    return TypeCategory.voidType;
+  } else if (trimmedType.startsWith('enum::') ||
+      trimmedType.startsWith('bitfield::')) {
+    return TypeCategory.enumType;
+  } else if (trimmedType.startsWith('typedarray::')) {
+    return TypeCategory.typedArray;
+  } else if (hasDartType(trimmedType)) {
+    return TypeCategory.primitive;
+  } else if (api.engineClasses.containsKey(trimmedType)) {
+    return TypeCategory.engineClass;
+  } else if (api.builtinClasses.containsKey(trimmedType) ||
+      trimmedType == 'Variant') {
+    return TypeCategory.builtinClass;
+  } else if (api.nativeStructures.containsKey(trimmedType)) {
+    return TypeCategory.nativeStructure;
+  } else if (trimmedType.startsWith('enum::') ||
+      trimmedType.startsWith('bitfield::')) {
+    // TODO:
+    return TypeCategory.voidType;
+  } else if (trimmedType.startsWith('typedarray::')) {
+    // TODO:
+    return TypeCategory.voidType;
+  }
+
+  //assert(false);
+
+  return TypeCategory.voidType;
+}
+
+enum TypeCategory {
+  voidType,
+  primitive,
+  engineClass,
+  builtinClass,
+  nativeStructure,
+  enumType,
+  typedArray,
+}
+
 class TypeInfo {
-  late bool isVoid;
   late bool isOptional;
-  late bool isEngineClass;
-  late bool isBuiltinClass;
+  late TypeCategory typeCategory;
   late String dartType;
   late String godotType;
+  bool isPointer = false;
 
   late String? rawName;
   late String? name;
@@ -50,7 +98,11 @@ class TypeInfo {
   // Type including optional
   String get fullType => '$dartType${isOptional ? '?' : ''}';
 
-  static String? getPointerType(String type) {
+  bool get needsAllocation {
+    return dartTypes.contains(godotType);
+  }
+
+  static String? getPointerType(GodotApiInfo api, String type) {
     int pointerCount = 0;
     var dartType = type;
     while (dartType.endsWith('*')) {
@@ -59,7 +111,9 @@ class TypeInfo {
     }
     dartType = dartType.trim();
 
-    final ffiType = getFFITypeFromString(dartType);
+    final ffiType = api.nativeStructures.containsKey(dartType)
+        ? dartType
+        : getFFITypeFromString(dartType);
     if (ffiType != null) {
       dartType = 'Pointer<' * pointerCount;
       dartType += ffiType;
@@ -72,20 +126,19 @@ class TypeInfo {
 
   // Simple types, used by members
   TypeInfo.forType(GodotApiInfo api, String type) {
-    isVoid = false;
     godotType = type;
     meta = null;
     isOptional = false;
 
-    isEngineClass = api.engineClasses.containsKey(godotType);
-    isBuiltinClass = api.builtinClasses.containsKey(godotType);
-    isOptional = isEngineClass;
+    typeCategory = _getTypeCategory(api, type);
+    isOptional = typeCategory == TypeCategory.engineClass;
 
     dartType = godotType.replaceFirst('const ', '');
     if (dartType.endsWith('*')) {
-      final pointerType = getPointerType(dartType);
+      final pointerType = getPointerType(api, dartType);
       if (pointerType != null) {
         dartType = pointerType;
+        isPointer = true;
       } else {
         isOptional = true;
         dartType = dartType.substring(0, dartType.length - 1);
@@ -100,20 +153,19 @@ class TypeInfo {
   }
 
   TypeInfo.fromArgument(GodotApiInfo api, Map<String, dynamic> argument) {
-    isVoid = false;
     godotType = argument['type'];
     meta = argument['meta'];
     isOptional = false;
 
-    isEngineClass = api.engineClasses.containsKey(godotType);
-    isBuiltinClass = api.builtinClasses.containsKey(godotType);
-    isOptional = isEngineClass;
+    typeCategory = _getTypeCategory(api, godotType);
+    isOptional = typeCategory == TypeCategory.engineClass;
 
     dartType = godotType.replaceFirst('const ', '');
     if (dartType.endsWith('*')) {
-      final pointerType = getPointerType(dartType);
+      final pointerType = getPointerType(api, dartType);
       if (pointerType != null) {
         dartType = pointerType;
+        isPointer = true;
       } else {
         isOptional = true;
         dartType = dartType.substring(0, dartType.length - 1);
@@ -129,7 +181,6 @@ class TypeInfo {
 
   TypeInfo.forReturnType(GodotApiInfo api, Map<String, dynamic> method) {
     isOptional = false;
-    isVoid = false;
     meta = null;
     if (method.containsKey('return_type')) {
       godotType = method['return_type'];
@@ -141,15 +192,14 @@ class TypeInfo {
       }
     } else {
       godotType = 'Void';
-      isVoid = true;
     }
 
     if (godotType == 'Void') {
       dartType = 'void';
+      typeCategory = TypeCategory.voidType;
     } else {
-      isEngineClass = api.engineClasses.containsKey(godotType);
-      isBuiltinClass = api.builtinClasses.containsKey(godotType);
-      isOptional = isEngineClass;
+      typeCategory = _getTypeCategory(api, godotType);
+      isOptional = typeCategory == TypeCategory.engineClass;
 
       dartType = getCorrectedType(godotType, meta: meta);
       if (godotType == 'String') {
@@ -161,9 +211,10 @@ class TypeInfo {
       }
 
       if (dartType.endsWith('*')) {
-        final pointerType = getPointerType(dartType);
+        final pointerType = getPointerType(api, dartType);
         if (pointerType != null) {
           dartType = pointerType;
+          isPointer = true;
         } else {
           isOptional = true;
           dartType = dartType.substring(0, dartType.length - 1);

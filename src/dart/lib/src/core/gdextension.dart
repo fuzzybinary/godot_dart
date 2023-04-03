@@ -8,6 +8,10 @@ import 'godot_dart_native_bindings.dart';
 
 GodotDart get gde => GodotDart.instance!;
 
+typedef GodotVirtualFunction = NativeFunction<
+    Void Function(GDExtensionClassInstancePtr, Pointer<GDExtensionConstTypePtr>,
+        GDExtensionTypePtr)>;
+
 /// This is a wrapper around the [GDExtensionInterface] generated FFI
 /// code to make calling the extension easier.
 class GodotDart {

@@ -28,7 +28,7 @@ abstract class ExtensionType {
     _owner = gde.constructObject(typeName);
   }
 
-  ExtensionType.fromOwner(this._owner);
+  ExtensionType.withNonNullOwner(this._owner);
 
   TypeInfo get staticTypeInfo;
 

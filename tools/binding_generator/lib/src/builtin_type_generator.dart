@@ -63,6 +63,7 @@ class $correctedName extends BuiltinType {
   TypeInfo get staticTypeInfo => typeInfo;
   
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
+
   @override
   Pointer<Uint8> get nativePtr => _opaque;
 
@@ -124,6 +125,12 @@ class $correctedName extends BuiltinType {
     out.write('  }\n');
 
     // Constructors
+    out.write('''
+  $correctedName.fromPointer(Pointer<Void> ptr) {
+    gde.dartBindings.variantCopyFromNative(this, ptr);
+  }
+''');
+
     for (Map<String, dynamic> constructor in builtinApi['constructors']) {
       int index = constructor['index'];
       final constructorName = getConstructorName(className, constructor);
@@ -148,7 +155,7 @@ class $correctedName extends BuiltinType {
     ${ei}gde.callBuiltinConstructor(_bindings.constructor_$index!, nativePtr.cast(), [
 ''');
         for (final argument in arguments) {
-          if (argumentNeedsAllocation(argument)) {
+          if (argument.needsAllocation) {
             out.write('      $ei${argument.name}Ptr.cast(),\n');
           } else if (argument.isOptional) {
             out.write(
@@ -176,7 +183,6 @@ class $correctedName extends BuiltinType {
     for (Map<String, dynamic> member in members) {
       final memberInfo = TypeInfo.forType(api, member['type'] as String);
       final memberName = member['name'] as String;
-      final dartMemberName = escapeName(memberName);
       out.write('''
 
   ${memberInfo.dartType} get $memberName {
@@ -194,7 +200,7 @@ class $correctedName extends BuiltinType {
     ${ei}f(nativePtr.cast(), retPtr.cast());
 ''');
         if (extractReturnValue) {
-          if (memberInfo.isEngineClass) {
+          if (memberInfo.typeCategory == TypeCategory.engineClass) {
             out.write(
                 '      retVal = retPtr == nullptr ? null : ${memberInfo.dartType}.fromOwner(retPtr.value);\n');
           } else {
@@ -218,7 +224,7 @@ class $correctedName extends BuiltinType {
 ''');
       withAllocationBlock([memberInfo], null, out, (ei) {
         String valueCast;
-        if (argumentNeedsAllocation(memberInfo)) {
+        if (memberInfo.needsAllocation) {
           valueCast = '${memberInfo.name}Ptr.cast()';
         } else if (memberInfo.godotType == 'String') {
           valueCast =
@@ -252,7 +258,7 @@ class $correctedName extends BuiltinType {
           .toList();
 
       final retInfo = TypeInfo.forReturnType(api, method);
-      if (!retInfo.isVoid) {
+      if (retInfo.typeCategory != TypeCategory.voidType) {
         if (retInfo.godotType == 'String') {
           out.write('    GDString retVal = GDString();\n');
         } else {
@@ -262,17 +268,19 @@ class $correctedName extends BuiltinType {
       }
       withAllocationBlock(arguments, retInfo, out, (ei) {
         bool extractReturnValue = false;
-        if (!retInfo.isVoid) {
+        if (retInfo.typeCategory != TypeCategory.voidType) {
           extractReturnValue = writeReturnAllocation(api, retInfo, out);
         }
-        final retParam = retInfo.isVoid ? 'nullptr' : 'retPtr.cast()';
+        final retParam = retInfo.typeCategory == TypeCategory.voidType
+            ? 'nullptr'
+            : 'retPtr.cast()';
         final thisParam =
             method['is_static'] == true ? 'nullptr' : 'nativePtr.cast()';
         out.write('''
     ${ei}gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [
 ''');
         for (final argument in arguments) {
-          if (argumentNeedsAllocation(argument)) {
+          if (argument.needsAllocation) {
             out.write('      $ei${argument.name}Ptr.cast(),\n');
           } else if (argument.isOptional) {
             out.write(
@@ -285,8 +293,9 @@ class $correctedName extends BuiltinType {
         out.write('''
     $ei]);
 ''');
-        if (!retInfo.isVoid && extractReturnValue) {
-          if (retInfo.isEngineClass) {
+        if (retInfo.typeCategory != TypeCategory.voidType &&
+            extractReturnValue) {
+          if (retInfo.typeCategory == TypeCategory.engineClass) {
             out.write(
                 '      retVal = retPtr == nullptr ? null : ${retInfo.dartType}.fromOwner(retPtr.value);\n');
           } else {
@@ -295,7 +304,7 @@ class $correctedName extends BuiltinType {
         }
       });
 
-      if (!retInfo.isVoid) {
+      if (retInfo.typeCategory != TypeCategory.voidType) {
         if (retInfo.godotType == 'String') {
           out.write('    return retVal.toDartString();\n');
         } else {

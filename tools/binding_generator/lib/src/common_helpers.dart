@@ -12,6 +12,8 @@ const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 // ignore_for_file: unnecessary_import
 // ignore_for_file: unused_field
 // ignore_for_file: non_constant_identifier_names
+// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_element
 ''';
 
 void writeImports(IOSink out, GodotApiInfo api, Map<String, dynamic> classApi,
@@ -22,6 +24,7 @@ void writeImports(IOSink out, GodotApiInfo api, Map<String, dynamic> classApi,
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
 
 import '../../core/core_types.dart';
 import '../../core/gdextension_ffi_bindings.dart';
@@ -55,19 +58,18 @@ ${forVariant ? '' : "import '../../variant/variant.dart';"}
 }
 
 void argumentAllocation(TypeInfo typeInfo, IOSink out) {
-  if (!argumentNeedsAllocation(typeInfo)) return;
+  if (!typeInfo.needsAllocation) return;
 
-  var type = typeInfo.godotType;
   var ffiType = getFFIType(typeInfo);
   out.write(
       '      final ${typeInfo.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${typeInfo.name};\n');
 }
 
 bool writeReturnAllocation(GodotApiInfo info, TypeInfo returnType, IOSink out) {
-  // TODO This is specialized for builtin returns... need to revisit if it's actually correct
+  // TODO check for types other than engine and builtins
   String indent = '      ';
   out.write(indent);
-  if (returnType.isEngineClass) {
+  if (returnType.typeCategory == TypeCategory.engineClass) {
     // Need a pointer to a pointer
     out.write(
         'final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());\n');
@@ -92,8 +94,8 @@ void withAllocationBlock(
   void Function(String indent) writeBlock,
 ) {
   var indent = '';
-  var needsArena = !(retInfo?.isVoid ?? true) ||
-      arguments.any((dynamic arg) => argumentNeedsAllocation(arg));
+  var needsArena = retInfo?.typeCategory != TypeCategory.voidType ||
+      arguments.any((arg) => arg.needsAllocation);
   if (needsArena) {
     indent = '  ';
     out.write('''
@@ -110,7 +112,7 @@ void withAllocationBlock(
 }
 
 void argumentFree(TypeInfo argument, IOSink out) {
-  if (!argumentNeedsAllocation(argument)) return;
+  if (!argument.needsAllocation) return;
 
   out.write('    malloc.free(${argument.name!.toLowerCamelCase()}Ptr);\n');
 }
@@ -143,13 +145,7 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
   return '';
 }
 
-String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
-  var modifiers = '';
-  var returnType = TypeInfo.forReturnType(api, functionData);
-
-  if (functionData['is_static'] == true) {
-    modifiers = 'static ';
-  }
+String getDartMethodName(Map<String, dynamic> functionData) {
   bool isVirtual = functionData['is_virtual'] ?? false;
   var methodName = functionData['name'] as String;
 
@@ -158,6 +154,14 @@ String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
   }
 
   methodName = escapeMethodName(methodName).toLowerCamelCase();
+  return methodName;
+}
+
+String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
+  var modifiers = '';
+  var returnType = TypeInfo.forReturnType(api, functionData);
+
+  final methodName = getDartMethodName(functionData);
 
   var signature = '$modifiers${returnType.fullType} $methodName(';
 
@@ -278,6 +282,115 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   return usedTypes.toList();
 }
 
+String convertPtrArgument(
+  int index,
+  TypeInfo argument, {
+  String indent = '    ',
+}) {
+  // TODO: Parameters mostly currently take 'GDString' whereas returns are 'String'
+  // I need to figure out how to make it String across the board.
+  // if (argument.godotType == 'String') {
+  //   // Very sepecial -- needs to be converted to a Dart String
+  //   var ret =
+  //       '${indent}final GDString gd${argument.name} = GDString.fromPointer(args.elementAt($index).value);\n';
+  //   ret +=
+  //       '${indent}final ${argument.name} = gde.dartBindings.gdStringToString(gd${argument.name});\n';
+  //   return ret;
+  // }
+
+  var ret = '${indent}final ${argument.fullType} ${argument.name} = ';
+  switch (argument.typeCategory) {
+    case TypeCategory.engineClass:
+      ret += '${argument.dartType}.fromOwner(args.elementAt($index).value)';
+      break;
+    case TypeCategory.builtinClass:
+      ret += '${argument.dartType}.fromPointer(args.elementAt($index).value)';
+      break;
+    case TypeCategory.primitive:
+      final castType =
+          argument.isPointer ? argument.fullType : getFFIType(argument);
+      ret += 'args.elementAt($index).cast<Pointer<$castType>>().value.value';
+      break;
+    case TypeCategory.nativeStructure:
+      if (argument.isOptional) {
+        // Completely rewrite for native structures because of optionals
+        ret =
+            '${indent}final ${argument.name}Ptr = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value;\n';
+        ret +=
+            '${indent}final ${argument.fullType} ${argument.name} = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref';
+      } else if (argument.isPointer) {
+        ret +=
+            'args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.value';
+      } else {
+        ret +=
+            'args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.ref';
+      }
+      break;
+    case TypeCategory.enumType:
+      ret +=
+          '${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Int32>>().value.value)';
+      break;
+    case TypeCategory.typedArray:
+      ret += '${argument.dartType}.fromPointer(args.elementAt($index).value)';
+      break;
+    case TypeCategory.voidType:
+      if (argument.dartType.startsWith('Pointer')) {
+        ret += 'args.elementAt($index).value';
+      }
+      break;
+  }
+
+  ret += ';\n';
+
+  return ret;
+}
+
+String writePtrReturn(TypeInfo argument, {String indent = '    '}) {
+  if (argument.godotType == 'String') {
+    var ret = '${indent}final retGdString = GDString.fromString(ret);\n';
+    ret +=
+        '${indent}gde.dartBindings.variantCopyToNative(retPtr, retGdString);\n';
+    return ret;
+  }
+
+  var ret = indent;
+  switch (argument.typeCategory) {
+    case TypeCategory.engineClass:
+      ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
+      ret +=
+          argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
+      break;
+    case TypeCategory.builtinClass:
+      ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
+      break;
+    case TypeCategory.primitive:
+      final castType =
+          argument.isPointer ? argument.fullType : getFFIType(argument);
+      ret += 'retPtr.cast<$castType>().value = ret';
+      break;
+    case TypeCategory.nativeStructure:
+      if (argument.isPointer) {
+        ret += 'retPtr.cast<${argument.dartType}>().value = ret';
+      } else {
+        ret += 'retPtr.cast<${argument.dartType}>().ref = ret';
+      }
+      break;
+    case TypeCategory.enumType:
+      // TODO: Determine if enums are variable width?
+      ret += 'retPtr.cast<Int32>().value = ret.value';
+      break;
+    case TypeCategory.typedArray:
+      ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
+      break;
+    case TypeCategory.voidType:
+      return '';
+  }
+
+  ret += ';\n';
+
+  return ret;
+}
+
 void writeEnum(Map<String, dynamic> godotEnum, String? inClass, IOSink out) {
   var enumName = getEnumName(godotEnum['name'], inClass);
   out.write('enum $enumName {\n');
@@ -293,6 +406,9 @@ void writeEnum(Map<String, dynamic> godotEnum, String? inClass, IOSink out) {
 
   final int value;
   const $enumName(this.value);
+  factory $enumName.fromValue(int value) {
+    return values.firstWhere((e) => e.value == value);
+  }
 }
 
 ''');

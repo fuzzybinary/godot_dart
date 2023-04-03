@@ -185,6 +185,10 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
 }
 
 void GodotDartBindings::shutdown() {
+  _stopRequested = true;
+  execute_on_dart_thread([]() {  });
+  
+  Dart_EnterIsolate(_isolate);
   DartDll_DrainMicrotaskQueue();
   Dart_ShutdownIsolate();
   DartDll_Shutdown();
@@ -205,6 +209,8 @@ void GodotDartBindings::thread_main() {
     // Do work
     _done_semaphore.release();
   }
+
+  Dart_ExitIsolate();
 }
 
 void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
@@ -464,7 +470,7 @@ GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata
 
     Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
-    Dart_Handle vtable = Dart_GetField(type, Dart_NewStringFromCString("_vTable"));
+    Dart_Handle vtable = Dart_GetField(type, Dart_NewStringFromCString("vTable"));
     if (Dart_IsError(vtable)) {
       GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
       GD_PRINT_ERROR(Dart_GetError(vtable));
@@ -541,7 +547,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
       GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
       GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
       Dart_ExitScope();
-      return nullptr;
+      return;
     }
     TypeInfo class_type_info;
     type_info_from_dart(&class_type_info, d_class_type_info);
@@ -551,7 +557,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
       GD_PRINT_ERROR("GodotDart: Error creating object: ");
       GD_PRINT_ERROR(Dart_GetError(new_object));
       Dart_ExitScope();
-      return nullptr;
+      return;
     }
 
     Dart_Handle owner = Dart_GetField(new_object, Dart_NewStringFromCString("nativePtr"));
@@ -559,7 +565,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
       GD_PRINT_ERROR("GodotDart: Error finding owner member for object: ");
       GD_PRINT_ERROR(Dart_GetError(owner));
       Dart_ExitScope();
-      return nullptr;
+      return;
     }
 
     Dart_Handle owner_address = Dart_GetField(owner, Dart_NewStringFromCString("address"));
@@ -567,7 +573,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
       GD_PRINT_ERROR("GodotDart: Error getting address for object: ");
       GD_PRINT_ERROR(Dart_GetError(owner_address));
       Dart_ExitScope();
-      return nullptr;
+      return;
     }
 
     Dart_IntegerToUint64(owner_address, &real_address);
@@ -799,6 +805,10 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   return ret;
 }
 
-extern "C" void variant_copy(void *dest, void *src, int size) {
+extern "C" {
+
+GDE_EXPORT void variant_copy(void *dest, void *src, int size) {
   memcpy(dest, src, size);
+}
+
 }

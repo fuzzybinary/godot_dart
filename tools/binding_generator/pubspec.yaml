@@ -6,11 +6,9 @@ publish_to: none
 environment:
   sdk: '>=2.18.2 <3.0.0'
 
-# dependencies:
-#   path: ^1.8.0
+dependencies:
+  collection: ^1.17.1
+  path: ^1.8.3
 
 dev_dependencies:
   lints: ^2.0.0
-dependencies:
-  mustache_template: ^2.0.0
-  path: ^1.8.3
