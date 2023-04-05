@@ -1,18 +1,18 @@
 extends Node2D
 
+var _timePassed = 0.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var ret = $Simple.myMethod()
-	print(ret)
-	var vec = Vector3(1.0, 3.2, 1.0)
-	var ret2 = $Simple.paramMethod(vec)
-	print(ret2)
-	$Simple.isSame($Simple)
-	var viewport = $Simple.doSomething()
-	print(viewport)
-
+	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	_timePassed += delta
+
+	var x = 10.0 + (10.0 * sin(_timePassed * 2.0))
+	var y = 10.0 + (10.0 * cos(_timePassed * 2.0))
+	var newPosition = Vector2(x, y)
+	
+	position = newPosition
 	pass

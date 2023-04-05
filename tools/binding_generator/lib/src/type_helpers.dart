@@ -27,9 +27,9 @@ bool hasDartType(String typeName) {
 final typeToFFIType = {
   'bool': 'Bool',
   'real_t': 'Float',
-  'float': 'Float',
+  'float': 'Double',
   'double': 'Double',
-  'int': 'Int',
+  'int': 'Int64',
   'int8_t': 'Int8',
   'uint8_t': 'Uint8',
   'int16_t': 'Int16',
@@ -41,7 +41,24 @@ final typeToFFIType = {
   'void': 'Void',
 };
 
+final metaTypeToFFIType = {
+  'float': 'Float',
+  'double': 'Double',
+  'int8': 'Int8',
+  'int16': 'Int16',
+  'int32': 'Int32',
+  'int64': 'Int64',
+  'uint8': 'Uint8',
+  'uint16': 'Uint16',
+  'uint32': 'Uint32',
+  'uint64': 'Uint64',
+};
+
 String? getFFIType(TypeInfo type) {
+  if (type.meta != null) {
+    final metaType = metaTypeToFFIType[type];
+    if (metaType != null) return metaType;
+  }
   return typeToFFIType[type.godotType];
 }
 
@@ -49,7 +66,7 @@ String? getFFITypeFromString(String type) {
   return typeToFFIType[type];
 }
 
-final defaultValueForType = {'bool': 'true', 'double': '0.0', 'int': '0'};
+final defaultValueForType = {'bool': 'false', 'double': '0.0', 'int': '0'};
 
 String getDefaultValueForType(TypeInfo info) {
   if (info.isOptional) {
