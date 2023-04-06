@@ -1,20 +1,20 @@
 #include "dart_bindings.h"
 
-#include <iostream>
-#include <thread>
 #include <functional>
+#include <iostream>
 #include <string.h>
+#include <thread>
 
 #include <dart_api.h>
 #include <dart_dll.h>
 #include <godot/gdextension_interface.h>
 
-#include "gde_wrapper.h"
 #include "dart_vtable_wrapper.h"
+#include "gde_wrapper.h"
 
 #define GDE GDEWrapper::instance()->gde()
 
-void GodotDartBindings::thread_callback(GodotDartBindings* bindings) {
+void GodotDartBindings::thread_callback(GodotDartBindings *bindings) {
   bindings->thread_main();
 }
 
@@ -66,6 +66,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     GD_PRINT_ERROR("GodotDart: Initialization Error (Could not find the `godot_dart` "
                    "package)");
     return false;
+  } else {
+    _godot_dart_library = Dart_NewPersistentHandle(godot_dart_library);
   }
 
   // Find the DartBindings "library" (just the file) and set us as the native callback handler
@@ -82,12 +84,11 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
 
   // Find the DartBindings "library" (just the file) and set us as the native callback handler
   {
-    Dart_Handle native_bindings_library_name =
-        Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
+    Dart_Handle native_bindings_library_name = Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
     Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
     if (!Dart_IsError(library)) {
       // Retrain for future calls to convert variants
-      _native_library = Dart_NewPersistentHandle(library);
+      _core_types_library = Dart_NewPersistentHandle(library);
       Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
   }
@@ -186,10 +187,26 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
 
 void GodotDartBindings::shutdown() {
   _stopRequested = true;
-  execute_on_dart_thread([]() {  });
-  
+  execute_on_dart_thread([]() {});
+
   Dart_EnterIsolate(_isolate);
+  Dart_EnterScope();
+
+  Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
+
+  GDEWrapper *wrapper = GDEWrapper::instance();
+  Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_unregisterGodot"), 0, nullptr);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error calling `_unregisterGodot`");
+    GD_PRINT_ERROR(Dart_GetError(result));
+  }
+
+  Dart_DeletePersistentHandle(_godot_dart_library);
+  Dart_DeletePersistentHandle(_core_types_library);
+  Dart_DeletePersistentHandle(_native_library);
+
   DartDll_DrainMicrotaskQueue();
+  Dart_ExitScope();
   Dart_ShutdownIsolate();
   DartDll_Shutdown();
 
@@ -205,7 +222,7 @@ void GodotDartBindings::thread_main() {
 
     _pendingWork();
     _pendingWork = []() {};
-    
+
     // Do work
     _done_semaphore.release();
   }
@@ -214,7 +231,7 @@ void GodotDartBindings::thread_main() {
 }
 
 void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
-  if (std::this_thread::get_id() == _dart_thread->get_id()) {
+  if (_dart_thread == nullptr || std::this_thread::get_id() == _dart_thread->get_id()) {
     work();
     return;
   }
@@ -224,7 +241,7 @@ void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
   _pendingWork = work;
   _work_semaphore.release();
   _done_semaphore.acquire();
-  
+
   _work_lock.unlock();
 }
 
@@ -355,7 +372,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     return;
   }
 
-  bindings->execute_on_dart_thread( [&](){
+  bindings->execute_on_dart_thread([&]() {
     Dart_EnterScope();
 
     Dart_PersistentHandle persist_handle = reinterpret_cast<Dart_PersistentHandle>(instance);
@@ -517,7 +534,7 @@ GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata
     }
 
     Dart_Handle dart_address = Dart_GetField(vtable_item, Dart_NewStringFromCString("address"));
-    
+
     uint64_t address = 0;
     Dart_IntegerToUint64(dart_address, &address);
 
@@ -525,7 +542,7 @@ GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata
 
     Dart_ExitScope();
   });
-  
+
   return func;
 }
 
@@ -535,8 +552,8 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
     // oooff
     return nullptr;
   }
-  
-  uint64_t real_address = 0; 
+
+  uint64_t real_address = 0;
   bindings->execute_on_dart_thread([&]() {
     Dart_EnterScope();
 
@@ -810,5 +827,4 @@ extern "C" {
 GDE_EXPORT void variant_copy(void *dest, void *src, int size) {
   memcpy(dest, src, size);
 }
-
 }

@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:path/path.dart' as path;
 
-import 'src/builtin_type_generator.dart';
 import 'src/common_helpers.dart';
-import 'src/engine_type_generator.dart';
+import 'src/generators/builtin_type_generator.dart';
+import 'src/generators/engine_type_generator.dart';
+import 'src/generators/native_structures_generator.dart';
 import 'src/godot_api_info.dart';
-import 'src/native_structures_generator.dart';
 import 'src/string_extensions.dart';
 import 'src/type_helpers.dart';
 

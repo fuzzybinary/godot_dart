@@ -24,7 +24,7 @@ public:
     return _instance;
   }
 
-  explicit GodotDartBindings() : _stopRequested(false), _work_semaphore(0), _done_semaphore(0), _isolate(nullptr) {
+  explicit GodotDartBindings() : _stopRequested(false), _dart_thread(nullptr), _work_semaphore(0), _done_semaphore(0), _isolate(nullptr) {
   }
 
   bool initialize(const char *script_path, const char *package_config);
@@ -60,6 +60,8 @@ private:
   std::binary_semaphore _done_semaphore;
 
   Dart_Isolate _isolate;
+  Dart_PersistentHandle _godot_dart_library;
+  Dart_PersistentHandle _core_types_library;
   Dart_PersistentHandle _native_library;
 
   // Some things we need often

@@ -16,10 +16,10 @@
 #define GD_STRING_NAME_MAX_SIZE 8
 
 #define GD_PRINT_ERROR(msg)                                                                                            \
-  { GDEWrapper::instance()->gde()->print_error(msg, __func__, __FILE__, __LINE__); }
+  { GDEWrapper::instance()->gde()->print_error(msg, __func__, __FILE__, __LINE__, true); }
 
 #define GD_PRINT_WARNING(msg)                                                                                          \
-  { GDEWrapper::instance()->gde()->print_warning(msg, __func__, __FILE__, __LINE__); }
+  { GDEWrapper::instance()->gde()->print_warning(msg, __func__, __FILE__, __LINE__, true); }
 
 class GDEWrapper {
 public:

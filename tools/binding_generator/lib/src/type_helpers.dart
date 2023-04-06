@@ -1,4 +1,4 @@
-import 'godot_api_info.dart';
+import 'type_info.dart';
 
 final dartTypes = [
   'Nil',
@@ -54,12 +54,12 @@ final metaTypeToFFIType = {
   'uint64': 'Uint64',
 };
 
-String? getFFIType(TypeInfo type) {
+String? getFFIType(ArgumentInfo type) {
   if (type.meta != null) {
     final metaType = metaTypeToFFIType[type];
     if (metaType != null) return metaType;
   }
-  return typeToFFIType[type.godotType];
+  return typeToFFIType[type.typeInfo.godotType];
 }
 
 String? getFFITypeFromString(String type) {
@@ -68,15 +68,15 @@ String? getFFITypeFromString(String type) {
 
 final defaultValueForType = {'bool': 'false', 'double': '0.0', 'int': '0'};
 
-String getDefaultValueForType(TypeInfo info) {
+String getDefaultValueForAgument(ArgumentInfo info) {
   if (info.isOptional) {
     return 'null';
   } else if (defaultValueForType.containsKey(info.dartType)) {
     return defaultValueForType[info.dartType]!;
   } else if (info.dartType == 'String') {
     return "''";
-  } else if (info.godotType.startsWith('enum::') ||
-      info.godotType.startsWith('bitfield::')) {
+  } else if (info.typeInfo.godotType.startsWith('enum::') ||
+      info.typeInfo.godotType.startsWith('bitfield::')) {
     // TODO: I'd rather this gave a real value
     return '${info.dartType}.values[0]';
   } else if (info.dartType.contains('Pointer<')) {

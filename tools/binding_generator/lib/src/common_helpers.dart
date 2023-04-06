@@ -3,6 +3,7 @@ import 'dart:io';
 import 'godot_api_info.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
+import 'type_info.dart';
 
 const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 //
@@ -57,7 +58,7 @@ ${forVariant ? '' : "import '../../variant/variant.dart';"}
   }
 }
 
-void argumentAllocation(TypeInfo typeInfo, IOSink out) {
+void argumentAllocation(ArgumentInfo typeInfo, IOSink out) {
   if (!typeInfo.needsAllocation) return;
 
   var ffiType = getFFIType(typeInfo);
@@ -65,11 +66,12 @@ void argumentAllocation(TypeInfo typeInfo, IOSink out) {
       '      final ${typeInfo.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${typeInfo.name};\n');
 }
 
-bool writeReturnAllocation(GodotApiInfo info, TypeInfo returnType, IOSink out) {
+bool writeReturnAllocation(
+    GodotApiInfo info, ArgumentInfo returnType, IOSink out) {
   // TODO check for types other than engine and builtins
   String indent = '      ';
   out.write(indent);
-  if (returnType.typeCategory == TypeCategory.engineClass) {
+  if (returnType.typeInfo.typeCategory == TypeCategory.engineClass) {
     // Need a pointer to a pointer
     out.write(
         'final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());\n');
@@ -88,13 +90,13 @@ bool writeReturnAllocation(GodotApiInfo info, TypeInfo returnType, IOSink out) {
 }
 
 void withAllocationBlock(
-  List<TypeInfo> arguments,
-  TypeInfo? retInfo,
+  List<ArgumentInfo> arguments,
+  ArgumentInfo? retInfo,
   IOSink out,
   void Function(String indent) writeBlock,
 ) {
   var indent = '';
-  var needsArena = retInfo?.typeCategory != TypeCategory.voidType ||
+  var needsArena = retInfo?.typeInfo.typeCategory != TypeCategory.voidType ||
       arguments.any((arg) => arg.needsAllocation);
   if (needsArena) {
     indent = '  ';
@@ -111,7 +113,7 @@ void withAllocationBlock(
   }
 }
 
-void argumentFree(TypeInfo argument, IOSink out) {
+void argumentFree(ArgumentInfo argument, IOSink out) {
   if (!argument.needsAllocation) return;
 
   out.write('    malloc.free(${argument.name!.toLowerCamelCase()}Ptr);\n');
@@ -159,11 +161,11 @@ String getDartMethodName(Map<String, dynamic> functionData) {
 
 String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
   var modifiers = '';
-  var returnType = TypeInfo.forReturnType(api, functionData);
+  var returnInfo = api.getReturnInfo(functionData);
 
   final methodName = getDartMethodName(functionData);
 
-  var signature = '$modifiers${returnType.fullType} $methodName(';
+  var signature = '$modifiers${returnInfo.fullDartType} $methodName(';
 
   final List<dynamic>? parameters = functionData['arguments'];
   if (parameters != null) {
@@ -171,10 +173,10 @@ String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
 
     for (int i = 0; i < parameters.length; ++i) {
       Map<String, dynamic> parameter = parameters[i];
-      final type = TypeInfo.fromArgument(api, parameter);
+      final type = api.getArgumentInfo(parameter);
 
       // TODO: Default values
-      paramSignature.add('${type.fullType} ${type.name}');
+      paramSignature.add('${type.fullDartType} ${type.name}');
     }
     signature += paramSignature.join(', ');
   }
@@ -284,7 +286,7 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
 
 String convertPtrArgument(
   int index,
-  TypeInfo argument, {
+  ArgumentInfo argument, {
   String indent = '    ',
 }) {
   // TODO: Parameters mostly currently take 'GDString' whereas returns are 'String'
@@ -298,8 +300,8 @@ String convertPtrArgument(
   //   return ret;
   // }
 
-  var ret = '${indent}final ${argument.fullType} ${argument.name} = ';
-  switch (argument.typeCategory) {
+  var ret = '${indent}final ${argument.fullDartType} ${argument.name} = ';
+  switch (argument.typeInfo.typeCategory) {
     case TypeCategory.engineClass:
       ret += '${argument.dartType}.fromOwner(args.elementAt($index).value)';
       break;
@@ -308,7 +310,7 @@ String convertPtrArgument(
       break;
     case TypeCategory.primitive:
       final castType =
-          argument.isPointer ? argument.fullType : getFFIType(argument);
+          argument.isPointer ? argument.fullDartType : getFFIType(argument);
       ret += 'args.elementAt($index).cast<Pointer<$castType>>().value.value';
       break;
     case TypeCategory.nativeStructure:
@@ -317,7 +319,7 @@ String convertPtrArgument(
         ret =
             '${indent}final ${argument.name}Ptr = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value;\n';
         ret +=
-            '${indent}final ${argument.fullType} ${argument.name} = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref';
+            '${indent}final ${argument.fullDartType} ${argument.name} = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref';
       } else if (argument.isPointer) {
         ret +=
             'args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.value';
@@ -345,8 +347,8 @@ String convertPtrArgument(
   return ret;
 }
 
-String writePtrReturn(TypeInfo argument, {String indent = '    '}) {
-  if (argument.godotType == 'String') {
+String writePtrReturn(ArgumentInfo argument, {String indent = '    '}) {
+  if (argument.typeInfo.godotType == 'String') {
     var ret = '${indent}final retGdString = GDString.fromString(ret);\n';
     ret +=
         '${indent}gde.dartBindings.variantCopyToNative(retPtr, retGdString);\n';
@@ -354,7 +356,7 @@ String writePtrReturn(TypeInfo argument, {String indent = '    '}) {
   }
 
   var ret = indent;
-  switch (argument.typeCategory) {
+  switch (argument.typeInfo.typeCategory) {
     case TypeCategory.engineClass:
       ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
       ret +=
@@ -365,7 +367,7 @@ String writePtrReturn(TypeInfo argument, {String indent = '    '}) {
       break;
     case TypeCategory.primitive:
       final castType =
-          argument.isPointer ? argument.fullType : getFFIType(argument);
+          argument.isPointer ? argument.dartType : getFFIType(argument);
       ret += 'retPtr.cast<$castType>().value = ret';
       break;
     case TypeCategory.nativeStructure:

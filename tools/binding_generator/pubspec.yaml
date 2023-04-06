@@ -9,6 +9,7 @@ environment:
 dependencies:
   collection: ^1.17.1
   path: ^1.8.3
+  tuple: ^2.0.1
 
 dev_dependencies:
   lints: ^2.0.0

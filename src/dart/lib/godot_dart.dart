@@ -5,6 +5,7 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/script/dart_script.dart';
 import 'src/script/dart_script_language.dart';
 
 export 'src/core/core_types.dart';
@@ -31,7 +32,13 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   TypeInfo.initTypeMappings();
 
   DartScriptLanguage.initBindings();
+  DartScript.initBindings();
   _dartScriptLanguage = DartScriptLanguage();
 
   Engine.singleton.registerScriptLanguage(_dartScriptLanguage);
+}
+
+@pragma('vm:entry-point')
+void _unregisterGodot() {
+  Engine.singleton.unregisterScriptLanguage(_dartScriptLanguage);
 }
