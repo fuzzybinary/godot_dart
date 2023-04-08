@@ -17,9 +17,10 @@ and copying the dlls to the example directory (`/simple`).
 
 ### Updating FFI Bindings
 
-The files in `godot-headers/godot` are from the 4.0 release of Godot. If you
-working on a different version of Godot post Godot 4.0, you will need to
-generate those files as explained in the Godot documentation.
+The files in `godot-headers/godot` are from the 4.0.2 release of Godot. If you
+working on a different version of Godot post Godot 4.0.2, you will need to
+generate those files as explained in the [Godot
+documentation](https://github.com/godotengine/godot-cpp/tree/master/gdextension).
 
 Once you have the files, you can generate the FFI bindings using Dart's ffigen
 tool. From the `/src/dart` directory run:
