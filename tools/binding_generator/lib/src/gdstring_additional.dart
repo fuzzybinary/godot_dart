@@ -2,36 +2,34 @@
 // (usually constructors or static functions as they cannot be added in
 // Extension classes)
 
+import 'code_sink.dart';
+
 /// Create GDString from String
-String gdStringFromString() {
-  return '''
-  GDString.fromString(String string) {
-    final native = string.toNativeUtf8();
+void gdStringFromString(CodeSink o) {
+  o.b('GDString.fromString(String string) {', () {
+    o.p('final native = string.toNativeUtf8();');
+    o.p('final f = gde.interface.ref.string_new_with_utf8_chars');
+    o.p('  .asFunction<void Function(GDExtensionStringPtr, Pointer<Char>)>();');
+    o.p('f(nativePtr.cast(), native.cast());');
+    o.nl();
 
-    final f = gde.interface.ref.string_new_with_utf8_chars
-      .asFunction<void Function(GDExtensionStringPtr, Pointer<Char>)>();
-    f(nativePtr.cast(), native.cast());
-
-    malloc.free(native);
-  }
-''';
+    o.p('malloc.free(native);');
+  }, '}');
+  o.nl();
 }
 
-String stringNameFromString() {
-  return '''
-  StringName.fromString(String string) {
-    final gdString = GDString.fromString(string);
-    gde.callBuiltinConstructor(_bindings.constructor_2!, nativePtr.cast(), [
-      gdString.nativePtr.cast(),
-    ]);
-  }
-''';
+void stringNameFromString(CodeSink o) {
+  o.b('StringName.fromString(String string) {', () {
+    o.p('final gdString = GDString.fromString(string);');
+    o.p('gde.callBuiltinConstructor(_bindings.constructor_2!, nativePtr.cast(), [');
+    o.p('  gdString.nativePtr.cast(),');
+    o.p(']);');
+  }, '}');
+  o.nl();
 }
 
-String gdStringToDartString() {
-  return '''
-  String toDartString() {
-    return gde.dartBindings.gdStringToString(this);
-  }
-''';
+void gdStringToDartString(CodeSink o) {
+  o.b('String toDartString() {', () {
+    o.p('return gde.dartBindings.gdStringToString(this);');
+  }, '}');
 }

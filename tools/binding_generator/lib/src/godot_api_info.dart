@@ -2,7 +2,16 @@ import 'package:tuple/tuple.dart';
 
 import 'godot_extension_api_json.dart';
 import 'type_helpers.dart';
-import 'type_info.dart';
+
+enum TypeCategory {
+  voidType,
+  primitive,
+  engineClass,
+  builtinClass,
+  nativeStructure,
+  enumType,
+  typedArray,
+}
 
 class GodotApiInfo {
   static GodotApiInfo? _instance;
@@ -28,43 +37,18 @@ class GodotApiInfo {
     singletons = {for (final e in api.singletons) e.name};
 
     classSize = api.builtinClassSizes
-        .firstWhere((e) => e.buildConfiguration == 'float64');
+        .firstWhere((e) => e.buildConfiguration == 'float_64');
 
     _instance = this;
-  }
-
-  ArgumentInfo getArgumentInfo(dynamic argument) {
-    final String rawType;
-    final ArgumentMeta? meta;
-    if (argument is Singleton) {
-      rawType = argument.type;
-      meta = null;
-    } else if (argument is Argument) {
-      rawType = argument.name;
-      meta = argument.meta;
-    } else {
-      throw ArgumentError(
-          'getArgument only accepts Singleton or Argument as parameters');
-    }
-
-    final typeCategory = getTypeCategory(rawType);
-    final pointerType = _getPointerType(rawType);
-
-    return ArgumentInfo(
-      godotType: rawType,
-      isOptional:
-          pointerType == null && typeCategory == TypeCategory.engineClass,
-      pointerType: pointerType,
-      rawName: argument['name'],
-      meta: meta,
-    );
   }
 
   TypeCategory getTypeCategory(String? godotType) {
     if (godotType == null) return TypeCategory.voidType;
 
     Tuple2 strippedType = _getStrippedType(godotType);
-    if (builtinClasses.containsKey(strippedType.item1)) {
+    if (hasDartType(strippedType.item1)) {
+      return TypeCategory.primitive;
+    } else if (builtinClasses.containsKey(strippedType.item1)) {
       return TypeCategory.builtinClass;
     } else if (engineClasses.containsKey(strippedType.item1)) {
       return TypeCategory.engineClass;
@@ -77,116 +61,11 @@ class GodotApiInfo {
     } else if (godotType.startsWith('enum') ||
         godotType.startsWith('bitfield')) {
       return TypeCategory.enumType;
-    } else if (hasDartType(godotType)) {
-      return TypeCategory.primitive;
     } else if (godotType == 'Variant') {
       return TypeCategory.builtinClass;
     }
 
     throw ArgumentError('Unknown type: `$godotType`');
-  }
-
-  // ArgumentInfo getReturnInfo(Map<String, dynamic> methodData) {
-  //   String? meta;
-  //   String rawType;
-  //   if (methodData.containsKey('return_type')) {
-  //     rawType = methodData['return_type'];
-  //   } else if (methodData.containsKey('return_value')) {
-  //     final returnValue = methodData['return_value'] as Map<String, dynamic>;
-  //     rawType = returnValue['type'] ?? 'Void';
-  //     if (returnValue.containsKey('meta')) {
-  //       meta = methodData['return_value']['meta'];
-  //     }
-  //   } else {
-  //     rawType = 'Void';
-  //   }
-
-  //   final strippedType = _getStrippedType(rawType);
-
-  //   final typeInfo = _findTypeInfo(strippedType.item1, strippedType.item2 > 0);
-  //   final pointerType = _getPointerType(rawType);
-
-  //   return ArgumentInfo(
-  //     typeInfo: typeInfo,
-  //     isOptional: pointerType == null &&
-  //         typeInfo.typeCategory == TypeCategory.engineClass,
-  //     pointerType: pointerType,
-  //     rawName: null,
-  //     meta: meta,
-  //   );
-  // }
-
-  // ArgumentInfo getMemberInfo(Map<String, dynamic> member) {
-  //   final rawType = member['type'] as String;
-  //   final meta = member['meta'] as String?;
-  //   final strippedType = _getStrippedType(rawType);
-
-  //   final typeInfo = _findTypeInfo(strippedType.item1, strippedType.item2 > 0);
-  //   final pointerType = _getPointerType(rawType);
-
-  //   return ArgumentInfo(
-  //     typeInfo: typeInfo,
-  //     isOptional: pointerType == null && strippedType.item2 > 0,
-  //     pointerType: pointerType,
-  //     rawName: member['name'],
-  //     meta: meta,
-  //   );
-  // }
-
-  // TypeInfo _findTypeInfo(String type, bool isPointer) {
-  //   var typeInfo =
-  //       builtinClasses[type] ?? engineClasses[type] ?? nativeStructures[type];
-  //   if (typeInfo == null) {
-  //     if (type == 'Void' && !isPointer) {
-  //       typeInfo = TypeInfo.voidType();
-  //     } else if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
-  //       typeInfo = TypeInfo(
-  //         typeCategory: TypeCategory.enumType,
-  //         godotType: type,
-  //         api: <String, dynamic>{},
-  //       );
-  //     } else if (type.startsWith('typedarray::')) {
-  //       typeInfo = TypeInfo(
-  //         typeCategory: TypeCategory.typedArray,
-  //         godotType: type,
-  //         api: <String, dynamic>{},
-  //       );
-  //     } else if (hasDartType(type)) {
-  //       typeInfo = TypeInfo.primitiveType(type);
-  //     } else if (type == 'Variant') {
-  //       return TypeInfo(
-  //         typeCategory: TypeCategory.builtinClass,
-  //         godotType: 'Variant',
-  //         api: <String, dynamic>{},
-  //       );
-  //     }
-  //   }
-
-  //   return typeInfo!;
-  // }
-
-  /// If this is a pointer, get the Dart FFI Pointer<> type
-  /// that would correctly wrap it.
-  String? _getPointerType(String rawGodotType) {
-    if (!rawGodotType.endsWith('*')) {
-      return null;
-    }
-
-    final typeTuple = _getStrippedType(rawGodotType);
-    final type = typeTuple.item1;
-    final pointerCount = typeTuple.item2;
-
-    final ffiType =
-        nativeStructures.containsKey(type) ? type : getFFITypeFromString(type);
-    String dartType = type;
-    if (ffiType != null) {
-      dartType = 'Pointer<' * pointerCount;
-      dartType += ffiType;
-      dartType += '>' * pointerCount;
-    } else {
-      return null;
-    }
-    return dartType;
   }
 }
 
@@ -204,191 +83,131 @@ extension DartNativeStructureExtensions on NativeStructure {
   String get dartName => getCorrectedType(name);
 }
 
-abstract class ArgumentProxy {
-  String get name;
-  String get type;
-  String get dartType;
+class ArgumentProxy {
+  final String name;
+  final String type;
+  final String rawDartType;
+  final String dartType;
 
-  bool get needsAllocation;
-  bool get isOptional;
-  bool get isPointer;
+  final bool needsAllocation;
+  final bool isOptional;
+  final bool isPointer;
 
-  TypeCategory get typeCategory;
+  final TypeCategory typeCategory;
+  final ArgumentMeta? meta;
 
-  ArgumentMeta? get meta;
+  final String defaultValue;
 
-  String getDefaultValue();
-}
+  ArgumentProxy._({
+    required this.name,
+    required this.type,
+    required this.rawDartType,
+    required this.dartType,
+    required this.needsAllocation,
+    required this.isOptional,
+    required this.isPointer,
+    required this.typeCategory,
+    required this.meta,
+    required this.defaultValue,
+  });
 
-class SingletonArgumentProxy implements ArgumentProxy {
-  final Singleton _singleton;
+  factory ArgumentProxy.fromSingleton(Singleton singleton) {
+    final dartType = godotTypeToDartType(singleton.type);
+    final isPointer = singleton.type.endsWith('*');
+    final typeCategory =
+        GodotApiInfo.instance().getTypeCategory(singleton.type);
+    final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
+    return ArgumentProxy._(
+      name: singleton.name,
+      type: singleton.type,
+      rawDartType: godotTypeToRawDartType(singleton.type),
+      dartType: dartType,
+      needsAllocation: dartTypes.contains(singleton.type),
+      isOptional: isOptional,
+      isPointer: isPointer,
+      typeCategory: typeCategory,
+      meta: null,
+      defaultValue: _getDefaultValue(singleton.type, dartType, isOptional),
+    );
+  }
 
-  SingletonArgumentProxy(this._singleton);
+  factory ArgumentProxy.fromArgument(Argument argument) {
+    final dartType = godotTypeToDartType(argument.type);
+    final isPointer = argument.type.endsWith('*');
+    final typeCategory = GodotApiInfo.instance().getTypeCategory(argument.type);
+    final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
+    return ArgumentProxy._(
+      name: argument.name,
+      type: argument.type,
+      rawDartType: godotTypeToRawDartType(argument.type),
+      dartType: dartType,
+      needsAllocation: dartTypes.contains(argument.type),
+      isOptional: isOptional,
+      isPointer: isPointer,
+      typeCategory: typeCategory,
+      meta: argument.meta,
+      defaultValue: _getDefaultValue(argument.type, dartType, isOptional),
+    );
+  }
 
-  @override
-  String get dartType => godotTypeToDartType(type);
+  factory ArgumentProxy.fromReturnValue(ReturnValue returnValue) {
+    final dartType = godotTypeToDartType(returnValue.type);
+    final isPointer = returnValue.type.endsWith('*');
+    final typeCategory =
+        GodotApiInfo.instance().getTypeCategory(returnValue.type);
+    final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
+    return ArgumentProxy._(
+      name: '',
+      type: returnValue.type,
+      rawDartType: godotTypeToRawDartType(returnValue.type),
+      dartType: dartType,
+      needsAllocation: dartTypes.contains(returnValue.type),
+      isOptional: isOptional,
+      isPointer: isPointer,
+      typeCategory: typeCategory,
+      meta: returnValue.meta,
+      defaultValue: _getDefaultValue(returnValue.type, dartType, isOptional),
+    );
+  }
 
-  @override
-  String getDefaultValue() {
+  static String _getDefaultValue(
+      String godotType, String dartType, bool isOptional) {
+    final myDartType = dartType;
     if (isOptional) {
       return 'null';
-    } else if (defaultValueForType.containsKey(dartType)) {
-      return defaultValueForType[dartType]!;
-    } else if (dartType == 'String') {
+    } else if (defaultValueForType.containsKey(myDartType)) {
+      return defaultValueForType[myDartType]!;
+    } else if (myDartType == 'String') {
       return "''";
-    } else if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
+    } else if (godotType.startsWith('enum::') ||
+        godotType.startsWith('bitfield::')) {
       // TODO: I'd rather this gave a real value
-      return '$dartType.values[0]';
-    } else if (dartType.contains('Pointer<')) {
+      return '$myDartType.values[0]';
+    } else if (myDartType.contains('Pointer<')) {
       return 'nullptr';
     } else {
-      return '$dartType()';
+      return '$myDartType()';
     }
   }
-
-  @override
-  bool get isOptional {
-    return !isPointer && typeCategory == TypeCategory.engineClass;
-  }
-
-  @override
-  bool get isPointer {
-    return type.endsWith('*');
-  }
-
-  @override
-  String get name => _singleton.name;
-
-  @override
-  bool get needsAllocation => dartType.contains(type);
-
-  @override
-  String get type => _singleton.type;
-
-  @override
-  TypeCategory get typeCategory =>
-      GodotApiInfo.instance().getTypeCategory(type);
-
-  @override
-  ArgumentMeta? get meta => null;
 }
 
 extension DartSingletonExtensions on Singleton {
-  SingletonArgumentProxy get proxy => SingletonArgumentProxy(this);
-}
-
-class ArgumentArgumentProxy implements ArgumentProxy {
-  final Argument _argument;
-
-  ArgumentArgumentProxy(this._argument);
-
-  @override
-  String get dartType => godotTypeToDartType(type);
-
-  @override
-  String getDefaultValue() {
-    if (isOptional) {
-      return 'null';
-    } else if (defaultValueForType.containsKey(dartType)) {
-      return defaultValueForType[dartType]!;
-    } else if (dartType == 'String') {
-      return "''";
-    } else if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
-      // TODO: I'd rather this gave a real value
-      return '$dartType.values[0]';
-    } else if (dartType.contains('Pointer<')) {
-      return 'nullptr';
-    } else {
-      return '$dartType()';
-    }
-  }
-
-  @override
-  bool get isOptional {
-    return !isPointer && typeCategory == TypeCategory.engineClass;
-  }
-
-  @override
-  bool get isPointer {
-    return type.endsWith('*');
-  }
-
-  @override
-  String get name => _argument.name;
-
-  @override
-  bool get needsAllocation => dartType.contains(type);
-
-  @override
-  String get type => _argument.type;
-
-  @override
-  TypeCategory get typeCategory =>
-      GodotApiInfo.instance().getTypeCategory(type);
-
-  @override
-  ArgumentMeta? get meta => _argument.meta;
+  ArgumentProxy get proxy => ArgumentProxy.fromSingleton(this);
 }
 
 extension DartArgumentExtension on Argument {
-  ArgumentArgumentProxy get proxy => ArgumentArgumentProxy(this);
-}
-
-class ReturnValueArgumentProxy implements ArgumentProxy {
-  final ReturnValue _returnValue;
-
-  ReturnValueArgumentProxy(this._returnValue);
-
-  @override
-  String get dartType => godotTypeToDartType(type);
-
-  @override
-  String getDefaultValue() {
-    if (isOptional) {
-      return 'null';
-    } else if (defaultValueForType.containsKey(dartType)) {
-      return defaultValueForType[dartType]!;
-    } else if (dartType == 'String') {
-      return "''";
-    } else if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
-      // TODO: I'd rather this gave a real value
-      return '$dartType.values[0]';
-    } else if (dartType.contains('Pointer<')) {
-      return 'nullptr';
-    } else {
-      return '$dartType()';
-    }
-  }
-
-  @override
-  bool get isOptional {
-    return !isPointer && typeCategory == TypeCategory.engineClass;
-  }
-
-  @override
-  bool get isPointer {
-    return type.endsWith('*');
-  }
-
-  @override
-  String get name => '';
-
-  @override
-  bool get needsAllocation => dartType.contains(type);
-
-  @override
-  String get type => _returnValue.type;
-
-  @override
-  TypeCategory get typeCategory =>
-      GodotApiInfo.instance().getTypeCategory(type);
-
-  @override
-  ArgumentMeta? get meta => _returnValue.meta;
+  ArgumentProxy get proxy => ArgumentProxy.fromArgument(this);
 }
 
 extension DartReturnValueExtension on ReturnValue {
-  ReturnValueArgumentProxy get proxy => ReturnValueArgumentProxy(this);
+  ArgumentProxy get proxy => ArgumentProxy.fromReturnValue(this);
+}
+
+String godotTypeToRawDartType(String? godotType) {
+  if (godotType == null) return 'void';
+
+  final strippedType = _getStrippedType(godotType);
+  return getCorrectedType(strippedType.item1);
 }
 
 String godotTypeToDartType(String? godotType) {

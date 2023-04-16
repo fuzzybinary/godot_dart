@@ -4,11 +4,11 @@ import 'package:path/path.dart' as path;
 
 import '../code_sink.dart';
 import '../common_helpers.dart';
+import '../gdstring_additional.dart';
 import '../godot_api_info.dart';
 import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
-import '../type_info.dart';
 
 Future<void> generateBuiltinBindings(
   GodotApiInfo api,
@@ -76,7 +76,7 @@ Future<void> generateBuiltinBindings(
     }, '}');
 
     // Class Enums
-    final enums = builtin.enums ?? <dynamic>[];
+    final enums = builtin.enums ?? [];
     for (final classEnum in enums) {
       writeEnum(classEnum, builtin.name, o);
     }
@@ -102,7 +102,7 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
     o.p('initBindingsConstructorDestructor();');
     o.nl();
     o.b('typeInfo = TypeInfo(', () {
-      o.p('StringName.fromString(builtin.name),');
+      o.p("StringName.fromString('${builtin.name}'),");
       o.p('variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
       o.p('size: _size,');
     }, ');');
@@ -114,7 +114,7 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
       o.p('_bindings.member${member.name.toUpperCamelCase()}Setter = gde.variantGetPtrSetter(');
-      o.p('  GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()}');
+      o.p('  GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
     }
@@ -144,7 +144,7 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     o.b('${builtin.dartName}$constructorName(', () {
       // Argument list
       for (final argument in arguments) {
-        o.p('final ${argument.dartType} ${escapeName(argument.name)},');
+        o.p('final ${argument.dartType} ${escapeName(argument.name).toLowerCamelCase()},');
       }
     }, ')', newLine: false);
     o.b(' {', () {
@@ -152,12 +152,13 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
           for (final argument in arguments) {
+            final escapedName = escapeName(argument.name).toLowerCamelCase();
             if (argument.needsAllocation) {
-              o.p('${argument.name}Ptr.cast(),');
+              o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
-              o.p('${argument.name}?.nativePtr.cast() ?? nullptr,');
+              o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
             } else {
-              o.p('${argument.name}.nativePtr.cast(),');
+              o.p('$escapedName.nativePtr.cast(),');
             }
           }
         }, ']);');
@@ -166,12 +167,12 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     o.nl();
   }
 
-  // if (builtin.godotType == 'String') {
-  //   out.write(gdStringFromString());
-  //   out.write(gdStringToDartString());
-  // } else if (builtin.godotType == 'StringName') {
-  //   out.write(stringNameFromString());
-  // }
+  if (builtin.name == 'String') {
+    gdStringFromString(o);
+    gdStringToDartString(o);
+  } else if (builtin.name == 'StringName') {
+    stringNameFromString(o);
+  }
 }
 
 void _writeMembers(CodeSink o, BuiltinClass builtin) {
@@ -182,7 +183,7 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
       if (member.type == 'String') {
         o.p('GDString retVal = GDString();');
       } else {
-        o.p('${memberProxy.dartType} retVal = ${memberProxy.getDefaultValue()};');
+        o.p('${memberProxy.dartType} retVal = ${memberProxy.defaultValue};');
       }
       withAllocationBlock([], memberProxy, o, () {
         bool extractReturnValue = writeReturnAllocation(memberProxy, o);
@@ -190,7 +191,7 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
         o.p('f(nativePtr.cast(), retPtr.cast());');
         if (extractReturnValue) {
           if (memberProxy.typeCategory == TypeCategory.engineClass) {
-            o.p('retVal = retPtr == nullptr ? null : ${memberProxy.dartType}.fromOwner(retPtr.value);');
+            o.p('retVal = retPtr == nullptr ? null : ${memberProxy.rawDartType}.fromOwner(retPtr.value);');
           } else {
             o.p('retVal = retPtr.value;');
           }
@@ -235,9 +236,10 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       if (retArg.typeCategory != TypeCategory.voidType) {
         if (method.returnType == 'String') {
           o.p('GDString retVal = GDString();');
+        } else if (retArg.isOptional) {
+          o.p('${retArg.dartType} retVal;');
         } else {
-          final dartType = godotTypeToDartType(method.returnType);
-          o.p('$dartType retVal = ${retArg.getDefaultValue()};');
+          o.p('${retArg.dartType} retVal = ${retArg.defaultValue};');
         }
       }
 
@@ -255,12 +257,13 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
         o.b('gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [',
             () {
           for (final argument in arguments) {
+            final escapedName = escapeName(argument.name).toLowerCamelCase();
             if (argument.needsAllocation) {
-              o.p('${argument.name}Ptr.cast(),');
+              o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
-              o.p('${argument.name}?.nativePtr.cast() ?? nullptr,');
+              o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
             } else {
-              o.p('${argument.name}.nativePtr.cast(),');
+              o.p('$escapedName.nativePtr.cast(),');
             }
           }
         }, ']);');
@@ -268,8 +271,7 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
         if (retArg.typeCategory != TypeCategory.voidType &&
             extractReturnValue) {
           if (retArg.typeCategory == TypeCategory.engineClass) {
-            final dartType = godotTypeToDartType(method.returnType);
-            o.p('retVal = retPtr == nullptr ? null : $dartType.fromOwner(retPtr.value);');
+            o.p('retVal = retPtr == nullptr ? null : ${retArg.rawDartType}.fromOwner(retPtr.value);');
           } else {
             o.p('retVal = retPtr.value;');
           }
@@ -277,15 +279,16 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       });
 
       if (retArg.typeCategory != TypeCategory.voidType) {
-        if (method.returnType == 'String') {
-          o.p('return retVal.toDartString();\n');
-        } else {
-          o.p('return retVal;\n');
-        }
+        // if (method.returnType == 'String') {
+        //   o.p('return retVal.toDartString();');
+        // } else {
+        //   o.p('return retVal;');
+        // }
+        o.p('return retVal;');
       }
     }, '}');
+    o.nl();
   }
-  o.nl();
 }
 
 void _writeBindingClass(CodeSink o, BuiltinClass builtin) {

@@ -9,7 +9,6 @@ import '../godot_api_info.dart';
 import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
-import '../type_info.dart';
 
 Future<void> generateEngineBindings(
   GodotApiInfo api,
@@ -38,11 +37,12 @@ Future<void> generateEngineBindings(
     o.write(header);
 
     writeImports(o, api, classInfo, false);
+    o.nl();
 
     final inherits = classInfo.inherits ?? 'ExtensionType';
     final correctedInherits = getCorrectedType(inherits);
 
-    o.b('${classInfo.dartName} extends $correctedInherits {', () {
+    o.b('class ${classInfo.dartName} extends $correctedInherits {', () {
       o.p('static TypeInfo? _typeInfo;');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
       o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');
@@ -76,12 +76,14 @@ Future<void> generateEngineBindings(
       _writeBindingCallbacks(o, classInfo);
       _writeVirtualFunctions(o, classInfo);
     }, '}');
+    o.nl();
 
     // Class Enums
     final enums = classInfo.enums ?? [];
     for (final classEnum in enums) {
       writeEnum(classEnum, classInfo.name, o);
     }
+    o.nl();
 
     _writeBindingsClass(o, classInfo);
 
@@ -111,7 +113,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       o.p('    _singletonPtr!.cast(), bindingCallbacks) as ${classInfo.dartName};');
     }, '}');
 
-    o.p('return _singletonObj!');
+    o.p('return _singletonObj!;');
   }, '}');
   o.nl();
 }
@@ -127,12 +129,16 @@ void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.p('if (owner == nullptr) return null;');
     o.p('return ${classInfo.dartName}.withNonNullOwner(owner);');
   }, '}');
+  o.nl();
 }
 
 void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   final methods = classInfo.methods ?? [];
 
   for (final method in methods) {
+    // TODO: Don't generate toString yet
+    if (method.name == 'to_string') continue;
+
     final methodName = escapeMethodName(method.name);
     final returnInfo = method.returnValue?.proxy;
     final hasReturn =
@@ -141,7 +147,7 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.b('${makeEngineMethodSignature(method)} {', () {
       if (method.isVirtual) {
         if (hasReturn) {
-          final defaultValue = returnInfo.getDefaultValue();
+          final defaultValue = returnInfo.defaultValue;
           o.p('return $defaultValue;');
         }
         return;
@@ -161,25 +167,25 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(method!, ${method.isStatic ? 'null' : 'this'}, [',
           () {
         for (final argument in arguments) {
-          o.p('convertToVariant(${argument.name}),');
+          o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}),');
         }
       }, ']);');
 
       if (hasReturn) {
         var bindingCallbacks = 'null';
         if (returnInfo.typeCategory == TypeCategory.engineClass) {
-          bindingCallbacks = '${returnInfo.dartType}.bindingCallbacks';
+          bindingCallbacks = '${returnInfo.rawDartType}.bindingCallbacks';
         }
 
         if (returnInfo.typeCategory == TypeCategory.enumType) {
-          o.p('return ${returnInfo.dartType}.fromValue(convertFromVariant(ret, $bindingCallbacks) as int);');
+          o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, $bindingCallbacks) as int);');
         } else {
           o.p('return convertFromVariant(ret, $bindingCallbacks) as ${returnInfo.dartType};');
         }
       }
     }, '}');
+    o.nl();
   }
-  o.nl();
 }
 
 void _writeBindingCallbacks(CodeSink o, GodotExtensionApiJsonClass classInfo) {
@@ -258,7 +264,7 @@ void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       arguments.forEachIndexed((i, e) {
         convertPtrArgument(i, e, o);
       });
-      o.p("${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => e.name).join(',')});");
+      o.p("${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => escapeName(e.name).toLowerCamelCase()).join(',')});");
       if (hasReturn) {
         writePtrReturn(returnInfo, o);
       }
@@ -276,7 +282,7 @@ void _writeBindingsClass(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       }
 
       final methodName = escapeMethodName(method.name).toUpperCamelCase();
-      o.p('GDExtensionMethodBindPtr? method$methodName;\n');
+      o.p('GDExtensionMethodBindPtr? method$methodName;');
     }
   }, '}');
 }

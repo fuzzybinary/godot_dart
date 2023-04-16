@@ -72,7 +72,7 @@ Future<void> generateNativeStructures(
         .toList();
 
     o.p("import 'dart:ffi';");
-    o.p("import '../../variant/structs.dart'");
+    o.p("import '../../variant/structs.dart';");
 
     Set<String> usedTypes = {};
 

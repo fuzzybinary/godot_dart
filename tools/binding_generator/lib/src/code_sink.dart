@@ -21,8 +21,11 @@ class CodeSink {
     _indentLevel += 2;
     _blockDidWrite.addLast(false);
     block();
-    _blockDidWrite.removeLast();
+    final didWrite = _blockDidWrite.removeLast();
     _indentLevel -= 2;
+    if (didWrite) {
+      _sink.write(' ' * _indentLevel);
+    }
     _sink.write(endBlock);
     if (newLine) _sink.writeln();
   }

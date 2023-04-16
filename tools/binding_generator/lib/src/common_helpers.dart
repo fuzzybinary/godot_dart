@@ -3,7 +3,6 @@ import 'godot_api_info.dart';
 import 'godot_extension_api_json.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
-import 'type_info.dart';
 
 const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 //
@@ -74,7 +73,8 @@ String? argumentAllocation(ArgumentProxy arg) {
   if (!arg.needsAllocation) return null;
 
   var ffiType = getFFIType(arg);
-  return 'final ${arg.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${arg.name};';
+  final argName = escapeName(arg.name).toLowerCamelCase();
+  return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName;';
 }
 
 bool writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
@@ -115,18 +115,12 @@ void withAllocationBlock(
   }
 }
 
-void argumentFree(ArgumentInfo argument, CodeSink out) {
-  if (!argument.needsAllocation) return;
-
-  out.p('malloc.free(${argument.name!.toLowerCamelCase()}Ptr);');
-}
-
 /// Generate a constructor name from arguments types. In the case
 /// of a single argument constructor of the same type, the constructor
 /// is called 'copy'. Otherwise it is named '.from{ArgType1}{ArgType2}'
 String getConstructorName(String type, Constructor constructor) {
   final arguments = constructor.arguments;
-  if (arguments != null) {
+  if (arguments != null && arguments.isNotEmpty) {
     if (arguments.length == 1) {
       var argument = arguments[0];
       if (argument.type == type) {
@@ -160,7 +154,7 @@ String getDartMethodName(String name, bool isVirtual) {
 String makeSignature(BuiltinClassMethod functionData) {
   var modifiers = '';
   if (functionData.isStatic) {
-    modifiers += 'static';
+    modifiers += 'static ';
   }
   final methodName = getDartMethodName(functionData.name, false);
 
@@ -175,7 +169,8 @@ String makeSignature(BuiltinClassMethod functionData) {
       final parameter = parameters[i];
 
       // TODO: Default values
-      paramSignature.add('${parameter.proxy.dartType} ${parameter.name}');
+      paramSignature.add(
+          '${parameter.proxy.dartType} ${escapeName(parameter.name).toLowerCamelCase()}');
     }
     signature += paramSignature.join(', ');
   }
@@ -188,9 +183,9 @@ String makeSignature(BuiltinClassMethod functionData) {
 String makeEngineMethodSignature(ClassMethod methodData) {
   var modifiers = '';
   if (methodData.isStatic) {
-    modifiers += 'static';
+    modifiers += 'static ';
   }
-  final methodName = getDartMethodName(methodData.name, false);
+  final methodName = getDartMethodName(methodData.name, methodData.isVirtual);
 
   var returnType = 'void';
   if (methodData.returnValue != null) {
@@ -207,7 +202,8 @@ String makeEngineMethodSignature(ClassMethod methodData) {
       final parameter = parameters[i];
 
       // TODO: Default values
-      paramSignature.add('${parameter.proxy.dartType} ${parameter.name}');
+      paramSignature.add(
+          '${parameter.proxy.dartType} ${escapeName(parameter.name).toLowerCamelCase()}');
     }
     signature += paramSignature.join(', ');
   }
@@ -235,9 +231,9 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
     usedTypes.add(inherits);
   }
 
-  if (api.containsKey('constructors')) {
+  if (api['constructors'] != null) {
     for (Map<String, dynamic> constructor in api['constructors']) {
-      if (constructor.containsKey('arguments')) {
+      if (constructor['arguments'] != null) {
         for (Map<String, dynamic> arg in constructor['arguments']) {
           usedTypes.add(nakedType(arg['type']));
         }
@@ -245,27 +241,25 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
     }
   }
 
-  if (api.containsKey('methods')) {
+  if (api['methods'] != null) {
     for (Map<String, dynamic> method in api['methods']) {
-      if (method.containsKey('arguments')) {
+      if (method['arguments'] != null) {
         for (Map<String, dynamic> arg in method['arguments']) {
           usedTypes.add(nakedType(arg['type']));
         }
       }
-      if (method.containsKey('return_type')) {
+      if (method['return_type'] != null) {
         usedTypes.add(nakedType(method['return_type']));
-      } else if (method.containsKey('return_value')) {
+      } else if (method['return_value'] != null) {
         final returnValue = method['return_value'] as Map<String, dynamic>;
         usedTypes.add(nakedType(returnValue['type']));
       }
     }
   }
 
-  if (api.containsKey('members')) {
-    if (api.containsKey('members')) {
-      for (Map<String, dynamic> member in api['members']) {
-        usedTypes.add(nakedType(member['type']));
-      }
+  if (api['members'] != null) {
+    for (Map<String, dynamic> member in api['members']) {
+      usedTypes.add(nakedType(member['type']));
     }
   }
 
@@ -327,13 +321,14 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   //   return ret;
   // }
 
-  var decl = 'final ${argument.dartType} ${argument.name}';
+  var decl =
+      'final ${argument.dartType} ${escapeName(argument.name).toLowerCamelCase()}';
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
-      o.p('$decl = ${argument.dartType}.fromOwner(args.elementAt($index).value);');
+      o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).value);');
       break;
     case TypeCategory.builtinClass:
-      o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
+      o.p('$decl = ${argument.rawDartType}.fromPointer(args.elementAt($index).value);');
       break;
     case TypeCategory.primitive:
       final castType =
@@ -365,11 +360,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
 }
 
 void writePtrReturn(ArgumentProxy argument, CodeSink o) {
-  if (argument.type == 'String') {
-    o.p('final retGdString = GDString.fromString(ret);');
-    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
-    return;
-  }
+  // if (argument.type == 'String') {
+  //   o.p('final retGdString = GDString.fromString(ret);');
+  //   o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
+  //   return;
+  // }
 
   var ret = '';
   switch (argument.typeCategory) {
@@ -407,12 +402,26 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   o.p('$ret;');
 }
 
-void writeEnum(GlobalEnumElement godotEnum, String? inClass, CodeSink o) {
-  var enumName = getEnumName(godotEnum.name, inClass);
+void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
+  String name;
+  List<Value> valueList;
+  if (godotEnum is BuiltinClassEnum) {
+    name = godotEnum.name;
+    valueList = godotEnum.values;
+  } else if (godotEnum is GlobalEnumElement) {
+    name = godotEnum.name;
+    valueList = godotEnum.values;
+  } else {
+    throw ArgumentError(
+        'Tring to write an enum that is of type ${godotEnum.runtimeType}');
+  }
+
+  var enumName = getEnumName(name, inClass);
   o.b('enum $enumName {', () {
-    List<String> values = [];
-    for (final value in godotEnum.values) {
-      o.p('${value.name}(${value.value}),');
+    for (int i = 0; i < valueList.length; ++i) {
+      final value = valueList[i];
+      final end = i == valueList.length - 1 ? ';' : ',';
+      o.p('${value.name.toLowerCamelCase()}(${value.value})$end');
     }
     o.nl();
 

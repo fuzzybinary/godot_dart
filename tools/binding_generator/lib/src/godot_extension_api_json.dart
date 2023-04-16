@@ -576,7 +576,7 @@ class Argument {
         name: json['name'],
         type: json['type'],
         defaultValue: json['default_value'],
-        meta: argumentMetaValues.map[json['meta']]!,
+        meta: argumentMetaValues.map[json['meta']],
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -896,7 +896,7 @@ class ReturnValue {
 
   factory ReturnValue.fromJson(Map<String, dynamic> json) => ReturnValue(
         type: json['type'],
-        meta: argumentMetaValues.map[json['meta']]!,
+        meta: argumentMetaValues.map[json['meta']],
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -1063,7 +1063,7 @@ class UtilityFunction {
   factory UtilityFunction.fromJson(Map<String, dynamic> json) =>
       UtilityFunction(
         name: json['name'],
-        returnType: returnTypeValues.map[json['return_type']]!,
+        returnType: returnTypeValues.map[json['return_type']],
         category: categoryValues.map[json['category']]!,
         isVararg: json['is_vararg'],
         hash: json['hash'],

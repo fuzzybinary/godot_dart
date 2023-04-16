@@ -30,21 +30,21 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  String vGetName() {
-    return 'Dart';
+  GDString vGetName() {
+    return GDString.fromString('Dart');
   }
 
   @override
-  String vGetType() {
-    return 'DartScript';
+  GDString vGetType() {
+    return GDString.fromString('DartScript');
   }
 
   @override
   void vFrame() {}
 
   @override
-  String vGetExtension() {
-    return 'dart';
+  GDString vGetExtension() {
+    return GDString.fromString('dart');
   }
 
   @override
@@ -53,8 +53,8 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  String vValidatePath(GDString path) {
-    return '';
+  GDString vValidatePath(GDString path) {
+    return GDString.fromString('');
   }
 
   @override
