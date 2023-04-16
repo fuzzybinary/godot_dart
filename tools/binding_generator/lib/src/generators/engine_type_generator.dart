@@ -239,7 +239,7 @@ void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.p('_vTable = {};');
 
     if (classInfo.inherits != null) {
-      final correctedInherits = getCorrectedType(classInfo.dartName);
+      final correctedInherits = getCorrectedType(classInfo.inherits!);
       o.p('_vTable!.addAll($correctedInherits.vTable);\n');
     }
 
