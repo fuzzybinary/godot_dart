@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as path;
 
+import '../code_sink.dart';
 import '../common_helpers.dart';
 import '../godot_api_info.dart';
 import '../string_extensions.dart';
@@ -55,27 +56,23 @@ Future<void> generateNativeStructures(
   var exportsString = '';
 
   for (final nativeStruct in api.nativeStructures.values) {
-    if (hasDartType(nativeStruct.godotType)) {
+    if (hasDartType(nativeStruct.name)) {
       continue;
     }
 
     final destPath =
-        path.join(targetDir, '${nativeStruct.dartType.toSnakeCase()}.dart');
-    final out = File(destPath).openWrite();
+        path.join(targetDir, '${nativeStruct.name.toSnakeCase()}.dart');
+    final o = CodeSink(File(destPath));
 
-    out.write(header);
+    o.write(header);
 
-    final fields = (nativeStruct.api['format'] as String)
+    final fields = nativeStruct.format
         .split(';')
         .map((e) => FieldInfo.fromString(e))
         .toList();
 
-    out.write('''
-import 'dart:ffi';
-
-import '../../variant/structs.dart';
-
-''');
+    o.p("import 'dart:ffi';");
+    o.p("import '../../variant/structs.dart'");
 
     Set<String> usedTypes = {};
 
@@ -86,67 +83,58 @@ import '../../variant/structs.dart';
       usedTypes.add(field.type);
       if (api.nativeStructures.containsKey(field.type) ||
           api.engineClasses.containsKey(field.type)) {
-        out.write("import '${field.type.toSnakeCase()}.dart';\n");
+        o.p("import '${field.type.toSnakeCase()}.dart';");
       }
       if (api.builtinClasses.containsKey(field.type) &&
           !hasDartType(field.type)) {
-        out.write("import '../variant/${field.type.toSnakeCase()}.dart';\n");
+        o.p("import '../variant/${field.type.toSnakeCase()}.dart';");
       }
     }
+    o.nl();
 
-    out.write('''
-
-class ${nativeStruct.dartType} extends Struct {
-
-''');
-
-    // Write fields
-    for (final field in fields) {
-      var dartType = getCorrectedType(field.type);
-      var ffiType = getFFITypeFromString(field.type);
-      String? comment;
-      if (field.type.endsWith('*')) {
-        dartType = 'Pointer<Void>';
-        ffiType = null;
-      }
-
-      if (dartType.contains('::')) {
-        // Likely an enum. I know the size here is compiler specific, but for
-        // now we're going to assume it's a 32-bit integer
-        dartType = 'int';
-        ffiType = 'Int32';
-        comment = 'Instance of ${dartType.replaceAll('::', '')}';
-      }
-
-      if (comment != null) {
-        out.write('  // $comment\n');
-      }
-
-      out.write('  ');
-
-      if (field.arraySize != null) {
-        final arrayType = ffiType ?? dartType;
-        out.write(
-            '@Array<$arrayType>(${field.arraySize}) external Array<$dartType> ${field.name};\n');
-      } else {
-        if (ffiType != null) {
-          out.write('@$ffiType() ');
-        } else if (!dartType.startsWith('Pointer')) {
-          // Add 'Struct' to the end of the DartType
-          dartType += 'Struct';
+    o.b('class ${nativeStruct.dartName} extends Struct {', () {
+      // Write fields
+      for (final field in fields) {
+        var dartType = getCorrectedType(field.type);
+        var ffiType = getFFITypeFromString(field.type);
+        String? comment;
+        if (field.type.endsWith('*')) {
+          dartType = 'Pointer<Void>';
+          ffiType = null;
         }
 
-        out.write('external $dartType ${field.name};\n');
+        if (dartType.contains('::')) {
+          // Likely an enum. I know the size here is compiler specific, but for
+          // now we're going to assume it's a 32-bit integer
+          dartType = 'int';
+          ffiType = 'Int32';
+          comment = 'Instance of ${dartType.replaceAll('::', '')}';
+        }
+
+        if (comment != null) {
+          o.p('/// $comment');
+        }
+
+        if (field.arraySize != null) {
+          final arrayType = ffiType ?? dartType;
+          o.p('@Array<$arrayType>(${field.arraySize}) external Array<$dartType> ${field.name};');
+        } else {
+          var annotation = '';
+          if (ffiType != null) {
+            annotation += '@$ffiType() ';
+          } else if (!dartType.startsWith('Pointer')) {
+            // Add 'Struct' to the end of the DartType
+            dartType += 'Struct';
+          }
+
+          o.p('${annotation}external $dartType ${field.name};\n');
+        }
       }
-    }
+    }, '}');
 
-    out.write('''
-}
-''');
+    await o.close();
 
-    await out.close();
-
-    exportsString += "import '${nativeStruct.dartType.toSnakeCase()}.dart';\n";
+    exportsString += "import '${nativeStruct.name.toSnakeCase()}.dart';\n";
   }
 
   var exportsFile = File(path.join(targetDir, 'native_structures.dart'));

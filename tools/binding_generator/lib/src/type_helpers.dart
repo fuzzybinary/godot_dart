@@ -1,4 +1,5 @@
-import 'type_info.dart';
+import 'godot_api_info.dart';
+import 'godot_extension_api_json.dart';
 
 final dartTypes = [
   'Nil',
@@ -42,24 +43,24 @@ final typeToFFIType = {
 };
 
 final metaTypeToFFIType = {
-  'float': 'Float',
-  'double': 'Double',
-  'int8': 'Int8',
-  'int16': 'Int16',
-  'int32': 'Int32',
-  'int64': 'Int64',
-  'uint8': 'Uint8',
-  'uint16': 'Uint16',
-  'uint32': 'Uint32',
-  'uint64': 'Uint64',
+  ArgumentMeta.float: 'Float',
+  ArgumentMeta.double: 'Double',
+  ArgumentMeta.int8: 'Int8',
+  ArgumentMeta.int16: 'Int16',
+  ArgumentMeta.int32: 'Int32',
+  ArgumentMeta.int64: 'Int64',
+  ArgumentMeta.uint8: 'Uint8',
+  ArgumentMeta.uint16: 'Uint16',
+  ArgumentMeta.uint32: 'Uint32',
+  ArgumentMeta.uint64: 'Uint64',
 };
 
-String? getFFIType(ArgumentInfo type) {
-  if (type.meta != null) {
-    final metaType = metaTypeToFFIType[type];
+String? getFFIType(ArgumentProxy arg) {
+  if (arg.meta != null) {
+    final metaType = metaTypeToFFIType[arg.meta];
     if (metaType != null) return metaType;
   }
-  return typeToFFIType[type.typeInfo.godotType];
+  return typeToFFIType[arg.type];
 }
 
 String? getFFITypeFromString(String type) {
@@ -67,24 +68,6 @@ String? getFFITypeFromString(String type) {
 }
 
 final defaultValueForType = {'bool': 'false', 'double': '0.0', 'int': '0'};
-
-String getDefaultValueForAgument(ArgumentInfo info) {
-  if (info.isOptional) {
-    return 'null';
-  } else if (defaultValueForType.containsKey(info.dartType)) {
-    return defaultValueForType[info.dartType]!;
-  } else if (info.dartType == 'String') {
-    return "''";
-  } else if (info.typeInfo.godotType.startsWith('enum::') ||
-      info.typeInfo.godotType.startsWith('bitfield::')) {
-    // TODO: I'd rather this gave a real value
-    return '${info.dartType}.values[0]';
-  } else if (info.dartType.contains('Pointer<')) {
-    return 'nullptr';
-  } else {
-    return '${info.dartType}()';
-  }
-}
 
 String getCorrectedType(String type, {String? meta}) {
   const typeConversion = {

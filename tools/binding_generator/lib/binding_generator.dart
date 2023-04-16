@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as path;
 
+import 'src/code_sink.dart';
 import 'src/common_helpers.dart';
 import 'src/generators/builtin_type_generator.dart';
 import 'src/generators/engine_type_generator.dart';
@@ -62,21 +63,19 @@ Future<void> generate(GenerationOptions options) async {
 Future<void> generateGlobalConstants(
     GodotApiInfo apiInfo, String outputDirectory, String buildConfig) async {
   final file = File(path.join(outputDirectory, 'global_constants.dart'));
-  final out = file.openWrite();
+  final o = CodeSink(file);
 
-  out.write(header);
+  o.write(header);
 
-  for (Map<String, dynamic> constant in apiInfo.raw['global_constants']) {
+  for (Map<String, dynamic> constant in apiInfo.api.globalConstants) {
     final name = constant['name'] as String;
-    out.write(
-        'const int ${escapeName(name).toLowerCamelCase()} = ${constant['value']};\n');
+    o.p('const int ${escapeName(name).toLowerCamelCase()} = ${constant['value']};');
+  }
+  o.nl();
+
+  for (final godotEnum in apiInfo.api.globalEnums) {
+    writeEnum(godotEnum, null, o);
   }
 
-  out.write('\n');
-
-  for (Map<String, dynamic> godotEnum in apiInfo.raw['global_enums']) {
-    writeEnum(godotEnum, null, out);
-  }
-
-  await out.close();
+  await o.close();
 }

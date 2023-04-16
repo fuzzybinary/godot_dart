@@ -1,3 +1,4 @@
+import 'godot_extension_api_json.dart';
 import 'type_helpers.dart';
 
 enum TypeCategory {
@@ -45,33 +46,33 @@ class TypeInfo {
 }
 
 class ArgumentInfo {
-  final TypeInfo typeInfo;
+  final String godotType;
   final bool isOptional;
   final String? pointerType;
-  final String? meta;
+  final ArgumentMeta? meta;
 
   final String? rawName;
   late final String? name;
 
-  String get fullDartType => '$dartType${isOptional ? '?' : ''}';
+  // String get fullDartType => '$dartType${isOptional ? '?' : ''}';
 
-  bool get isPointer => pointerType != null;
-  String get dartType {
-    if (isPointer) {
-      return pointerType!;
-    } else if (name == null && typeInfo.dartType == 'GDString') {
-      // HACK: no name means return type. Need to make this work for all parameters, not just returns.
-      return 'String';
-    }
-    return typeInfo.dartType;
-  }
+  // bool get isPointer => pointerType != null;
+  // String get dartType {
+  //   if (isPointer) {
+  //     return pointerType!;
+  //   } else if (name == null && typeInfo.dartType == 'GDString') {
+  //     // HACK: no name means return type. Need to make this work for all parameters, not just returns.
+  //     return 'String';
+  //   }
+  //   return typeInfo.dartType;
+  // }
 
   bool get needsAllocation {
-    return dartTypes.contains(typeInfo.godotType);
+    return dartTypes.contains(godotType);
   }
 
   ArgumentInfo({
-    required this.typeInfo,
+    required this.godotType,
     required this.isOptional,
     required this.pointerType,
     required this.rawName,

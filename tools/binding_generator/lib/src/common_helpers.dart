@@ -1,6 +1,6 @@
-import 'dart:io';
-
+import 'code_sink.dart';
 import 'godot_api_info.dart';
+import 'godot_extension_api_json.dart';
 import 'string_extensions.dart';
 import 'type_helpers.dart';
 import 'type_info.dart';
@@ -17,9 +17,21 @@ const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 // ignore_for_file: unused_element
 ''';
 
-void writeImports(IOSink out, GodotApiInfo api, Map<String, dynamic> classApi,
-    bool forVariant) {
-  final String className = classApi['name'];
+void writeImports(
+    CodeSink out, GodotApiInfo api, dynamic classApi, bool forVariant) {
+  final String className;
+  // Convert the class back to json, as that's easier to process for finding used classes
+  Map<String, dynamic> json;
+  if (classApi is BuiltinClass) {
+    json = classApi.toJson();
+    className = classApi.name;
+  } else if (classApi is GodotExtensionApiJsonClass) {
+    json = classApi.toJson();
+    className = classApi.name;
+  } else {
+    throw ArgumentError(
+        'invalid class passed to writeImports: ${classApi.runtimeType}');
+  }
 
   out.write('''
 import 'dart:ffi';
@@ -39,105 +51,94 @@ ${forVariant ? '' : "import '../../variant/variant.dart';"}
   final builtinPreface = forVariant ? '' : '../variant/';
   final enginePreface = forVariant ? '../classes/' : '';
 
-  final usedClasses = getUsedTypes(classApi);
+  final usedClasses = getUsedTypes(json);
   for (var used in usedClasses) {
     if (used != className) {
       if (used == 'Variant') {
-        out.write("import '../../variant/variant.dart';\n");
+        out.p("import '../../variant/variant.dart';");
       } else if (used == 'TypedArray') {
-        out.write("import '../../variant/typed_array.dart';\n");
+        out.p("import '../../variant/typed_array.dart';");
       } else if (used == 'GlobalConstants') {
-        out.write("import '../global_constants.dart';\n");
+        out.p("import '../global_constants.dart';");
       } else {
         var prefix = api.builtinClasses.containsKey(used)
             ? builtinPreface
             : enginePreface;
-        out.write("import '$prefix${used.toSnakeCase()}.dart';\n");
+        out.p("import '$prefix${used.toSnakeCase()}.dart';");
       }
     }
   }
 }
 
-void argumentAllocation(ArgumentInfo typeInfo, IOSink out) {
-  if (!typeInfo.needsAllocation) return;
+String? argumentAllocation(ArgumentProxy arg) {
+  if (!arg.needsAllocation) return null;
 
-  var ffiType = getFFIType(typeInfo);
-  out.write(
-      '      final ${typeInfo.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${typeInfo.name};\n');
+  var ffiType = getFFIType(arg);
+  return 'final ${arg.name}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = ${arg.name};';
 }
 
-bool writeReturnAllocation(
-    GodotApiInfo info, ArgumentInfo returnType, IOSink out) {
-  // TODO check for types other than engine and builtins
-  String indent = '      ';
-  out.write(indent);
-  if (returnType.typeInfo.typeCategory == TypeCategory.engineClass) {
+bool writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
+  if (returnType.typeCategory == TypeCategory.engineClass) {
     // Need a pointer to a pointer
-    out.write(
-        'final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());\n');
+    o.p('final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());');
     return true;
   } else {
     final nativeType = getFFIType(returnType);
     if (nativeType == null) {
-      out.write('final retPtr = retVal.nativePtr;\n');
+      o.p('final retPtr = retVal.nativePtr;');
       return false;
     } else {
-      out.write(
-          'final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());\n');
+      o.p('final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());');
       return true;
     }
   }
 }
 
 void withAllocationBlock(
-  List<ArgumentInfo> arguments,
-  ArgumentInfo? retInfo,
-  IOSink out,
-  void Function(String indent) writeBlock,
+  List<ArgumentProxy> arguments,
+  ArgumentProxy? retInfo,
+  CodeSink out,
+  void Function() writeBlock,
 ) {
-  var indent = '';
-  var needsArena = retInfo?.typeInfo.typeCategory != TypeCategory.voidType ||
+  var needsArena = retInfo?.typeCategory != TypeCategory.voidType ||
       arguments.any((arg) => arg.needsAllocation);
   if (needsArena) {
-    indent = '  ';
-    out.write('''
-    using((arena) {
-''');
-    for (final arg in arguments) {
-      argumentAllocation(arg, out);
-    }
-  }
-  writeBlock(indent);
-  if (needsArena) {
-    out.write('    });\n');
+    out.b('using((arena) {', () {
+      for (final arg in arguments) {
+        final alloc = argumentAllocation(arg);
+        if (alloc != null) out.p(alloc);
+      }
+      writeBlock();
+    }, '});');
+  } else {
+    writeBlock();
   }
 }
 
-void argumentFree(ArgumentInfo argument, IOSink out) {
+void argumentFree(ArgumentInfo argument, CodeSink out) {
   if (!argument.needsAllocation) return;
 
-  out.write('    malloc.free(${argument.name!.toLowerCamelCase()}Ptr);\n');
+  out.p('malloc.free(${argument.name!.toLowerCamelCase()}Ptr);');
 }
 
 /// Generate a constructor name from arguments types. In the case
 /// of a single argument constructor of the same type, the constructor
 /// is called 'copy'. Otherwise it is named '.from{ArgType1}{ArgType2}'
-String getConstructorName(String type, Map<String, dynamic> constructor) {
-  var arguments = constructor['arguments'] as List?;
+String getConstructorName(String type, Constructor constructor) {
+  final arguments = constructor.arguments;
   if (arguments != null) {
     if (arguments.length == 1) {
-      var argument = arguments[0] as Map<String, dynamic>;
-      final argType = argument['type'] as String;
-      if (argType == type) {
+      var argument = arguments[0];
+      if (argument.type == type) {
         return '.copy';
-      } else if (argType == 'String') {
+      } else if (argument.type == 'String') {
         return '.fromGDString';
       }
-      return '.from${argument['type']}';
+      return '.from${argument.type}';
     } else {
       var name = '.from';
       for (final arg in arguments) {
-        var argName = escapeName((arg['name'] as String)).toLowerCamelCase();
+        var argName = escapeName(arg.name).toLowerCamelCase();
         name += argName[0].toUpperCase() + argName.substring(1);
       }
       return name;
@@ -147,36 +148,66 @@ String getConstructorName(String type, Map<String, dynamic> constructor) {
   return '';
 }
 
-String getDartMethodName(Map<String, dynamic> functionData) {
-  bool isVirtual = functionData['is_virtual'] ?? false;
-  var methodName = functionData['name'] as String;
-
-  if (isVirtual && methodName.startsWith('_')) {
-    methodName = methodName.replaceFirst('_', 'v_');
+String getDartMethodName(String name, bool isVirtual) {
+  if (isVirtual && name.startsWith('_')) {
+    name = name.replaceFirst('_', 'v_');
   }
 
-  methodName = escapeMethodName(methodName).toLowerCamelCase();
-  return methodName;
+  name = escapeMethodName(name).toLowerCamelCase();
+  return name;
 }
 
-String makeSignature(GodotApiInfo api, Map<String, dynamic> functionData) {
+String makeSignature(BuiltinClassMethod functionData) {
   var modifiers = '';
-  var returnInfo = api.getReturnInfo(functionData);
+  if (functionData.isStatic) {
+    modifiers += 'static';
+  }
+  final methodName = getDartMethodName(functionData.name, false);
 
-  final methodName = getDartMethodName(functionData);
+  var signature =
+      '$modifiers${godotTypeToDartType(functionData.returnType)} $methodName(';
 
-  var signature = '$modifiers${returnInfo.fullDartType} $methodName(';
-
-  final List<dynamic>? parameters = functionData['arguments'];
+  final parameters = functionData.arguments;
   if (parameters != null) {
     List<String> paramSignature = [];
 
     for (int i = 0; i < parameters.length; ++i) {
-      Map<String, dynamic> parameter = parameters[i];
-      final type = api.getArgumentInfo(parameter);
+      final parameter = parameters[i];
 
       // TODO: Default values
-      paramSignature.add('${type.fullDartType} ${type.name}');
+      paramSignature.add('${parameter.proxy.dartType} ${parameter.name}');
+    }
+    signature += paramSignature.join(', ');
+  }
+
+  signature += ')';
+
+  return signature;
+}
+
+String makeEngineMethodSignature(ClassMethod methodData) {
+  var modifiers = '';
+  if (methodData.isStatic) {
+    modifiers += 'static';
+  }
+  final methodName = getDartMethodName(methodData.name, false);
+
+  var returnType = 'void';
+  if (methodData.returnValue != null) {
+    returnType = methodData.returnValue!.proxy.dartType;
+  }
+
+  var signature = '$modifiers$returnType $methodName(';
+
+  final parameters = methodData.arguments;
+  if (parameters != null) {
+    List<String> paramSignature = [];
+
+    for (int i = 0; i < parameters.length; ++i) {
+      final parameter = parameters[i];
+
+      // TODO: Default values
+      paramSignature.add('${parameter.proxy.dartType} ${parameter.name}');
     }
     signature += paramSignature.join(', ');
   }
@@ -284,11 +315,7 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   return usedTypes.toList();
 }
 
-String convertPtrArgument(
-  int index,
-  ArgumentInfo argument, {
-  String indent = '    ',
-}) {
+void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   // TODO: Parameters mostly currently take 'GDString' whereas returns are 'String'
   // I need to figure out how to make it String across the board.
   // if (argument.godotType == 'String') {
@@ -300,63 +327,52 @@ String convertPtrArgument(
   //   return ret;
   // }
 
-  var ret = '${indent}final ${argument.fullDartType} ${argument.name} = ';
-  switch (argument.typeInfo.typeCategory) {
+  var decl = 'final ${argument.dartType} ${argument.name}';
+  switch (argument.typeCategory) {
     case TypeCategory.engineClass:
-      ret += '${argument.dartType}.fromOwner(args.elementAt($index).value)';
+      o.p('$decl = ${argument.dartType}.fromOwner(args.elementAt($index).value);');
       break;
     case TypeCategory.builtinClass:
-      ret += '${argument.dartType}.fromPointer(args.elementAt($index).value)';
+      o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
       break;
     case TypeCategory.primitive:
       final castType =
-          argument.isPointer ? argument.fullDartType : getFFIType(argument);
-      ret += 'args.elementAt($index).cast<Pointer<$castType>>().value.value';
+          argument.isPointer ? argument.dartType : getFFIType(argument);
+      o.p('$decl = args.elementAt($index).cast<Pointer<$castType>>().value.value;');
       break;
     case TypeCategory.nativeStructure:
       if (argument.isOptional) {
-        // Completely rewrite for native structures because of optionals
-        ret =
-            '${indent}final ${argument.name}Ptr = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value;\n';
-        ret +=
-            '${indent}final ${argument.fullDartType} ${argument.name} = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref';
+        o.p('final ${argument.name}Ptr = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value;');
+        o.p('$decl = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref;');
       } else if (argument.isPointer) {
-        ret +=
-            'args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.value';
+        o.p('$decl = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.value;');
       } else {
-        ret +=
-            'args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.ref';
+        o.p('$decl = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.ref;');
       }
       break;
     case TypeCategory.enumType:
-      ret +=
-          '${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Int32>>().value.value)';
+      o.p('$decl = ${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Int32>>().value.value);');
       break;
     case TypeCategory.typedArray:
-      ret += '${argument.dartType}.fromPointer(args.elementAt($index).value)';
+      o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
       break;
     case TypeCategory.voidType:
       if (argument.dartType.startsWith('Pointer')) {
-        ret += 'args.elementAt($index).value';
+        o.p('$decl = args.elementAt($index).value;');
       }
       break;
   }
-
-  ret += ';\n';
-
-  return ret;
 }
 
-String writePtrReturn(ArgumentInfo argument, {String indent = '    '}) {
-  if (argument.typeInfo.godotType == 'String') {
-    var ret = '${indent}final retGdString = GDString.fromString(ret);\n';
-    ret +=
-        '${indent}gde.dartBindings.variantCopyToNative(retPtr, retGdString);\n';
-    return ret;
+void writePtrReturn(ArgumentProxy argument, CodeSink o) {
+  if (argument.type == 'String') {
+    o.p('final retGdString = GDString.fromString(ret);');
+    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
+    return;
   }
 
-  var ret = indent;
-  switch (argument.typeInfo.typeCategory) {
+  var ret = '';
+  switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
       ret +=
@@ -385,33 +401,25 @@ String writePtrReturn(ArgumentInfo argument, {String indent = '    '}) {
       ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
       break;
     case TypeCategory.voidType:
-      return '';
+      return;
   }
 
-  ret += ';\n';
-
-  return ret;
+  o.p('$ret;');
 }
 
-void writeEnum(Map<String, dynamic> godotEnum, String? inClass, IOSink out) {
-  var enumName = getEnumName(godotEnum['name'], inClass);
-  out.write('enum $enumName {\n');
-  List<String> values = [];
-  for (Map<String, dynamic> value in godotEnum['values']) {
-    final name = (value['name'] as String).toLowerCamelCase();
-    values.add('  $name(${value['value']})');
-  }
-  out.write(values.join(',\n'));
-  out.write(';\n');
+void writeEnum(GlobalEnumElement godotEnum, String? inClass, CodeSink o) {
+  var enumName = getEnumName(godotEnum.name, inClass);
+  o.b('enum $enumName {', () {
+    List<String> values = [];
+    for (final value in godotEnum.values) {
+      o.p('${value.name}(${value.value}),');
+    }
+    o.nl();
 
-  out.write('''
-
-  final int value;
-  const $enumName(this.value);
-  factory $enumName.fromValue(int value) {
-    return values.firstWhere((e) => e.value == value);
-  }
-}
-
-''');
+    o.p('final int value;');
+    o.p('const $enumName(this.value);');
+    o.b('factory $enumName.fromValue(int value) {', () {
+      o.p('return values.firstWhere((e) => e.value == value);');
+    }, '}');
+  }, '}');
 }
