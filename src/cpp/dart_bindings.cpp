@@ -1,4 +1,4 @@
-#include "dart_bindings.h"
+﻿#include "dart_bindings.h"
 
 #include <functional>
 #include <iostream>
@@ -6,6 +6,7 @@
 #include <thread>
 
 #include <dart_api.h>
+#include <dart_tools_api.h>
 #include <dart_dll.h>
 #include <godot/gdextension_interface.h>
 
@@ -18,7 +19,7 @@ void GodotDartBindings::thread_callback(GodotDartBindings *bindings) {
   bindings->thread_main();
 }
 
-/* Binding callbacks (not sure what these are for?) */
+/* Binding callbacks -- These are only used for Variants */
 
 static void *__binding_create_callback(void *p_token, void *p_instance) {
   return nullptr;
@@ -189,6 +190,11 @@ void GodotDartBindings::shutdown() {
   _stopRequested = true;
   execute_on_dart_thread([]() {});
 
+  // Unset Dart thread. All future execution should now happen on this thread.
+  _dart_thread->join();
+  delete _dart_thread;
+  _dart_thread = nullptr;
+
   Dart_EnterIsolate(_isolate);
   Dart_EnterScope();
 
@@ -207,10 +213,12 @@ void GodotDartBindings::shutdown() {
 
   DartDll_DrainMicrotaskQueue();
   Dart_ExitScope();
-  Dart_ShutdownIsolate();
+  
+  // Don't actually shut down. Godot still has some cleanup to do. 😡
+  /*Dart_ShutdownIsolate();
   DartDll_Shutdown();
 
-  _instance = nullptr;
+  _instance = nullptr;*/
 }
 
 void GodotDartBindings::thread_main() {
@@ -223,7 +231,22 @@ void GodotDartBindings::thread_main() {
     _pendingWork();
     _pendingWork = []() {};
 
-    // Do work
+    // TODO: This drains the microtask queue and lets finalizers run
+    // from the garbage collector. We should run this once a frame but
+    // for now it lives here.
+    Dart_EnterScope();
+    
+    uint64_t currentTime = Dart_TimelineGetMicros();
+    Dart_NotifyIdle(currentTime + 1000);  // Idle for 1 ms... increase when we get to use once a frame.
+
+    Dart_Handle result = Dart_WaitForEvent(1);
+    if (Dart_IsError(result)) {
+      GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
+      GD_PRINT_ERROR(Dart_GetError(result));
+    }
+
+    Dart_ExitScope();
+
     _done_semaphore.release();
   }
 
@@ -608,8 +631,20 @@ void GodotDartBindings::class_free_instance(void *p_userdata, GDExtensionClassIn
     return;
   }
 
-  bindings->execute_on_dart_thread(
-      [&]() { Dart_DeletePersistentHandle(reinterpret_cast<Dart_PersistentHandle>(p_instance)); });
+  bindings->execute_on_dart_thread([&]() {
+    Dart_EnterScope();
+
+    Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_instance);
+    Dart_Handle obj = Dart_HandleFromPersistent(persistent);
+    Dart_Handle ret = Dart_Invoke(obj, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
+    if (Dart_IsError(ret)) {
+      GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
+      GD_PRINT_ERROR(Dart_GetError(ret));
+    }
+    Dart_DeletePersistentHandle(persistent);
+
+    Dart_ExitScope();
+  });
 }
 
 /* Static Functions From Dart */
@@ -822,9 +857,19 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   return ret;
 }
 
+// C calls from Dart
 extern "C" {
 
 GDE_EXPORT void variant_copy(void *dest, void *src, int size) {
   memcpy(dest, src, size);
 }
+
+GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object) {
+  if (extention_object == nullptr) {
+    return;
+  }
+
+  GDE->object_destroy(extention_object);
+}
+
 }

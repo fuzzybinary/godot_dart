@@ -64,21 +64,19 @@ class DartScriptLanguage extends ScriptLanguageExtension {
     final strBaseClassName = gde.dartBindings.gdStringToString(baseClassName);
 
     final source = '''
-class $strClassName extends $baseClassName {
+class $strClassName extends $strBaseClassName {
   // This is necessary boilerplate at the moment
-  static late TypeInfo typeInfo;
-  static void initTypeInfo() => typeInfo = TypeInfo(
-        StringName.fromString('DartScript'),
-        parentClass: Script.typeInfo.className,
-      );
-  static Map<String, Pointer<GodotVirtualFunction>> get vTable => $baseClassName.vTable;
+  static TypeInfo typeInfo = TypeInfo(
+    StringName.fromString('$strClassName'),
+    parentClass: $strBaseClassName.typeInfo.className,
+  );
+  static Map<String, Pointer<GodotVirtualFunction>> get vTable => $strBaseClassName.vTable;
 
   @override
   TypeInfo get staticTypeInfo => typeInfo;
 
-  static void initBindings() {
-    initTypeInfo();
-    gde.dartBindings.bindClass($strClassName, $strClassName.typeInfo);
+  $strClassName() : super() {
+    postInitialize();
   }
 
   @override

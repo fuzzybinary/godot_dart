@@ -31,6 +31,10 @@ class GodotDartNativeBindings {
       .asFunction<void Function(Pointer<Void>, Pointer<Void>, int size)>(
           isLeaf: true);
 
+  late final finalizeExtensionObject =
+      godotDartDylib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
+          'finalize_extension_object');
+
   static DynamicLibrary openLibrary(String libName) {
     var libraryPath = path.join(Directory.current.path, '$libName.so');
     if (Platform.isMacOS) {
@@ -72,12 +76,14 @@ class GodotDartNativeBindings {
     return _handleFromPersistent(handle);
   }
 
-  Object? clearPersistentHandle(Pointer<Void> handle) {
+  void clearPersistentHandle(Pointer<Void> handle) {
     final obj = _handleFromPersistent(handle);
     if (obj != null) {
+      if (obj is ExtensionType) {
+        obj.detachOwner();
+      }
       _deletePersistentHandle(handle);
     }
-    return obj;
   }
 
   void variantCopyToNative(Pointer<Void> dest, BuiltinType src) {

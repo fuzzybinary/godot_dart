@@ -124,9 +124,6 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
 
 // TODO: Variant probably shouldn't extend BuiltinType?
 class Variant extends BuiltinType {
-  static final Finalizer<Pointer<Uint8>> _finalizer =
-      Finalizer((mem) => calloc.free(mem));
-
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
@@ -135,16 +132,15 @@ class Variant extends BuiltinType {
   @override
   TypeInfo get staticTypeInfo => typeInfo;
 
-  final Pointer<Uint8> _opaque;
+  final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   @override
   Pointer<Uint8> get nativePtr => _opaque;
 
-  Variant() : _opaque = calloc<Uint8>(_size) {
-    _finalizer.attach(this, _opaque);
-  }
+  Variant() : super();
 
-  // Godot manages this pointer, don't free it
-  Variant.fromPointer(Pointer<void> ptr) : _opaque = ptr.cast();
+  Variant.fromPointer(Pointer<void> ptr) {
+    gde.dartBindings.variantCopyFromNative(this, ptr.cast());
+  }
 
   int getType() {
     int Function(Pointer<Void>) getType =
