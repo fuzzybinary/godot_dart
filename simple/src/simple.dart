@@ -15,6 +15,8 @@ class Simple extends Sprite2D {
   TypeInfo get staticTypeInfo => typeInfo;
 
   double _timePassed = 0.0;
+  double amplitude = 10.0;
+  double speed = 1.0;
 
   Simple() : super() {
     postInitialize();
@@ -22,11 +24,27 @@ class Simple extends Sprite2D {
 
   @override
   void vProcess(double delta) {
-    _timePassed += delta;
+    _timePassed += speed * delta;
 
-    final x = 10.0 + (10.0 * sin(_timePassed * 2.0));
-    final y = 10.0 + (10.0 * cos(_timePassed * 2.0));
+    final x = amplitude + (amplitude * sin(_timePassed * 2.0));
+    final y = amplitude + (amplitude * cos(_timePassed * 2.0));
     final newPosition = Vector2.fromXY(x, y);
     setPosition(newPosition);
+  }
+
+  static void bind() {
+    gde.dartBindings.bindClass(Simple, Simple.typeInfo);
+    gde.dartBindings.addProperty(Simple.typeInfo, 'amplitude',
+        PropertyInfo(type: VariantType.typeFloat, name: 'amplitude'));
+    gde.dartBindings.addProperty(
+      Simple.typeInfo,
+      'speed',
+      PropertyInfo(
+        type: VariantType.typeFloat,
+        name: 'speed',
+        hint: PropertyHint.propertyHintRange,
+        hintString: '0,20,0.01',
+      ),
+    );
   }
 }

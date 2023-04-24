@@ -2,6 +2,7 @@
 
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
+#include "godot_string_wrappers.h"
 
 namespace godot_dart {
 
@@ -23,11 +24,9 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
     return;
   }
 
-  uint8_t gdsn_method_name[GD_STRING_NAME_MAX_SIZE];
-  gde->gd_string_name_new(&gdsn_method_name, "get_base_dir");
-  GDExtensionPtrBuiltInMethod get_base_dir =
-      gde->gde()->variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_STRING, gdsn_method_name, kGetBaseDirHash);
-  gde->gd_string_name_destructor(gdsn_method_name);
+  GDStringName gd_method_name("get_base_dir");
+  GDExtensionPtrBuiltInMethod get_base_dir = gde->gde()->variant_get_ptr_builtin_method(
+      GDEXTENSION_VARIANT_TYPE_STRING, gd_method_name._native_ptr(), kGetBaseDirHash);
   if (get_base_dir == nullptr) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrieve "
                    "`String.get_base_dir` method)");
@@ -35,27 +34,23 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
   }
 
   // Get the library path
-  uint8_t library_path[GD_STRING_MAX_SIZE];
-  gde->gd_string_new(library_path);
-  gde->gde()->get_library_path(gde->lib(), library_path);
+  GDString library_path;
+  gde->gde()->get_library_path(gde->lib(), library_path._native_ptr());
 
   // Get the base dir from the library path
-  uint8_t gd_basedir_path[GD_STRING_MAX_SIZE];
-  gde->gd_string_new(gd_basedir_path);
-  get_base_dir(library_path, NULL, gd_basedir_path, 0);
-  gde->gd_string_destructor(library_path);
+  GDString gd_basedir_path;
+  get_base_dir(library_path._native_ptr(), NULL, gd_basedir_path._native_ptr(), 0);
 
   // basedir_path to c string
-  GDExtensionInt basedir_path_size = gde->gde()->string_to_utf8_chars(gd_basedir_path, NULL, 0);
+  GDExtensionInt basedir_path_size = gde->gde()->string_to_utf8_chars(gd_basedir_path._native_ptr(), NULL, 0);
   char *basedir_path = reinterpret_cast<char *>(gde->gde()->mem_alloc(basedir_path_size + 1));
   if (basedir_path == NULL) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (Memory allocation failure)");
     return;
   }
 
-  gde->gde()->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
+  gde->gde()->string_to_utf8_chars(gd_basedir_path._native_ptr(), basedir_path, basedir_path_size);
   basedir_path[basedir_path_size] = '\0';
-  gde->gd_string_destructor(gd_basedir_path);
 
   char dart_script_path[256], package_path[256];
   sprintf_s(dart_script_path, "%s/src/main.dart", basedir_path);

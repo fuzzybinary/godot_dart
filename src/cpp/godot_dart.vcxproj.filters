@@ -5,11 +5,13 @@
     <ClCompile Include="dart_bindings.cpp" />
     <ClCompile Include="gde_wrapper..cpp" />
     <ClCompile Include="dart_vtable_wrapper.cpp" />
+    <ClCompile Include="godot_string_wrappers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
     <ClInclude Include="gde_wrapper.h" />
     <ClInclude Include="dart_vtable_wrapper.h" />
+    <ClInclude Include="godot_string_wrappers.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

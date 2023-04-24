@@ -127,7 +127,11 @@ class Variant extends BuiltinType {
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
-  static late final TypeInfo typeInfo;
+  static final TypeInfo typeInfo = TypeInfo(
+    StringName.fromString('Variant'),
+    variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+    size: _size,
+  );
 
   @override
   TypeInfo get staticTypeInfo => typeInfo;
@@ -146,14 +150,6 @@ class Variant extends BuiltinType {
     int Function(Pointer<Void>) getType =
         gde.interface.ref.variant_get_type.asFunction();
     return getType(_opaque.cast());
-  }
-
-  static void initBindings() {
-    typeInfo = TypeInfo(
-      StringName.fromString('Variant'),
-      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
-      size: _size,
-    );
   }
 }
 

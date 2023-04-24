@@ -52,10 +52,11 @@ class GodotDartNativeBindings {
   }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
-  external void bindClass(
-    Type type,
-    TypeInfo typeInfo,
-  );
+  external void bindClass(Type type, TypeInfo typeInfo);
+
+  @pragma('vm:external-name', 'GodotDartNativeBindings::addProperty')
+  external void addProperty(
+      TypeInfo typeInfo, String propertyName, PropertyInfo propertyInfo);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindMethod')
   external void bindMethod(TypeInfo typeInfo, String methodName,

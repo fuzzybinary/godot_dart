@@ -9,13 +9,32 @@
 #include <dart_api.h>
 #include <godot/gdextension_interface.h>
 
+#define GDE GDEWrapper::instance()->gde()
+
+#define DART_CHECK_RET(var, expr, ret, message)                                                                        \
+  Dart_Handle var = (expr);                                                                                            \
+  if (Dart_IsError(var)) {                                                                                             \
+    GD_PRINT_ERROR("GodotDart: "##message##": ");                                                                      \
+    GD_PRINT_ERROR(Dart_GetError(var));                                                                                \
+    Dart_ExitScope();                                                                                                  \
+    return ret;                                                                                                        \
+  }
+
+#define DART_CHECK(var, expr, message) DART_CHECK_RET(var, expr, , message)
+
+enum class MethodFlags : int32_t {
+  None,
+  PropertyGetter,
+  PropertySetter,
+};
+
 struct TypeInfo {
-  GDExtensionStringNamePtr type_name;
+  GDExtensionStringNamePtr type_name = nullptr;
   // Can be null
-  GDExtensionStringNamePtr parent_name;
-  GDExtensionVariantType variant_type;
+  GDExtensionStringNamePtr parent_name = nullptr;
+  GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
   // Can be null
-  GDExtensionInstanceBindingCallbacks *binding_callbacks;
+  GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };
 
 class GodotDartBindings {
@@ -31,13 +50,14 @@ public:
   void shutdown();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
-                   const std::vector<TypeInfo> &arg_list);
+                   const std::vector<TypeInfo> &arg_list, MethodFlags method_flags);
+  void add_property(const TypeInfo &bind_type, const char *property_name, GDExtensionPropertyInfo *prop_info);
   void execute_on_dart_thread(std::function<void()> work);
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
   static GDExtensionClassCallVirtual get_virtual_func(void *p_userdata, GDExtensionConstStringNamePtr p_name);
-
+  
 private:
   static void thread_callback(GodotDartBindings *bindings);
 

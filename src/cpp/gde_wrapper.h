@@ -37,25 +37,10 @@ public:
     return _library;
   }
 
-  void gd_string_name_new(GDExtensionStringNamePtr out, const char *cstr);
-  void gd_string_name_destructor(GDExtensionStringNamePtr ptr);
-
-  void gd_string_new(GDExtensionTypePtr out);
-  void gd_string_from_string_name(GDExtensionConstStringNamePtr ptr, uint8_t* out);
-  void gd_string_destructor(GDExtensionTypePtr ptr);
-
 private:
   static GDEWrapper *_instance;
 
   const GDExtensionInterface *_gde_interface = nullptr;
   GDExtensionClassLibraryPtr _library = nullptr;
   void *token = nullptr;
-
-  // GDExtension interface uses GDStringName everywhere a name should be passed,
-  // however it is very cumbersome to create it!
-  GDExtensionPtrConstructor _gdstring_constructor = nullptr;
-  GDExtensionPtrConstructor _gdstring_from_gdstringname_constructor = nullptr;
-  GDExtensionPtrDestructor _gdstring_destructor = nullptr;
-  GDExtensionPtrConstructor _gdstringname_from_gdstring_constructor = nullptr;
-  GDExtensionPtrDestructor _gdstringname_destructor = nullptr;
 };

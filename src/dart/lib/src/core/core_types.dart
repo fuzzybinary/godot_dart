@@ -39,8 +39,9 @@ abstract class ExtensionType implements Finalizable {
 
   @internal
   void detachOwner() {
-    // Should be no harm calling this finalizer in either case
-    // (if it's not registered to this one, it won't do anything)
+    // We should be able to call this finalizer even if Dart doesn't own
+    // the object. In that case the object shouldn't have been registered
+    // to the finalizer and this call won't do anything.
     _finalizer.detach(this);
     _owner = Pointer.fromAddress(0);
   }
