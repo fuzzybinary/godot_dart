@@ -82,11 +82,10 @@ class in `simple/src/simple.dart`
 class Simple extends Sprite2D {
   // typeInfo is required. Make sure that your class name
   // and the inheritted name are both correct.
-  static late TypeInfo typeInfo;
-  static void initTypeInfo() => typeInfo = TypeInfo(
-        StringName.fromString('Simple'),
-        parentClass: StringName.fromString('Sprite2D'),
-      );
+  static late TypeInfo typeInfo = TypeInfo(
+    StringName.fromString('Simple'),
+    parentClass: StringName.fromString('Sprite2D'),
+  );
   // a vTable getter is also required. If you are not adding any
   // virtual functions, just return the base class's vTable
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
@@ -116,16 +115,20 @@ class Simple extends Sprite2D {
     print('vProcess - $x, $y, ${newPosition.x}, ${newPosition.y}');
     setPosition(newPosition);
   }
+
+  // The simplest way to bind your class it to create a static function to
+  // bind it to Godot. The name doesn't matter
+  static void bind() {
+    gde.dartBindings.bindClass(Simple, Simple.typeInfo);  
+  }
 }
 ```
 
-Classes also need to be registered to Godot in `main.dart`:
+Classes need to be registered to Godot in `main.dart`:
 
 ```dart
 void main() {
-  Simple.initTypeInfo();
-
-  gde.dartBindings.bindClass(Simple, Simple.typeInfo);
+  Simple.bind();
 }
 ```
 
