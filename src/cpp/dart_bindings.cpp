@@ -197,22 +197,6 @@ void GodotDartBindings::thread_main() {
     _pendingWork();
     _pendingWork = []() {};
 
-    // TODO: This drains the microtask queue and lets finalizers run
-    // from the garbage collector. We should run this once a frame but
-    // for now it lives here.
-    Dart_EnterScope();
-
-    uint64_t currentTime = Dart_TimelineGetMicros();
-    Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... increase when we get to use once a frame.
-
-    Dart_Handle result = Dart_WaitForEvent(1);
-    if (Dart_IsError(result)) {
-      GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
-      GD_PRINT_ERROR(Dart_GetError(result));
-    }
-
-    Dart_ExitScope();
-
     _done_semaphore.release();
   }
 
@@ -775,6 +759,10 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
   uint64_t object_ptr = 0;
   Dart_IntegerToUint64(address, &object_ptr);
+  if (object_ptr == 0) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
 
   Dart_Handle dart_bindings_ptr = Dart_GetNativeArgument(args, 2);
   const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &__binding_callbacks;
@@ -886,4 +874,20 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
 
   GDE->object_destroy(extention_object);
 }
+
+GDE_EXPORT void perform_frame_maintenance() {
+  Dart_EnterScope();
+
+  uint64_t currentTime = Dart_TimelineGetMicros();
+  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... increase when we get to use once a frame.
+
+  Dart_Handle result = Dart_WaitForEvent(1);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
+    GD_PRINT_ERROR(Dart_GetError(result));
+  }
+
+  Dart_ExitScope();
+}
+
 }

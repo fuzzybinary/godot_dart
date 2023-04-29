@@ -4,11 +4,10 @@ import '../../godot_dart.dart';
 import 'dart_script.dart';
 
 class DartScriptLanguage extends ScriptLanguageExtension {
-  static late TypeInfo typeInfo;
-  static void initTypeInfo() => typeInfo = TypeInfo(
-        StringName.fromString('DartScriptLanguage'),
-        parentClass: ScriptLanguageExtension.typeInfo.className,
-      );
+  static TypeInfo typeInfo = TypeInfo(
+    StringName.fromString('DartScriptLanguage'),
+    parentClass: ScriptLanguageExtension.typeInfo.className,
+  );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ScriptLanguageExtension.vTable;
 
@@ -17,7 +16,6 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   static void initBindings() {
-    initTypeInfo();
     gde.dartBindings.bindClass(DartScriptLanguage, DartScriptLanguage.typeInfo);
   }
 
@@ -25,9 +23,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   TypeInfo get staticTypeInfo => typeInfo;
 
   @override
-  void vInit() {
-    print('Hi from vInit!');
-  }
+  void vInit() {}
 
   @override
   GDString vGetName() {
@@ -40,7 +36,9 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  void vFrame() {}
+  void vFrame() {
+    gde.dartBindings.performFrameMaintenance();
+  }
 
   @override
   GDString vGetExtension() {
@@ -58,7 +56,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  Script? vMakeTemplate(
+  Ref<Script> vMakeTemplate(
       GDString template, GDString className, GDString baseClassName) {
     final strClassName = gde.dartBindings.gdStringToString(className);
     final strBaseClassName = gde.dartBindings.gdStringToString(baseClassName);
@@ -96,7 +94,7 @@ class $strClassName extends $strBaseClassName {
     final script = DartScript();
     script.setSourceCode(gdSource);
     script.setName(className);
-    return script;
+    return Ref<Script>(script);
   }
 
   @override

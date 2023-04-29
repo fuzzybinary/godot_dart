@@ -27,7 +27,7 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
       Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
   final libraryPtr = GDExtensionClassLibraryPtr.fromAddress(libraryAddress);
 
-  // TODO: Assert everything is how we expect..
+  // TODO: Assert everything is how we expect.
   _globalExtension = GodotDart(extensionInterface, libraryPtr);
 
   initVariantBindings(extensionInterface.ref);
@@ -37,7 +37,8 @@ void _registerGodot(int gdeAddress, int libraryAddress) {
   DartScript.initBindings();
   _dartScriptLanguage = DartScriptLanguage();
 
-  Engine.singleton.registerScriptLanguage(_dartScriptLanguage);
+  var engine = Engine.singleton;
+  engine.registerScriptLanguage(_dartScriptLanguage);
 }
 
 @pragma('vm:entry-point')

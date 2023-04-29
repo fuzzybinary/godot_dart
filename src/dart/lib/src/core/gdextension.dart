@@ -174,4 +174,40 @@ class GodotDart {
         GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
     return func(className.nativePtr.cast());
   }
+
+  Pointer<Void> getClassTag(StringName className) {
+    final func = interface.ref.classdb_get_class_tag
+        .asFunction<Pointer<Void> Function(GDExtensionConstStringNamePtr)>(
+            isLeaf: true);
+    return func(className.nativePtr.cast());
+  }
+
+  void refSetObject(Pointer<Void> ref, RefCounted? obj) {
+    if (obj == null) return;
+
+    final func = interface.ref.ref_set_object
+        .asFunction<void Function(Pointer<Void>, Pointer<Void>)>(isLeaf: true);
+    func(ref, obj.nativePtr.cast());
+  }
+
+  T? cast<T>(GodotObject? from, TypeInfo typeInfo) {
+    if (from == null) {
+      return null;
+    }
+
+    final func = interface.ref.object_cast_to.asFunction<
+        GDExtensionObjectPtr Function(Pointer<Void>, Pointer<Void>)>();
+    final casted = func(from.nativePtr, getClassTag(typeInfo.className));
+    if (casted == nullptr) {
+      return null;
+    }
+
+    final persistent = interface.ref.object_get_instance_binding.asFunction<
+            Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
+                Pointer<GDExtensionInstanceBindingCallbacks>)>()(
+        casted, libraryPtr, typeInfo.bindingCallbacks ?? nullptr);
+    final dartObject = dartBindings.fromPersistentHandle(persistent);
+
+    return dartObject as T;
+  }
 }

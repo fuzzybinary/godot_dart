@@ -325,7 +325,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
       'final ${argument.dartType} ${escapeName(argument.name).toLowerCamelCase()}';
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
-      o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).value);');
+      if (argument.isRefCounted) {
+        o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value, ${argument.rawDartType}.typeInfo);');
+      } else {
+        o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).value);');
+      }
       break;
     case TypeCategory.builtinClass:
       o.p('$decl = ${argument.rawDartType}.fromPointer(args.elementAt($index).value);');
@@ -369,9 +373,13 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   var ret = '';
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
-      ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
-      ret +=
-          argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
+      if (argument.isRefCounted) {
+        ret += 'gde.refSetObject(retPtr, ret.obj)';
+      } else {
+        ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
+        ret +=
+            argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
+      }
       break;
     case TypeCategory.builtinClass:
       ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';

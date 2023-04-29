@@ -52,3 +52,33 @@ abstract class ExtensionType implements Finalizable {
   @pragma('vm:external-name', 'ExtensionType::postInitialize')
   external void postInitialize();
 }
+
+/// Reference counted objects
+class Ref<T extends RefCounted> implements Finalizable {
+  // If a ref is no longer reachable, tell Godot to unreference it.
+  static final _finalizer = Finalizer<RefCounted>((obj) => obj.unreference());
+
+  RefCounted? obj;
+
+  Ref(this.obj) {
+    obj?.reference();
+    if (obj != null) {
+      _finalizer.attach(this, obj!);
+    }
+  }
+
+  Ref.fromPointer(Pointer<Void> refPointer, TypeInfo typeInfo) {
+    final objPtr = gde.interface.ref.ref_get_object
+        .asFunction<Pointer<Void> Function(Pointer<Void>)>(
+            isLeaf: true)(refPointer);
+    final maybeObj = gde.dartBindings
+        .gdObjectToDartObject(objPtr, typeInfo.bindingCallbacks);
+    if (maybeObj is RefCounted) {
+      obj = maybeObj;
+      obj?.reference();
+      if (obj != null) {
+        _finalizer.attach(this, obj!);
+      }
+    }
+  }
+}

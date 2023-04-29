@@ -42,6 +42,12 @@ class GodotApiInfo {
     _instance = this;
   }
 
+  bool isRefCounted(String godotType) {
+    Tuple2 strippedType = _getStrippedType(godotType);
+    final engineType = engineClasses[strippedType.item1];
+    return engineType?.isRefcounted ?? false;
+  }
+
   TypeCategory getTypeCategory(String? godotType) {
     if (godotType == null) return TypeCategory.voidType;
 
@@ -92,6 +98,7 @@ class ArgumentProxy {
   final bool needsAllocation;
   final bool isOptional;
   final bool isPointer;
+  final bool isRefCounted;
 
   final TypeCategory typeCategory;
   final ArgumentMeta? meta;
@@ -106,6 +113,7 @@ class ArgumentProxy {
     required this.needsAllocation,
     required this.isOptional,
     required this.isPointer,
+    required this.isRefCounted,
     required this.typeCategory,
     required this.meta,
     required this.defaultValue,
@@ -116,6 +124,9 @@ class ArgumentProxy {
     final isPointer = singleton.type.endsWith('*');
     final typeCategory =
         GodotApiInfo.instance().getTypeCategory(singleton.type);
+    final isRefCounted = !isPointer &&
+        typeCategory == TypeCategory.engineClass &&
+        GodotApiInfo.instance().isRefCounted(singleton.type);
     final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
     return ArgumentProxy._(
       name: singleton.name,
@@ -125,9 +136,11 @@ class ArgumentProxy {
       needsAllocation: dartTypes.contains(singleton.type),
       isOptional: isOptional,
       isPointer: isPointer,
+      isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: null,
-      defaultValue: _getDefaultValue(singleton.type, dartType, isOptional),
+      defaultValue:
+          _getDefaultValue(singleton.type, dartType, isOptional, isRefCounted),
     );
   }
 
@@ -135,6 +148,9 @@ class ArgumentProxy {
     final dartType = godotTypeToDartType(argument.type);
     final isPointer = argument.type.endsWith('*');
     final typeCategory = GodotApiInfo.instance().getTypeCategory(argument.type);
+    final isRefCounted = !isPointer &&
+        typeCategory == TypeCategory.engineClass &&
+        GodotApiInfo.instance().isRefCounted(argument.type);
     final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
     return ArgumentProxy._(
       name: argument.name,
@@ -144,9 +160,11 @@ class ArgumentProxy {
       needsAllocation: dartTypes.contains(argument.type),
       isOptional: isOptional,
       isPointer: isPointer,
+      isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: argument.meta,
-      defaultValue: _getDefaultValue(argument.type, dartType, isOptional),
+      defaultValue:
+          _getDefaultValue(argument.type, dartType, isOptional, isRefCounted),
     );
   }
 
@@ -155,6 +173,9 @@ class ArgumentProxy {
     final isPointer = returnValue.type.endsWith('*');
     final typeCategory =
         GodotApiInfo.instance().getTypeCategory(returnValue.type);
+    final isRefCounted = !isPointer &&
+        typeCategory == TypeCategory.engineClass &&
+        GodotApiInfo.instance().isRefCounted(returnValue.type);
     final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
     return ArgumentProxy._(
       name: '',
@@ -164,16 +185,20 @@ class ArgumentProxy {
       needsAllocation: dartTypes.contains(returnValue.type),
       isOptional: isOptional,
       isPointer: isPointer,
+      isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: returnValue.meta,
-      defaultValue: _getDefaultValue(returnValue.type, dartType, isOptional),
+      defaultValue: _getDefaultValue(
+          returnValue.type, dartType, isOptional, isRefCounted),
     );
   }
 
   static String _getDefaultValue(
-      String godotType, String dartType, bool isOptional) {
+      String godotType, String dartType, bool isOptional, bool isRefCounted) {
     final myDartType = dartType;
-    if (isOptional) {
+    if (isRefCounted) {
+      return '$dartType(null)';
+    } else if (isOptional) {
       return 'null';
     } else if (defaultValueForType.containsKey(myDartType)) {
       return defaultValueForType[myDartType]!;
@@ -218,6 +243,9 @@ String godotTypeToDartType(String? godotType) {
   final typeCategory =
       GodotApiInfo.instance().getTypeCategory(strippedType.item1);
   final isPointer = strippedType.item2 > 0;
+  final isRefCounted = !isPointer &&
+      typeCategory == TypeCategory.engineClass &&
+      GodotApiInfo.instance().isRefCounted(strippedType.item1);
   final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
 
   if (isPointer) {
@@ -234,6 +262,8 @@ String godotTypeToDartType(String? godotType) {
     } else {
       throw Error();
     }
+  } else if (isRefCounted) {
+    return 'Ref<$rawDartType>';
   }
 
   return '$rawDartType${isOptional ? '?' : ''}';

@@ -34,6 +34,9 @@ class GodotDartNativeBindings {
   late final finalizeExtensionObject =
       godotDartDylib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'finalize_extension_object');
+  late final performFrameMaintenance = godotDartDylib
+      .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
+      .asFunction<void Function()>();
 
   static DynamicLibrary openLibrary(String libName) {
     var libraryPath = path.join(Directory.current.path, '$libName.so');
