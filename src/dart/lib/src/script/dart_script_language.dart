@@ -11,8 +11,11 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ScriptLanguageExtension.vTable;
 
+  static late DartScriptLanguage singleton;
+
   DartScriptLanguage() : super() {
     postInitialize();
+    singleton = this;
   }
 
   static void initBindings() {
@@ -102,5 +105,13 @@ class $strClassName extends $strBaseClassName {
     final array = PackedStringArray();
     array.append(GDString.fromString('dart'));
     return array;
+  }
+
+  @override
+  Dictionary vValidate(GDString script, GDString path, bool validateFunctions,
+      bool validateErrors, bool validateWarnings, bool validateSafeLines) {
+    final validateResponse = Dictionary();
+    validateResponse[convertToVariant('valid')] = convertToVariant(true);
+    return validateResponse;
   }
 }

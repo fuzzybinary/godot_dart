@@ -19,10 +19,11 @@ class GodotDart {
 
   final Pointer<GDExtensionInterface> interface;
   final GDExtensionClassLibraryPtr libraryPtr;
+  final Pointer<GDExtensionInstanceBindingCallbacks> engineBindingCallbacks;
 
   late GodotDartNativeBindings dartBindings;
 
-  GodotDart(this.interface, this.libraryPtr) {
+  GodotDart(this.interface, this.libraryPtr, this.engineBindingCallbacks) {
     instance = this;
 
     dartBindings = GodotDartNativeBindings();
@@ -103,6 +104,7 @@ class GodotDart {
     void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>,
         GDExtensionTypePtr, int) m = method.asFunction();
     m(base, array, ret, args.length);
+    malloc.free(array);
   }
 
   void callNativeMethodBindPtrCall(
@@ -169,6 +171,36 @@ class GodotDart {
             int)>()(variantType, name.nativePtr.cast(), hash);
   }
 
+  GDExtensionPtrIndexedSetter variantGetIndexedSetter(int variantType) {
+    return interface.ref.variant_get_ptr_indexed_setter
+        .asFunction<GDExtensionPtrIndexedSetter Function(int)>(
+            isLeaf: true)(variantType);
+  }
+
+  GDExtensionPtrIndexedGetter variantGetIndexedGetter(int variantType) {
+    return interface.ref.variant_get_ptr_indexed_getter
+        .asFunction<GDExtensionPtrIndexedGetter Function(int)>(
+            isLeaf: true)(variantType);
+  }
+
+  GDExtensionPtrKeyedSetter variantGetKeyedSetter(int variantType) {
+    return interface.ref.variant_get_ptr_keyed_setter
+        .asFunction<GDExtensionPtrKeyedSetter Function(int)>(
+            isLeaf: true)(variantType);
+  }
+
+  GDExtensionPtrKeyedGetter variantGetKeyedGetter(int variantType) {
+    return interface.ref.variant_get_ptr_keyed_getter
+        .asFunction<GDExtensionPtrKeyedGetter Function(int)>(
+            isLeaf: true)(variantType);
+  }
+
+  GDExtensionPtrKeyedChecker variantGetKeyedChecker(int variantType) {
+    return interface.ref.variant_get_ptr_keyed_checker
+        .asFunction<GDExtensionPtrKeyedChecker Function(int)>(
+            isLeaf: true)(variantType);
+  }
+
   GDExtensionObjectPtr constructObject(StringName className) {
     final func = interface.ref.classdb_construct_object.asFunction<
         GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
@@ -203,9 +235,12 @@ class GodotDart {
     }
 
     final persistent = interface.ref.object_get_instance_binding.asFunction<
-            Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
-                Pointer<GDExtensionInstanceBindingCallbacks>)>()(
-        casted, libraryPtr, typeInfo.bindingCallbacks ?? nullptr);
+        Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
+            Pointer<GDExtensionInstanceBindingCallbacks>)>()(
+      casted,
+      typeInfo.bindingToken ?? libraryPtr,
+      gde.engineBindingCallbacks,
+    );
     final dartObject = dartBindings.fromPersistentHandle(persistent);
 
     return dartObject as T;

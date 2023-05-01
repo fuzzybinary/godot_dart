@@ -34,7 +34,7 @@ struct TypeInfo {
   GDExtensionStringNamePtr parent_name = nullptr;
   GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
   // Can be null
-  GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
+  const GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };
 
 class GodotDartBindings {
@@ -53,6 +53,7 @@ public:
                    const std::vector<TypeInfo> &arg_list, MethodFlags method_flags);
   void add_property(const TypeInfo &bind_type, const char *property_name, GDExtensionPropertyInfo *prop_info);
   void execute_on_dart_thread(std::function<void()> work);
+  Dart_Handle new_dart_void_pointer(void *ptr);
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);

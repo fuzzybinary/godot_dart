@@ -5,6 +5,7 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/script/dart_resource_format.dart';
 import 'src/script/dart_script.dart';
 import 'src/script/dart_script_language.dart';
 
@@ -22,23 +23,33 @@ late GodotDart _globalExtension;
 DartScriptLanguage? _dartScriptLanguage;
 
 @pragma('vm:entry-point')
-void _registerGodot(int gdeAddress, int libraryAddress) {
+void _registerGodot(int gdeAddress, int libraryAddress, int bindingCallbacks) {
   final extensionInterface =
       Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
   final libraryPtr = GDExtensionClassLibraryPtr.fromAddress(libraryAddress);
-
+  final bindingCallbackPtr =
+      Pointer<GDExtensionInstanceBindingCallbacks>.fromAddress(
+          bindingCallbacks);
   // TODO: Assert everything is how we expect.
-  _globalExtension = GodotDart(extensionInterface, libraryPtr);
+  _globalExtension =
+      GodotDart(extensionInterface, libraryPtr, bindingCallbackPtr);
 
   initVariantBindings(extensionInterface.ref);
   TypeInfo.initTypeMappings();
 
   DartScriptLanguage.initBindings();
   DartScript.initBindings();
+  DartResourceFormatLoader.initBindings();
+  DartResourceFormatSaver.initBindings();
   _dartScriptLanguage = DartScriptLanguage();
 
   var engine = Engine.singleton;
   engine.registerScriptLanguage(_dartScriptLanguage);
+
+  ResourceLoader.singleton
+      .addResourceFormatLoader(Ref(DartResourceFormatLoader()), false);
+  ResourceSaver.singleton
+      .addResourceFormatSaver(Ref(DartResourceFormatSaver()), false);
 }
 
 @pragma('vm:entry-point')

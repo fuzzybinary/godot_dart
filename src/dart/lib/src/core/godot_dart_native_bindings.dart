@@ -69,8 +69,8 @@ class GodotDartNativeBindings {
   external String gdStringToString(GDString string);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::gdObjectToDartObject')
-  external Object? gdObjectToDartObject(GDExtensionObjectPtr object,
-      Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks);
+  external Object? gdObjectToDartObject(
+      GDExtensionObjectPtr object, Pointer<Void>? bindingToken);
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _newPersistentHandle(instance);

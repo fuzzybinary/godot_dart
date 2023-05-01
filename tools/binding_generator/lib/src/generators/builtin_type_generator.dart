@@ -97,24 +97,26 @@ Future<void> generateBuiltinBindings(
 }
 
 void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
+  var variantEnum =
+      'GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()}';
   o.nl();
   o.b('static void initBindings() {', () {
     o.p('initBindingsConstructorDestructor();');
     o.nl();
     o.b('typeInfo = TypeInfo(', () {
       o.p("StringName.fromString('${builtin.name}'),");
-      o.p('variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
+      o.p('variantType: $variantEnum,');
       o.p('size: _size,');
     }, ');');
 
     final members = builtin.members ?? [];
     for (final member in members) {
       o.p('_bindings.member${member.name.toUpperCamelCase()}Getter = gde.variantGetPtrGetter(');
-      o.p('  GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
+      o.p('  $variantEnum,');
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
       o.p('_bindings.member${member.name.toUpperCamelCase()}Setter = gde.variantGetPtrSetter(');
-      o.p('  GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
+      o.p('  $variantEnum,');
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
     }
@@ -123,10 +125,20 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
     for (final method in methods) {
       var dartMethodName = escapeMethodName(method.name);
       o.p('_bindings.method${dartMethodName.toUpperCamelCase()} = gde.variantGetBuiltinMethod(');
-      o.p('  GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()},');
+      o.p('  $variantEnum,');
       o.p("  StringName.fromString('${method.name}'),");
       o.p('  ${method.hash},');
       o.p(');');
+    }
+
+    if (builtin.indexingReturnType != null) {
+      o.p('_bindings.indexedSetter = gde.variantGetIndexedSetter($variantEnum);');
+      o.p('_bindings.indexedGetter = gde.variantGetIndexedGetter($variantEnum);');
+    }
+    if (builtin.isKeyed) {
+      o.p('_bindings.keyedSetter = gde.variantGetKeyedSetter($variantEnum);');
+      o.p('_bindings.keyedGetter = gde.variantGetKeyedGetter($variantEnum);');
+      o.p('_bindings.keyedChecker = gde.variantGetKeyedChecker($variantEnum);');
     }
   }, '}');
   o.nl();
@@ -279,13 +291,45 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       });
 
       if (retArg.typeCategory != TypeCategory.voidType) {
-        // if (method.returnType == 'String') {
-        //   o.p('return retVal.toDartString();');
-        // } else {
-        //   o.p('return retVal;');
-        // }
         o.p('return retVal;');
       }
+    }, '}');
+    o.nl();
+  }
+
+  // TODO: Double check this logic, godot-cpp hasn't gotten around to implementing this
+  if (builtin.name == 'Array') {
+    o.b('Variant operator [](int index) {', () {
+      o.p('final ret = Variant();');
+      o.p('_bindings.indexedGetter?.asFunction<');
+      o.p('        void Function(GDExtensionConstTypePtr, int, GDExtensionTypePtr)>(');
+      o.p('    isLeaf: true)(nativePtr.cast(), index, ret.nativePtr.cast());');
+      o.p('return ret;');
+    }, '}');
+    o.nl();
+    o.b('void operator []=(int index, Variant value) {', () {
+      o.p('_bindings.indexedSetter?.asFunction<');
+      o.p('        void Function(GDExtensionTypePtr, int, GDExtensionTypePtr)>(');
+      o.p('    isLeaf: true)(nativePtr.cast(), index, value.nativePtr.cast());');
+    }, '}');
+    o.nl();
+  }
+
+  if (builtin.name == 'Dictionary') {
+    o.b('Variant operator [](Variant key) {', () {
+      o.p('final ret = Variant();');
+      o.p('_bindings.keyedGetter?.asFunction<');
+      o.p('        void Function(GDExtensionConstTypePtr, GDExtensionConstTypePtr,');
+      o.p('            GDExtensionTypePtr)>(isLeaf: true)(');
+      o.p('    nativePtr.cast(), key.nativePtr.cast(), ret.nativePtr.cast());');
+      o.p('return ret;');
+    }, '}');
+    o.nl();
+    o.b('void operator []=(Variant key, Variant value) {', () {
+      o.p('_bindings.keyedSetter?.asFunction<');
+      o.p('      void Function(GDExtensionTypePtr, GDExtensionConstTypePtr,');
+      o.p('          GDExtensionTypePtr)>(isLeaf: true)(');
+      o.p('  nativePtr.cast(), key.nativePtr.cast(), value.nativePtr.cast());');
     }, '}');
     o.nl();
   }
@@ -310,6 +354,15 @@ void _writeBindingClass(CodeSink o, BuiltinClass builtin) {
     for (final method in methods) {
       final methodName = method.name.toUpperCamelCase();
       o.p('GDExtensionPtrBuiltInMethod? method$methodName;');
+    }
+    if (builtin.indexingReturnType != null) {
+      o.p('GDExtensionPtrIndexedSetter? indexedSetter;');
+      o.p('GDExtensionPtrIndexedGetter? indexedGetter;');
+    }
+    if (builtin.isKeyed) {
+      o.p('GDExtensionPtrKeyedSetter? keyedSetter;');
+      o.p('GDExtensionPtrKeyedGetter? keyedGetter;');
+      o.p('GDExtensionPtrKeyedChecker? keyedChecker;');
     }
   }, '}');
   o.nl();

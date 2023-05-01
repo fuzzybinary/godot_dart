@@ -58,7 +58,7 @@ Future<void> generateEngineBindings(
         o.b('_typeInfo ??= TypeInfo(', () {
           o.p("StringName.fromString('${classInfo.name}'),");
           o.p("parentClass: StringName.fromString('${classInfo.inherits}'),");
-          o.p('bindingCallbacks: bindingCallbacks,');
+          o.p('bindingToken: bindingToken,');
         }, ');');
         o.p('return _typeInfo!;');
       }, '}');
@@ -73,7 +73,7 @@ Future<void> generateEngineBindings(
       _writeSingleton(o, classInfo);
       _writeConstructors(o, classInfo);
       _writeMethods(o, classInfo);
-      _writeBindingCallbacks(o, classInfo);
+      _writeBindingToken(o, classInfo);
       _writeVirtualFunctions(o, classInfo);
     }, '}');
     o.nl();
@@ -110,7 +110,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.b('if (_singletonPtr == null) {', () {
       o.p('_singletonPtr = gde.globalGetSingleton(typeInfo.className);');
       o.p('_singletonObj = gde.dartBindings.gdObjectToDartObject(');
-      o.p('    _singletonPtr!.cast(), bindingCallbacks) as ${classInfo.dartName};');
+      o.p('    _singletonPtr!.cast(), _bindingToken) as ${classInfo.dartName};');
     }, '}');
 
     o.p('return _singletonObj!;');
@@ -156,31 +156,37 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
 
       // TODO: Research if we can do ptrCalls
-      o.p('var method = _bindings.method${methodName.toUpperCamelCase()};');
-      o.b('if (method == null) {', () {
+      o.p('var methodBind = _bindings.method${methodName.toUpperCamelCase()};');
+      o.b('if (methodBind == null) {', () {
         o.p('_bindings.method${methodName.toUpperCamelCase()} = gde.classDbGetMethodBind(');
         o.p("    typeInfo.className, StringName.fromString('${method.name}'), ${method.hash});");
-        o.p('method = _bindings.method${methodName.toUpperCamelCase()};');
+        o.p('methodBind = _bindings.method${methodName.toUpperCamelCase()};');
       }, '}');
       o.nl();
 
-      o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(method!, ${method.isStatic ? 'null' : 'this'}, [',
+      o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(methodBind!, ${method.isStatic ? 'null' : 'this'}, [',
           () {
         for (final argument in arguments) {
-          o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}),');
+          if (argument.typeCategory == TypeCategory.enumType) {
+            o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}.value),');
+          } else {
+            o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}),');
+          }
         }
       }, ']);');
 
       if (hasReturn) {
-        var bindingCallbacks = 'null';
+        var bindingToken = 'null';
         if (returnInfo.typeCategory == TypeCategory.engineClass) {
-          bindingCallbacks = '${returnInfo.rawDartType}.bindingCallbacks';
+          bindingToken = '${returnInfo.rawDartType}.bindingToken';
         }
 
         if (returnInfo.typeCategory == TypeCategory.enumType) {
-          o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, $bindingCallbacks) as int);');
+          o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, $bindingToken) as int);');
+        } else if (returnInfo.isRefCounted) {
+          o.p('return Ref<${returnInfo.rawDartType}>(convertFromVariant(ret, $bindingToken) as ${returnInfo.rawDartType});');
         } else {
-          o.p('return convertFromVariant(ret, $bindingCallbacks) as ${returnInfo.dartType};');
+          o.p('return convertFromVariant(ret, $bindingToken) as ${returnInfo.dartType};');
         }
       }
     }, '}');
@@ -188,44 +194,20 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   }
 }
 
-void _writeBindingCallbacks(CodeSink o, GodotExtensionApiJsonClass classInfo) {
+void _writeBindingToken(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.nl();
   o.p('// Binding callbacks');
-  o.p('static Pointer<GDExtensionInstanceBindingCallbacks>? _bindingCallbacks;');
-  o.b('static Pointer<GDExtensionInstanceBindingCallbacks>? get bindingCallbacks {',
-      () {
-    o.b('if (_bindingCallbacks == null) {', () {
+  o.p('static Pointer<Void>? _bindingToken;');
+  o.b('static Pointer<Void> get bindingToken {', () {
+    o.b('if (_bindingToken == null) {', () {
       o.p('_initBindings();');
     }, '}');
-    o.p('return _bindingCallbacks!;');
-  }, '}');
-  o.nl();
-
-  o.b('static Pointer<Void> _bindingCreateCallback(Pointer<Void> token, Pointer<Void> instance) {',
-      () {
-    o.p('final dartInstance = ${classInfo.dartName}.withNonNullOwner(instance);');
-    o.p('return gde.dartBindings.toPersistentHandle(dartInstance);');
-  }, '}');
-  o.nl();
-
-  o.b('static void _bindingFreeCallback(Pointer<Void> token, Pointer<Void> instance, Pointer<Void> binding) {',
-      () {
-    o.p('gde.dartBindings.clearPersistentHandle(binding);');
-  }, '}');
-  o.nl();
-
-  o.b('static int _bindingReferenceCallback(Pointer<Void> token, Pointer<Void> instance, int reference) {',
-      () {
-    o.p('return 1;');
+    o.p('return _bindingToken!;');
   }, '}');
   o.nl();
 
   o.b('static void _initBindings() {', () {
-    o.p('_bindingCallbacks = malloc<GDExtensionInstanceBindingCallbacks>();');
-    o.p('_bindingCallbacks!.ref');
-    o.p('  ..create_callback = Pointer.fromFunction(_bindingCreateCallback)');
-    o.p('  ..free_callback = Pointer.fromFunction(_bindingFreeCallback)');
-    o.p('  ..reference_callback = Pointer.fromFunction(_bindingReferenceCallback, 1);');
+    o.p('_bindingToken = gde.dartBindings.toPersistentHandle(${classInfo.dartName});');
     o.p('_initVTable();');
   }, '}');
   o.nl();

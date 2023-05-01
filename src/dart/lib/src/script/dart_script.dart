@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import '../../godot_dart.dart';
+import 'dart_script_language.dart';
 
 class DartScript extends ScriptExtension {
   static late TypeInfo typeInfo;
@@ -19,8 +20,25 @@ class DartScript extends ScriptExtension {
     gde.dartBindings.bindClass(DartScript, DartScript.typeInfo);
   }
 
+  GDString _sourceCode = GDString();
+
   DartScript() : super() {
     postInitialize();
+  }
+
+  @override
+  DartScriptLanguage? vGetLanguage() {
+    return DartScriptLanguage.singleton;
+  }
+
+  @override
+  void vSetSourceCode(GDString code) {
+    _sourceCode = code;
+  }
+
+  @override
+  GDString vGetSourceCode() {
+    return _sourceCode;
   }
 
   @override

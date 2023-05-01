@@ -163,6 +163,21 @@ Variant convertToVariant(Object? obj) {
     GodotDart.instance!.interface.ref.variant_new_nil
         .asFunction<void Function(GDExtensionVariantPtr)>(
             isLeaf: true)(ret.nativePtr.cast());
+  } else if (obj is Ref) {
+    final referencedObj = obj.obj;
+    if (referencedObj == null) {
+      GodotDart.instance!.interface.ref.variant_new_nil
+          .asFunction<void Function(GDExtensionVariantPtr)>(
+              isLeaf: true)(ret.nativePtr.cast());
+    } else {
+      // Already an Object, but constructor expects a pointer to the object
+      Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
+      ptrToObj.value = referencedObj.nativePtr;
+      c = _fromTypeConstructor[
+          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+      c?.call(ret.nativePtr.cast(), ptrToObj.cast());
+      malloc.free(ptrToObj);
+    }
   } else if (obj is ExtensionType) {
     // Already an Object, but constructor expects a pointer to the object
     Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
@@ -222,7 +237,7 @@ Variant convertToVariant(Object? obj) {
 
 Object? convertFromVariant(
   Variant variant,
-  Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks,
+  Pointer<Void>? bindingToken,
 ) {
   Object? ret;
   int variantType = variant.getType();
@@ -267,7 +282,7 @@ Object? convertFromVariant(
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
         c!(gdString.nativePtr.cast(), variant.nativePtr.cast());
-        ret = gde.dartBindings.gdStringToString(gdString);
+        ret = gdString;
         break;
 
       // Or a wrapped object
@@ -277,7 +292,7 @@ Object? convertFromVariant(
         c!(ptr.cast(), variant.nativePtr.cast());
         ret = gde.dartBindings.gdObjectToDartObject(
           ptr.value,
-          bindingCallbacks,
+          bindingToken,
         );
         break;
 

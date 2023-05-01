@@ -58,7 +58,7 @@ class Ref<T extends RefCounted> implements Finalizable {
   // If a ref is no longer reachable, tell Godot to unreference it.
   static final _finalizer = Finalizer<RefCounted>((obj) => obj.unreference());
 
-  RefCounted? obj;
+  T? obj;
 
   Ref(this.obj) {
     obj?.reference();
@@ -71,9 +71,9 @@ class Ref<T extends RefCounted> implements Finalizable {
     final objPtr = gde.interface.ref.ref_get_object
         .asFunction<Pointer<Void> Function(Pointer<Void>)>(
             isLeaf: true)(refPointer);
-    final maybeObj = gde.dartBindings
-        .gdObjectToDartObject(objPtr, typeInfo.bindingCallbacks);
-    if (maybeObj is RefCounted) {
+    final maybeObj =
+        gde.dartBindings.gdObjectToDartObject(objPtr, typeInfo.bindingToken);
+    if (maybeObj is T) {
       obj = maybeObj;
       obj?.reference();
       if (obj != null) {

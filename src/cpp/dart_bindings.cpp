@@ -18,7 +18,7 @@ void GodotDartBindings::thread_callback(GodotDartBindings *bindings) {
   bindings->thread_main();
 }
 
-/* Binding callbacks -- These are only used for Variants */
+/* Binding callbacks -- Used for Dart defined types and Variants */
 
 static void *__binding_create_callback(void *p_token, void *p_instance) {
   return nullptr;
@@ -35,6 +35,58 @@ static constexpr GDExtensionInstanceBindingCallbacks __binding_callbacks = {
     __binding_create_callback,
     __binding_free_callback,
     __binding_reference_callback,
+};
+
+/* Binding callbacks used for Engine types */
+
+static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings || p_instance == nullptr) {
+    return nullptr;
+  }
+
+  void *ret_obj;
+  bindings->execute_on_dart_thread([&] {
+    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(p_token);
+    Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
+
+    Dart_Handle dart_pointer = bindings->new_dart_void_pointer(p_instance);
+    Dart_Handle args[1] = {dart_pointer};
+    DART_CHECK(new_obj, Dart_New(dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
+               "Error creating bindings");
+    Dart_PersistentHandle persist_new_obj = Dart_NewPersistentHandle(new_obj);
+
+    ret_obj = reinterpret_cast<void *>(persist_new_obj);
+  });
+
+  return ret_obj;
+}
+
+static void __engine_binding_free_callback(void *ptoken, void *p_instance, void *p_binding) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    return;
+  }
+
+  bindings->execute_on_dart_thread([&] {
+    Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_instance);
+    Dart_Handle obj = Dart_HandleFromPersistent(persistent);
+    if (!Dart_IsNull(obj)) {
+      Dart_Invoke(obj, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
+      Dart_DeletePersistentHandle(persistent);
+    }
+  });
+}
+
+static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *p_instance,
+                                                           GDExtensionBool p_reference) {
+  return true;
+}
+
+static constexpr GDExtensionInstanceBindingCallbacks __enging_binding_callbacks = {
+    __engine_binding_create_callback,
+    __engine_binding_free_callback,
+    __engine_binding_reference_callback,
 };
 
 struct MethodInfo {
@@ -131,8 +183,12 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   // Everything should be prepared, register Dart with Godot
   {
     GDEWrapper *wrapper = GDEWrapper::instance();
-    Dart_Handle args[] = {Dart_NewInteger((int64_t)wrapper->gde()), Dart_NewInteger((int64_t)wrapper->lib())};
-    DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args), false,
+    Dart_Handle args[] = {
+      Dart_NewInteger((int64_t)wrapper->gde()), 
+      Dart_NewInteger((int64_t)wrapper->lib()),
+      Dart_NewInteger(((int64_t)&__enging_binding_callbacks)),
+    };
+    DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 3, args), false,
                    "Error calling '_registerGodot'");
   }
 
@@ -218,6 +274,13 @@ void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
   _work_lock.unlock();
 }
 
+Dart_Handle GodotDartBindings::new_dart_void_pointer(void *ptr) {
+  Dart_Handle dart_int = Dart_NewIntegerFromUint64(reinterpret_cast<uint64_t>(ptr));
+  Dart_Handle args[1] = {dart_int};
+
+  return Dart_New(_void_pointer_pointer_type, Dart_NewStringFromCString("fromAddress"), 1, args);
+}
+
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                                     const std::vector<TypeInfo> &arg_list, MethodFlags method_flags) {
   MethodInfo *info = new MethodInfo();
@@ -259,7 +322,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
   if (method_name[0] == '_') {
     flags |= GDEXTENSION_METHOD_FLAG_VIRTUAL;
   }
-  
+
   // Add getter / setter prefix if needed
   std::string full_method_name(method_name);
   switch (method_flags) {
@@ -299,7 +362,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
 }
 
 void GodotDartBindings::add_property(const TypeInfo &bind_type, const char *property_name,
-                                     GDExtensionPropertyInfo* prop_info) {
+                                     GDExtensionPropertyInfo *prop_info) {
   TypeInfo property_type_info = {
       prop_info->class_name,
       nullptr,
@@ -350,7 +413,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
   Dart_Handle parent_class = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentClass"));
   Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
-  Dart_Handle bindings_ptr = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingCallbacks"));
+  Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
 
   type_info->type_name = get_opaque_address(class_name);
   if (Dart_IsNull(parent_class)) {
@@ -361,18 +424,10 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   int64_t temp;
   Dart_IntegerToInt64(variant_type, &temp);
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
-  if (Dart_IsNull(bindings_ptr)) {
+  if (Dart_IsNull(binding_token)) {
     type_info->binding_callbacks = nullptr;
   } else {
-    Dart_Handle bindings_address = Dart_GetField(bindings_ptr, Dart_NewStringFromCString("address"));
-    if (Dart_IsError(bindings_address)) {
-      GD_PRINT_ERROR(Dart_GetError(bindings_address));
-      type_info->binding_callbacks = nullptr;
-    } else {
-      uint64_t bindings_c_ptr = 0;
-      Dart_IntegerToUint64(bindings_address, &bindings_c_ptr);
-      type_info->binding_callbacks = reinterpret_cast<GDExtensionInstanceBindingCallbacks *>(bindings_c_ptr);
-    }
+    type_info->binding_callbacks = &__enging_binding_callbacks;
   }
 
   Dart_ExitScope();
@@ -701,11 +756,11 @@ void add_property(Dart_NativeArguments args) {
   Dart_Handle name_prop = Dart_GetField(dart_info, Dart_NewStringFromCString("name"));
   GDStringName gd_name(name_prop);
   prop_info.name = gd_name._native_ptr();
-  
+
   Dart_Handle class_name_prop = Dart_GetField(dart_info, Dart_NewStringFromCString("className"));
   GDStringName gd_class_name(class_name_prop);
   prop_info.class_name = gd_class_name._native_ptr();
-  
+
   {
     DART_CHECK(hint, Dart_GetField(dart_info, Dart_NewStringFromCString("hint")), "Error getting hint property");
     DART_CHECK(enum_value, Dart_GetField(hint, Dart_NewStringFromCString("value")), "Error getting hint value");
@@ -713,11 +768,11 @@ void add_property(Dart_NativeArguments args) {
     Dart_IntegerToUint64(enum_value, &hint_value);
     prop_info.hint = uint32_t(hint_value);
   }
-  
+
   Dart_Handle hint_string_prop = Dart_GetField(dart_info, Dart_NewStringFromCString("hintString"));
   GDString gd_hint_string(hint_string_prop);
   prop_info.hint_string = gd_hint_string._native_ptr();
-  
+
   {
     DART_CHECK(dart_flags, Dart_GetField(dart_info, Dart_NewStringFromCString("flags")), "Error getting flagsproperty");
     uint64_t flags;
@@ -764,23 +819,25 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
     return;
   }
 
-  Dart_Handle dart_bindings_ptr = Dart_GetNativeArgument(args, 2);
+  GDEWrapper *gde = GDEWrapper::instance();
+  void *token = gde->lib();
+  Dart_Handle bindings_token = Dart_GetNativeArgument(args, 2);
   const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &__binding_callbacks;
-  if (!Dart_IsNull(dart_bindings_ptr)) {
-    address = Dart_GetField(dart_bindings_ptr, Dart_NewStringFromCString("address"));
+  if (!Dart_IsNull(bindings_token)) {
+    address = Dart_GetField(bindings_token, Dart_NewStringFromCString("address"));
     if (Dart_IsError(address)) {
       GD_PRINT_ERROR(Dart_GetError(address));
       Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(address)));
       return;
     }
-    uint64_t bindings_ptr = 0;
-    Dart_IntegerToUint64(address, &bindings_ptr);
-    bindings_callbacks = reinterpret_cast<const GDExtensionInstanceBindingCallbacks *>(bindings_ptr);
+    uint64_t token_int = 0;
+    Dart_IntegerToUint64(address, &token_int);
+    token = (void *)token_int;
+    bindings_callbacks = &__enging_binding_callbacks;
   }
 
-  GDEWrapper *gde = GDEWrapper::instance();
   Dart_PersistentHandle dart_persistent = (Dart_PersistentHandle)GDE->object_get_instance_binding(
-      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), gde->lib(), bindings_callbacks);
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, bindings_callbacks);
   if (dart_persistent == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {

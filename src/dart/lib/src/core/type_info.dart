@@ -27,16 +27,16 @@ class TypeInfo {
   /// The size of the variant type. Zero for non-variants
   final int size;
 
-  /// Callbacks that create the proper Dart type from the C type. Mostly
-  /// only used by core engine classes. Pass null to use the default.
-  final Pointer<GDExtensionInstanceBindingCallbacks>? bindingCallbacks;
+  /// The token for binding callbacks for a given type. Actually a Dart persistent
+  /// handle to the type istelf.
+  final Pointer<Void>? bindingToken;
 
   TypeInfo(
     this.className, {
     this.parentClass,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
     this.size = 0,
-    this.bindingCallbacks,
+    this.bindingToken,
   });
 
   static late Map<Type?, TypeInfo> _typeMapping;
