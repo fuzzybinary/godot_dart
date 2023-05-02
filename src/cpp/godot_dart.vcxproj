@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dart_bindings.cpp" />
+    <ClCompile Include="dart_script_instance.cpp" />
     <ClCompile Include="dart_vtable_wrapper.cpp" />
     <ClCompile Include="godot_dart.cpp" />
     <ClCompile Include="gde_wrapper..cpp" />
@@ -27,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
+    <ClInclude Include="dart_script_instance.h" />
     <ClInclude Include="dart_vtable_wrapper.h" />
     <ClInclude Include="gde_wrapper.h" />
     <ClInclude Include="godot_string_wrappers.h" />
