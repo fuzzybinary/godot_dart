@@ -33,7 +33,7 @@ class DartScript extends ScriptExtension {
 
   @override
   void vSetSourceCode(GDString code) {
-    _sourceCode = code;
+    _sourceCode = GDString.copy(code);
   }
 
   @override

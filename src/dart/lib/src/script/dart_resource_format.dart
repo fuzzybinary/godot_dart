@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import '../../godot_dart.dart';
 import 'dart_script.dart';
+import 'dart_script_language.dart';
 
 class DartResourceFormatLoader extends ResourceFormatLoader {
   static TypeInfo typeInfo = TypeInfo(
@@ -24,9 +25,63 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   TypeInfo get staticTypeInfo => typeInfo;
 
   @override
+  bool vHandlesType(StringName type) {
+    final strType = GDString.fromStringName(type).toDartString();
+    return strType == 'Script' || strType == 'DartScript';
+  }
+
+  @override
+  PackedStringArray vGetRecognizedExtensions() {
+    final array = PackedStringArray();
+    array.pushBack(GDString.fromString('dart'));
+    return array;
+  }
+
+  @override
+  bool vRecognizePath(GDString path, StringName type) {
+    return path.toDartString().endsWith('.dart');
+  }
+
+  @override
+  GDString vGetResourceType(GDString path) {
+    final extension = path.getExtension();
+
+    return extension.toDartString() == 'dart'
+        ? GDString.fromString('DartScript')
+        : GDString.fromString('');
+  }
+
+  @override
+  GDString vGetResourceScriptClass(GDString path) {
+    return GDString.fromString('DartScript');
+  }
+
+  @override
+  bool vExists(GDString path) {
+    return FileAccess.fileExists(path);
+  }
+
+  @override
   Variant vLoad(
       GDString path, GDString originalPath, bool useSubThreads, int cacheMode) {
-    return Variant();
+    // Can cast directly since this is a direct Dart -> Dart call
+    final script = DartScriptLanguage.singleton.vCreateScript() as DartScript?;
+
+    if (script == null) {
+      return Variant();
+    }
+
+    script.setPath(originalPath);
+    final file = FileAccess.open(originalPath, FileAccessModeFlags.read);
+    if (file.obj != null) {
+      final text = file.obj?.getAsText(false);
+      if (text != null) {
+        script.setSourceCode(text);
+      }
+      file.obj?.close();
+    }
+
+    return convertToVariant(script);
   }
 }
 
@@ -59,13 +114,15 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
     final file = FileAccess.open(path, FileAccessModeFlags.write);
     if (file.obj != null) {
-      file.obj?.storeString(script.getSourceCode());
+      final srcCode = script.getSourceCode();
+      file.obj?.storeString(srcCode);
       if (file.obj?.getError() != GDError.ok &&
           file.obj?.getError() != GDError.errFileEof) {
         return GDError.errCantCreate;
       }
     }
 
+    file.obj?.flush();
     file.obj?.close();
 
     return GDError.ok;

@@ -59,12 +59,20 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
+  GodotObject? vCreateScript() {
+    return DartScript();
+  }
+
+  @override
   Ref<Script> vMakeTemplate(
       GDString template, GDString className, GDString baseClassName) {
     final strClassName = gde.dartBindings.gdStringToString(className);
     final strBaseClassName = gde.dartBindings.gdStringToString(baseClassName);
 
-    final source = '''
+    final source = '''import 'dart:ffi';
+
+import 'package:godot_dart/godot_dart.dart';
+
 class $strClassName extends $strBaseClassName {
   // This is necessary boilerplate at the moment
   static TypeInfo typeInfo = TypeInfo(
@@ -88,6 +96,10 @@ class $strClassName extends $strBaseClassName {
   @override
   void vProcess(double delta) {
 
+  }
+
+  static void bind() {
+    gde.dartBindings.bindClass($strClassName, $strClassName.typeInfo);
   }
 }
 ''';
