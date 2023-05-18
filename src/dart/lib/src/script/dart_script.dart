@@ -1,23 +1,21 @@
 import 'dart:ffi';
 
 import '../../godot_dart.dart';
-import 'dart_script_language.dart';
 
 class DartScript extends ScriptExtension {
-  static late TypeInfo typeInfo;
-  static void initTypeInfo() => typeInfo = TypeInfo(
-        StringName.fromString('DartScript'),
-        parentClass: ScriptExtension.typeInfo.className,
-      );
+  static TypeInfo sTypeInfo = TypeInfo(
+    DartScript,
+    StringName.fromString('DartScript'),
+    parentClass: ScriptExtension.sTypeInfo.className,
+  );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ScriptExtension.vTable;
 
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   static void initBindings() {
-    initTypeInfo();
-    gde.dartBindings.bindClass(DartScript, DartScript.typeInfo);
+    gde.dartBindings.bindClass(DartScript, DartScript.sTypeInfo);
   }
 
   GDString _sourceCode = GDString();
@@ -43,16 +41,30 @@ class DartScript extends ScriptExtension {
 
   @override
   bool vCanInstantiate() {
-    return true;
+    return vIsTool() || !Engine.singleton.isEditorHint();
   }
 
   @override
   Pointer<Void> vInstanceCreate(GodotObject? forObject) {
-    return nullptr;
+    if (forObject == null) return nullptr;
+    print('Instance create');
+
+    final scriptPath = getPath().toDartString();
+    final type = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
+    if (type == null) return nullptr;
+
+    Pointer<Void> scriptInstance =
+        gde.dartBindings.createScriptInstance(type, this, forObject.nativePtr);
+    // if (scriptInstance != nullptr) {
+    //   forObject.setScript(convertToVariant(this));
+    // }
+
+    return scriptInstance;
   }
 
   @override
   Pointer<Void> vPlaceholderInstanceCreate(GodotObject? forObject) {
+    print('Placeholder instance create');
     return nullptr;
   }
 }

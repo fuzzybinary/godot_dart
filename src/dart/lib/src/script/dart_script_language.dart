@@ -4,26 +4,51 @@ import '../../godot_dart.dart';
 import 'dart_script.dart';
 
 class DartScriptLanguage extends ScriptLanguageExtension {
-  static TypeInfo typeInfo = TypeInfo(
+  static TypeInfo sTypeInfo = TypeInfo(
+    DartScriptLanguage,
     StringName.fromString('DartScriptLanguage'),
-    parentClass: ScriptLanguageExtension.typeInfo.className,
+    parentClass: ScriptLanguageExtension.sTypeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ScriptLanguageExtension.vTable;
+  static void initBindings() {
+    gde.dartBindings
+        .bindClass(DartScriptLanguage, DartScriptLanguage.sTypeInfo);
+  }
 
   static late DartScriptLanguage singleton;
+
+  final _TypeScriptMapping _scriptMapping = _TypeScriptMapping();
 
   DartScriptLanguage() : super() {
     postInitialize();
     singleton = this;
   }
 
-  static void initBindings() {
-    gde.dartBindings.bindClass(DartScriptLanguage, DartScriptLanguage.typeInfo);
+  @override
+  TypeInfo get typeInfo => sTypeInfo;
+
+  void addScript(String scriptPath, Type type) {
+    _scriptMapping.put(scriptPath, type);
   }
 
+  Type? getTypeForScript(String scriptPath) {
+    final type = _scriptMapping.getType(scriptPath);
+    if (type == null) {
+      print(
+          'Unable to find registered Dart type for script at path $scriptPath');
+    }
+    return type;
+  }
+
+  static final Map<String, MethodInfo> _methodTable = {
+    '_init':
+        MethodInfo(methodName: '_init', dartMethodName: 'vInit', arguments: []),
+  };
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  MethodInfo? getMethodInfo(String methodName) {
+    return _methodTable[methodName] ?? super.getMethodInfo(methodName);
+  }
 
   @override
   void vInit() {}
@@ -125,5 +150,23 @@ class $strClassName extends $strBaseClassName {
     final validateResponse = Dictionary();
     validateResponse[convertToVariant('valid')] = convertToVariant(true);
     return validateResponse;
+  }
+}
+
+class _TypeScriptMapping {
+  final _map = <String, Type>{};
+  final _inverse = <Type, String>{};
+
+  void put(String scriptFile, Type type) {
+    _map[scriptFile] = type;
+    _inverse[type] = scriptFile;
+  }
+
+  Type? getType(String scriptFile) {
+    return _map[scriptFile];
+  }
+
+  String? getScript(Type type) {
+    return _inverse[type];
   }
 }

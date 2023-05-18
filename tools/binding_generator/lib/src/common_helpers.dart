@@ -326,7 +326,7 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       if (argument.isRefCounted) {
-        o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value, ${argument.rawDartType}.typeInfo);');
+        o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value, ${argument.rawDartType}.sTypeInfo);');
       } else {
         o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).value);');
       }

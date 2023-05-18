@@ -12,7 +12,7 @@ abstract class BuiltinType {
     calloc.free(mem);
   });
 
-  TypeInfo get staticTypeInfo;
+  TypeInfo get typeInfo;
   Pointer<Uint8> get nativePtr;
 
   BuiltinType() {
@@ -26,6 +26,8 @@ abstract class ExtensionType implements Finalizable {
   // it has Godot delete the object
   static final _finalizer =
       NativeFinalizer(gde.dartBindings.finalizeExtensionObject);
+
+  TypeInfo get typeInfo;
 
   late GDExtensionObjectPtr _owner = Pointer.fromAddress(0);
   GDExtensionObjectPtr get nativePtr => _owner;
@@ -46,7 +48,8 @@ abstract class ExtensionType implements Finalizable {
     _owner = Pointer.fromAddress(0);
   }
 
-  TypeInfo get staticTypeInfo;
+  @internal
+  MethodInfo? getMethodInfo(String methodName) => null;
 
   @protected
   @pragma('vm:external-name', 'ExtensionType::postInitialize')
@@ -81,4 +84,22 @@ class Ref<T extends RefCounted> implements Finalizable {
       }
     }
   }
+}
+
+/// Used for ScriptBinding to get information about callable methods
+class MethodInfo {
+  /// Name of the method that Godot knows.
+  final String methodName;
+
+  /// Name of the method in Dart (if different from Godot)
+  final String? dartMethodName;
+
+  /// List of arguments
+  List<TypeInfo> arguments;
+
+  MethodInfo({
+    required this.methodName,
+    this.dartMethodName,
+    required this.arguments,
+  });
 }

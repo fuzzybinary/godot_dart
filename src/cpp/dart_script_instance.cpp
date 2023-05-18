@@ -1,5 +1,27 @@
 #include "dart_script_instance.h"
 
+#include <dart_api.h>
+
+#include "dart_bindings.h"
+#include "gde_wrapper.h"
+
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner)
+  : _godot_script_obj(nullptr) {
+  _dart_object = Dart_NewPersistentHandle(for_object);
+  _dart_script = Dart_NewPersistentHandle(script);
+  _owner = owner;
+}
+
+DartScriptInstance::~DartScriptInstance() {
+  GodotDartBindings* gde = GodotDartBindings::instance();
+  if (gde != nullptr) {
+    gde->execute_on_dart_thread([&] {
+      Dart_DeletePersistentHandle(_dart_object);
+      Dart_DeletePersistentHandle(_dart_script);
+    });
+  }
+}
+
 bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value) {
   return false;
 }
@@ -9,6 +31,7 @@ bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionTypePtr r_re
 }
 
 const GDExtensionPropertyInfo *DartScriptInstance::get_property_list(uint32_t *r_count) {
+  *r_count = 0;
   return nullptr;
 }
 
@@ -20,15 +43,15 @@ GDExtensionVariantType DartScriptInstance::get_property_type(const GDStringName 
 }
 
 GDExtensionBool DartScriptInstance::property_can_revert(const GDStringName &p_name) {
-  return GDExtensionBool();
+  return false;
 }
 
 GDExtensionBool DartScriptInstance::property_get_revert(const GDStringName &p_name, GDExtensionVariantPtr r_ret) {
-  return GDExtensionBool();
+  return false;
 }
 
 GDExtensionObjectPtr DartScriptInstance::get_owner() {
-  return GDExtensionObjectPtr();
+  return _owner;
 }
 
 void DartScriptInstance::get_property_state(GDExtensionScriptInstancePropertyStateAdd p_add_func, void *p_userdata) {
@@ -42,12 +65,113 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
 }
 
 GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
-  return GDExtensionBool();
+  GodotDartBindings *gde = GodotDartBindings::instance();
+  if (gde == nullptr) {
+    return false;
+  }
+
+  bool hasMethod = false;
+  gde->execute_on_dart_thread([&] {
+    Dart_EnterScope();
+
+    Dart_Handle dart_obj = Dart_HandleFromPersistent(_dart_object);
+
+    Dart_Handle method_info_args[] = {p_name.to_dart()};
+    DART_CHECK(method_info, Dart_Invoke(dart_obj, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
+               "Failed getting method");
+
+    hasMethod = Dart_IsNull(method_info);
+  });
+
+  return hasMethod;
 }
 
 void DartScriptInstance::call(const GDStringName &p_method, const GDExtensionConstVariantPtr *p_args,
                               GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return,
                               GDExtensionCallError *r_error) {
+  GodotDartBindings *gde = GodotDartBindings::instance();
+  if (gde == nullptr) {
+    return;
+  }
+
+  gde->execute_on_dart_thread([&] {
+    Dart_EnterScope();
+
+    Dart_Handle dart_obj = Dart_HandleFromPersistent(_dart_object);
+    
+    Dart_Handle method_info_args[] = {p_method.to_dart()};
+    DART_CHECK(method_info, Dart_Invoke(dart_obj, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args), "Failed getting method");
+    if (Dart_IsNull(method_info)) {
+      Dart_ExitScope();
+      return;
+    }
+
+    DART_CHECK(dart_method_name, Dart_GetField(method_info, Dart_NewStringFromCString("dartMethodName")), "Failed getting dart method name");
+    if (Dart_IsNull(dart_method_name)) {
+      dart_method_name = Dart_GetField(method_info, Dart_NewStringFromCString("methodName"));
+    }
+    DART_CHECK(args_list, Dart_GetField(method_info, Dart_NewStringFromCString("arguments")), "Failed getting method arguments");
+    intptr_t arg_count = 0;
+    Dart_ListLength(args_list, &arg_count);
+
+    Dart_Handle *dart_args = nullptr;
+    if (arg_count != 0) {
+      dart_args = new Dart_Handle[arg_count];
+      Dart_Handle args_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_args));
+      Dart_Handle convert_args[3]{
+          Dart_New(Dart_HandleFromPersistent(gde->_void_pointer_pointer_type), Dart_NewStringFromCString("fromAddress"),
+                   1, &args_address),
+          Dart_NewInteger(arg_count),
+          args_list,
+      };
+      DART_CHECK(dart_converted_arg_list,
+                  Dart_Invoke(gde->_native_library, Dart_NewStringFromCString("_variantsToDart"), 3, convert_args),
+                  "Error converting parameters from Variants");
+
+      for (intptr_t i = 0; i < arg_count; ++i) {
+        // TODO: Need a better way to do this. Replace references with proper references
+        Dart_Handle type_info = Dart_ListGetAt(args_list, i);
+        Dart_Handle d_is_reference = Dart_GetField(type_info, Dart_NewStringFromCString("isReference"));
+        bool is_reference = false;
+        Dart_BooleanValue(d_is_reference, &is_reference);
+        if (is_reference) {
+          DART_CHECK(inner_type, Dart_GetField(type_info, Dart_NewStringFromCString("type")), "Failed getting className");
+          DART_CHECK(type_args, Dart_NewList(1), "ASDGARGAEg");
+          Dart_ListSetAt(type_args, 0, inner_type);
+          DART_CHECK(ref_type,
+                     Dart_GetNonNullableType(gde->_godot_dart_library, Dart_NewStringFromCString("Ref"), 1, &type_args),
+                     "Failed finding Ref type");
+          Dart_Handle constructor_args[] {
+            Dart_ListGetAt(dart_converted_arg_list, i)
+          };
+          dart_args[i] = Dart_New(ref_type, Dart_Null(), 1, constructor_args);
+        } else {
+          dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
+        }
+      }
+    }
+
+    DART_CHECK(dart_ret, Dart_Invoke(dart_obj, dart_method_name, arg_count, dart_args));
+    Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
+    Dart_Handle args[] = {dart_ret};
+    Dart_Handle variant_result = Dart_Invoke(native_library, Dart_NewStringFromCString("_convertToVariant"), 1, args);
+    
+    if (Dart_IsError(variant_result)) {
+      GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
+      GD_PRINT_ERROR(Dart_GetError(variant_result));
+    } else {
+      void *variantDataPtr = get_opaque_address(variant_result);
+      if (variantDataPtr) {
+        GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+      }
+    }
+    // TODO - these leak on error
+    if (dart_args != nullptr) {
+      delete[] dart_args;
+    }
+
+    Dart_ExitScope();
+  });
 }
 
 void DartScriptInstance::notification(int32_t p_what) {
@@ -64,11 +188,31 @@ GDExtensionBool DartScriptInstance::ref_count_decremented() {
 }
 
 GDExtensionObjectPtr DartScriptInstance::get_script() {
-  return GDExtensionObjectPtr();
+  if (_godot_script_obj == nullptr) {
+    GodotDartBindings::instance()->execute_on_dart_thread([&] {
+      Dart_EnterScope();
+
+      Dart_Handle dart_script_obj = Dart_HandleFromPersistent(_dart_script);
+
+      DART_CHECK(obj_native_ptr, Dart_GetField(dart_script_obj, Dart_NewStringFromCString("nativePtr")),
+                 "Failed getting nativePtr for Script");
+      Dart_Handle address = Dart_GetField(obj_native_ptr, Dart_NewStringFromCString("address"));
+      if (Dart_IsError(address)) {
+        GD_PRINT_ERROR(Dart_GetError(address));
+      }
+      uint64_t obj_ptr = 0;
+      Dart_IntegerToUint64(address, &obj_ptr);
+      _godot_script_obj = reinterpret_cast<GDExtensionObjectPtr>(obj_ptr);
+
+      Dart_ExitScope();
+    });
+  }
+
+  return _godot_script_obj;
 }
 
 GDExtensionBool DartScriptInstance::is_placeholder() {
-  return GDExtensionBool();
+  return false;
 }
 
 bool DartScriptInstance::set_fallback(const GDStringName &p_name, GDExtensionConstVariantPtr p_value) {
@@ -80,7 +224,8 @@ bool DartScriptInstance::get_fallback(const GDStringName &p_name, GDExtensionTyp
 }
 
 GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
-  return GDExtensionScriptLanguagePtr();
+
+  return nullptr;
 }
 
 // * Static Callback Functions for Godot */

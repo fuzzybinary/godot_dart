@@ -46,79 +46,79 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
   GDString.initBindings();
 
   StringName.initBindings();
-  _dartBuiltinConstructors[StringName.typeInfo.variantType] = StringName.new;
+  _dartBuiltinConstructors[StringName.sTypeInfo.variantType] = StringName.new;
 
   // Generate this?
   Vector2.initBindings();
-  _dartBuiltinConstructors[Vector2.typeInfo.variantType] = Vector2.new;
+  _dartBuiltinConstructors[Vector2.sTypeInfo.variantType] = Vector2.new;
   Vector2i.initBindings();
-  _dartBuiltinConstructors[Vector2i.typeInfo.variantType] = Vector2i.new;
+  _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] = Vector2i.new;
   Vector3.initBindings();
-  _dartBuiltinConstructors[Vector3.typeInfo.variantType] = Vector3.new;
+  _dartBuiltinConstructors[Vector3.sTypeInfo.variantType] = Vector3.new;
   Vector3i.initBindings();
-  _dartBuiltinConstructors[Vector3i.typeInfo.variantType] = Vector3i.new;
+  _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] = Vector3i.new;
   Vector4.initBindings();
-  _dartBuiltinConstructors[Vector4.typeInfo.variantType] = Vector4.new;
+  _dartBuiltinConstructors[Vector4.sTypeInfo.variantType] = Vector4.new;
   Vector4i.initBindings();
-  _dartBuiltinConstructors[Vector4i.typeInfo.variantType] = Vector4i.new;
+  _dartBuiltinConstructors[Vector4i.sTypeInfo.variantType] = Vector4i.new;
   Quaternion.initBindings();
-  _dartBuiltinConstructors[Quaternion.typeInfo.variantType] = Quaternion.new;
+  _dartBuiltinConstructors[Quaternion.sTypeInfo.variantType] = Quaternion.new;
   Rect2.initBindings();
-  _dartBuiltinConstructors[Rect2.typeInfo.variantType] = Rect2.new;
+  _dartBuiltinConstructors[Rect2.sTypeInfo.variantType] = Rect2.new;
   Rect2i.initBindings();
-  _dartBuiltinConstructors[Rect2i.typeInfo.variantType] = Rect2i.new;
+  _dartBuiltinConstructors[Rect2i.sTypeInfo.variantType] = Rect2i.new;
   Transform2D.initBindings();
-  _dartBuiltinConstructors[Transform2D.typeInfo.variantType] = Transform2D.new;
+  _dartBuiltinConstructors[Transform2D.sTypeInfo.variantType] = Transform2D.new;
   Plane.initBindings();
-  _dartBuiltinConstructors[Plane.typeInfo.variantType] = Plane.new;
+  _dartBuiltinConstructors[Plane.sTypeInfo.variantType] = Plane.new;
   AABB.initBindings();
-  _dartBuiltinConstructors[AABB.typeInfo.variantType] = AABB.new;
+  _dartBuiltinConstructors[AABB.sTypeInfo.variantType] = AABB.new;
   Basis.initBindings();
-  _dartBuiltinConstructors[Basis.typeInfo.variantType] = Basis.new;
+  _dartBuiltinConstructors[Basis.sTypeInfo.variantType] = Basis.new;
   Transform3D.initBindings();
-  _dartBuiltinConstructors[Transform3D.typeInfo.variantType] = Transform3D.new;
+  _dartBuiltinConstructors[Transform3D.sTypeInfo.variantType] = Transform3D.new;
   Projection.initBindings();
-  _dartBuiltinConstructors[Projection.typeInfo.variantType] = Projection.new;
+  _dartBuiltinConstructors[Projection.sTypeInfo.variantType] = Projection.new;
   Color.initBindings();
-  _dartBuiltinConstructors[Color.typeInfo.variantType] = Color.new;
+  _dartBuiltinConstructors[Color.sTypeInfo.variantType] = Color.new;
   NodePath.initBindings();
-  _dartBuiltinConstructors[NodePath.typeInfo.variantType] = NodePath.new;
+  _dartBuiltinConstructors[NodePath.sTypeInfo.variantType] = NodePath.new;
   RID.initBindings();
-  _dartBuiltinConstructors[RID.typeInfo.variantType] = RID.new;
+  _dartBuiltinConstructors[RID.sTypeInfo.variantType] = RID.new;
   Callable.initBindings();
-  _dartBuiltinConstructors[Callable.typeInfo.variantType] = Callable.new;
+  _dartBuiltinConstructors[Callable.sTypeInfo.variantType] = Callable.new;
   Signal.initBindings();
-  _dartBuiltinConstructors[Signal.typeInfo.variantType] = Signal.new;
+  _dartBuiltinConstructors[Signal.sTypeInfo.variantType] = Signal.new;
   Dictionary.initBindings();
-  _dartBuiltinConstructors[Dictionary.typeInfo.variantType] = Dictionary.new;
+  _dartBuiltinConstructors[Dictionary.sTypeInfo.variantType] = Dictionary.new;
   Array.initBindings();
-  _dartBuiltinConstructors[Array.typeInfo.variantType] = Array.new;
+  _dartBuiltinConstructors[Array.sTypeInfo.variantType] = Array.new;
   PackedByteArray.initBindings();
-  _dartBuiltinConstructors[PackedByteArray.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedByteArray.sTypeInfo.variantType] =
       PackedByteArray.new;
   PackedInt32Array.initBindings();
-  _dartBuiltinConstructors[PackedInt32Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedInt32Array.sTypeInfo.variantType] =
       PackedInt32Array.new;
   PackedInt64Array.initBindings();
-  _dartBuiltinConstructors[PackedInt64Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedInt64Array.sTypeInfo.variantType] =
       PackedInt64Array.new;
   PackedFloat32Array.initBindings();
-  _dartBuiltinConstructors[PackedFloat32Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedFloat32Array.sTypeInfo.variantType] =
       PackedFloat32Array.new;
   PackedFloat64Array.initBindings();
-  _dartBuiltinConstructors[PackedFloat64Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedFloat64Array.sTypeInfo.variantType] =
       PackedFloat64Array.new;
   PackedStringArray.initBindings();
-  _dartBuiltinConstructors[PackedStringArray.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedStringArray.sTypeInfo.variantType] =
       PackedStringArray.new;
   PackedVector2Array.initBindings();
-  _dartBuiltinConstructors[PackedVector2Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedVector2Array.sTypeInfo.variantType] =
       PackedVector2Array.new;
   PackedVector3Array.initBindings();
-  _dartBuiltinConstructors[PackedVector3Array.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedVector3Array.sTypeInfo.variantType] =
       PackedVector3Array.new;
   PackedColorArray.initBindings();
-  _dartBuiltinConstructors[PackedColorArray.typeInfo.variantType] =
+  _dartBuiltinConstructors[PackedColorArray.sTypeInfo.variantType] =
       PackedColorArray.new;
 }
 
@@ -127,14 +127,15 @@ class Variant extends BuiltinType {
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
-  static final TypeInfo typeInfo = TypeInfo(
+  static final TypeInfo sTypeInfo = TypeInfo(
+    Variant,
     StringName.fromString('Variant'),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
     size: _size,
   );
 
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
   @override
@@ -188,7 +189,7 @@ Variant convertToVariant(Object? obj) {
     malloc.free(ptrToObj);
   } else if (obj is BuiltinType) {
     // Builtin type
-    var typeInfo = obj.staticTypeInfo;
+    var typeInfo = obj.typeInfo;
     c = _fromTypeConstructor[typeInfo.variantType];
     c?.call(ret.nativePtr.cast(), obj.nativePtr.cast());
   } else {

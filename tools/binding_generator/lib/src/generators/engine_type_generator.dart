@@ -43,7 +43,7 @@ Future<void> generateEngineBindings(
     final correctedInherits = getCorrectedType(inherits);
 
     o.b('class ${classInfo.dartName} extends $correctedInherits {', () {
-      o.p('static TypeInfo? _typeInfo;');
+      o.p('static TypeInfo? _sTypeInfo;');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
       o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');
       o.b('static Map<String, Pointer<GodotVirtualFunction>> get vTable {', () {
@@ -54,18 +54,19 @@ Future<void> generateEngineBindings(
       }, '}');
       o.nl();
 
-      o.b('static TypeInfo get typeInfo {', () {
-        o.b('_typeInfo ??= TypeInfo(', () {
+      o.b('static TypeInfo get sTypeInfo {', () {
+        o.b('_sTypeInfo ??= TypeInfo(', () {
+          o.p('${classInfo.dartName},');
           o.p("StringName.fromString('${classInfo.name}'),");
           o.p("parentClass: StringName.fromString('${classInfo.inherits}'),");
           o.p('bindingToken: bindingToken,');
         }, ');');
-        o.p('return _typeInfo!;');
+        o.p('return _sTypeInfo!;');
       }, '}');
       o.nl();
 
       o.p('@override');
-      o.p('TypeInfo get staticTypeInfo => typeInfo;');
+      o.p('TypeInfo get typeInfo => sTypeInfo;');
       o.nl();
 
       o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');
@@ -73,6 +74,7 @@ Future<void> generateEngineBindings(
       _writeSingleton(o, classInfo);
       _writeConstructors(o, classInfo);
       _writeMethods(o, classInfo);
+      //_writeMethodTable(o, classInfo);
       _writeBindingToken(o, classInfo);
       _writeVirtualFunctions(o, classInfo);
     }, '}');
@@ -108,7 +110,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.p('static ${classInfo.dartName}? _singletonObj;');
   o.b('static ${classInfo.dartName} get singleton {', () {
     o.b('if (_singletonPtr == null) {', () {
-      o.p('_singletonPtr = gde.globalGetSingleton(typeInfo.className);');
+      o.p('_singletonPtr = gde.globalGetSingleton(sTypeInfo.className);');
       o.p('_singletonObj = gde.dartBindings.gdObjectToDartObject(');
       o.p('    _singletonPtr!.cast(), _bindingToken) as ${classInfo.dartName};');
     }, '}');
@@ -120,7 +122,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
 
 void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   // Constructors
-  o.p('${classInfo.dartName}() : super.forType(typeInfo.className);');
+  o.p('${classInfo.dartName}() : super.forType(sTypeInfo.className);');
   o.nl();
 
   o.p('${classInfo.dartName}.forType(StringName type) : super.forType(type);');
@@ -159,7 +161,7 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       o.p('var methodBind = _bindings.method${methodName.toUpperCamelCase()};');
       o.b('if (methodBind == null) {', () {
         o.p('_bindings.method${methodName.toUpperCamelCase()} = gde.classDbGetMethodBind(');
-        o.p("    typeInfo.className, StringName.fromString('${method.name}'), ${method.hash});");
+        o.p("    sTypeInfo.className, StringName.fromString('${method.name}'), ${method.hash});");
         o.p('methodBind = _bindings.method${methodName.toUpperCamelCase()};');
       }, '}');
       o.nl();
@@ -169,6 +171,8 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
         for (final argument in arguments) {
           if (argument.typeCategory == TypeCategory.enumType) {
             o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}.value),');
+          } else if (argument.dartType == 'Variant') {
+            o.p('${escapeName(argument.name).toLowerCamelCase()},');
           } else {
             o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}),');
           }
@@ -185,6 +189,8 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
           o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, $bindingToken) as int);');
         } else if (returnInfo.isRefCounted) {
           o.p('return Ref<${returnInfo.rawDartType}>(convertFromVariant(ret, $bindingToken) as ${returnInfo.rawDartType});');
+        } else if (returnInfo.dartType == 'Variant') {
+          o.p('return ret;');
         } else {
           o.p('return convertFromVariant(ret, $bindingToken) as ${returnInfo.dartType};');
         }
@@ -193,6 +199,54 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.nl();
   }
 }
+
+// For now, we're not going to write out a full method table. Instead, scripts will add
+// the functions that they use to the method table, which will allow the ScriptInstance to correctly
+// respond to `has_method`
+// void _writeMethodTable(CodeSink o, GodotExtensionApiJsonClass classInfo) {
+//   // The methodTable is similar to the vTable, except that it's used by the Script side of the
+//   // extension rather the extension side. It's just a different way of calling methods that
+//   // needs a slightly different lookup table and parameter conversion from the other two types
+//   // of calls made by the Extension side.
+
+//   o.p('// Method Table');
+//   o.b('static final Map<String, MethodInfo> _methodTable = {', () {
+//     final methods = classInfo.methods ?? [];
+//     for (final method in methods) {
+//       if (method.name == 'to_string') continue;
+//       if (method.isStatic || method.isVararg) continue;
+
+//       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+//       final dartMethodName = getDartMethodName(method.name, method.isVirtual);
+//       o.b("'${method.name}': MethodInfo(methodName: '${method.name}', dartMethodName: '$dartMethodName', arguments: [",
+//           () {
+//         for (final argument in arguments) {
+//           final typeCategory = argument.typeCategory;
+//           if (typeCategory == TypeCategory.nativeStructure ||
+//               argument.isPointer) {
+//             // TODO: How do scripts handle native structures and pointers?
+//             o.p('TypeInfo.forType(int)!,');
+//           } else if (typeCategory == TypeCategory.primitive) {
+//             o.p('TypeInfo.forType(${argument.rawDartType})!,');
+//           } else if (typeCategory == TypeCategory.enumType) {
+//             o.p("TypeInfo(${argument.rawDartType}, StringName.fromString('${argument.rawDartType}'), variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT),");
+//           } else if (argument.dartType.startsWith('TypedArray')) {
+//             // TODO: Really need to figure out typed array support
+//             o.p('TypedArray.sTypeInfo,');
+//           } else if (argument.isRefCounted) {
+//             o.p('${argument.rawDartType}.sTypeInfo.asRef(),');
+//           } else {
+//             o.p('${argument.rawDartType}.sTypeInfo,');
+//           }
+//         }
+//       }, ']),');
+//     }
+//   }, '};');
+//   o.p('@override');
+//   o.b('MethodInfo? getMethodInfo(String methodName) {', () {
+//     o.p('return _methodTable[methodName] ?? super.getMethodInfo(methodName);');
+//   }, '}');
+// }
 
 void _writeBindingToken(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.nl();

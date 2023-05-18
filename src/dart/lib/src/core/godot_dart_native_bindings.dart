@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 
 import '../../godot_dart.dart';
+import '../script/dart_script.dart';
 import 'gdextension_ffi_bindings.dart';
 
 class GodotDartNativeBindings {
@@ -37,6 +38,12 @@ class GodotDartNativeBindings {
   late final performFrameMaintenance = godotDartDylib
       .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
       .asFunction<void Function()>();
+  late final createScriptInstance = godotDartDylib
+      .lookup<
+          NativeFunction<
+              Pointer<Void> Function(
+                  Handle, Handle, Pointer<Void>)>>('create_script_instance')
+      .asFunction<Pointer<Void> Function(Type, DartScript, Pointer<Void>)>();
 
   static DynamicLibrary openLibrary(String libName) {
     var libraryPath = path.join(Directory.current.path, '$libName.so');
@@ -53,6 +60,9 @@ class GodotDartNativeBindings {
     dartDylib = DynamicLibrary.open('dart_dll');
     godotDartDylib = DynamicLibrary.open('godot_dart');
   }
+
+  @pragma('vm:external-name', 'GodotDartNativeBindings::print')
+  external void print(String s);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
   external void bindClass(Type type, TypeInfo typeInfo);
@@ -91,11 +101,11 @@ class GodotDartNativeBindings {
   }
 
   void variantCopyToNative(Pointer<Void> dest, BuiltinType src) {
-    _variantCopy(dest, src.nativePtr.cast(), src.staticTypeInfo.size);
+    _variantCopy(dest, src.nativePtr.cast(), src.typeInfo.size);
   }
 
   void variantCopyFromNative(BuiltinType dest, Pointer<Void> src) {
-    _variantCopy(dest.nativePtr.cast(), src, dest.staticTypeInfo.size);
+    _variantCopy(dest.nativePtr.cast(), src, dest.typeInfo.size);
   }
 }
 
@@ -106,12 +116,18 @@ Variant _convertToVariant(Object? object) {
 }
 
 @pragma('vm:entry-point')
-List<Object?> _variantsToDart(Pointer<Pointer<Void>> variants, int count,
-    List<Pointer<Void>?> bindingCallbacks) {
+List<Object?> _variantsToDart(
+    Pointer<Pointer<Void>> variants, int count, List<TypeInfo> typeInfo) {
   var result = <Object?>[];
   for (int i = 0; i < count; ++i) {
     var variant = Variant.fromPointer(variants.elementAt(i).value);
-    result.add(convertFromVariant(variant, bindingCallbacks[i]?.cast()));
+    if (typeInfo[i].variantType ==
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
+      // Keep as variant
+      result.add(variant);
+    } else {
+      result.add(convertFromVariant(variant, typeInfo[i].bindingToken));
+    }
   }
 
   return result;

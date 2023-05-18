@@ -80,28 +80,30 @@ class in `simple/src/simple.dart`
 
 ```dart
 class Simple extends Sprite2D {
-  // typeInfo is required. Make sure that your class name
-  // and the inheritted name are both correct.
-  static late TypeInfo typeInfo = TypeInfo(
+  // It's best to statically create a TypeInfo for your class:
+  static late TypeInfo sTypeInfo = TypeInfo(
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
   );
-  // a vTable getter is also required. If you are not adding any
-  // virtual functions, just return the base class's vTable
+  // a vTable getter is required for classes that will be used from extensions.
+  // If you are not adding any virtual functions, just return the base class's vTable.
+  // If the class is only used from scripts, this is likely not necessary.
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       Sprite2D.vTable;
 
-  // An override of [staticTypeInfo] is ALSO required. This is how
+  // An override of [typeInfo] is required. This is how
   // the bindings understand the what types it's looking at.
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   double _timePassed = 0.0;
 
-  // Constructor is required and MUST call [postInitialize]
+  // Constructor is required and MUST call [postInitialize] for all classes usable
+  // from an extension.
   Simple() : super() {
     postInitialize();
   }
+  // Classes that are Scripts must have a named constructor
 
   // All virtual functions from Godot should be available, and start
   // with a v instead of an underscore.

@@ -47,10 +47,10 @@ Future<void> generateBuiltinBindings(
     o.b('class ${builtin.dartName} extends BuiltinType {', () {
       o.p('static const int _size = $size;');
       o.p('static final _${builtin.name}Bindings _bindings = _${builtin.name}Bindings();');
-      o.p('static late TypeInfo typeInfo;');
+      o.p('static late TypeInfo sTypeInfo;');
       o.nl();
       o.p('@override');
-      o.p('TypeInfo get staticTypeInfo => typeInfo;');
+      o.p('TypeInfo get typeInfo => sTypeInfo;');
       o.nl();
       o.p('final Pointer<Uint8> _opaque = calloc<Uint8>(_size);');
       o.nl();
@@ -103,7 +103,8 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
   o.b('static void initBindings() {', () {
     o.p('initBindingsConstructorDestructor();');
     o.nl();
-    o.b('typeInfo = TypeInfo(', () {
+    o.b('sTypeInfo = TypeInfo(', () {
+      o.p('${builtin.dartName},');
       o.p("StringName.fromString('${builtin.name}'),");
       o.p('variantType: $variantEnum,');
       o.p('size: _size,');

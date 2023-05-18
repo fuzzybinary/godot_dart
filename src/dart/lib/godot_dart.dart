@@ -7,7 +7,6 @@ import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
 import 'src/script/dart_resource_format.dart';
 import 'src/script/dart_script.dart';
-import 'src/script/dart_script_language.dart';
 
 export 'src/core/core_types.dart';
 export 'src/core/gdextension.dart';
@@ -16,6 +15,7 @@ export 'src/core/type_info.dart';
 export 'src/gen/classes/engine_classes.dart';
 export 'src/gen/global_constants.dart';
 export 'src/gen/variant/builtins.dart';
+export 'src/script/dart_script_language.dart';
 export 'src/variant/variant.dart';
 
 // ignore: unused_element
@@ -50,9 +50,17 @@ void _registerGodot(int gdeAddress, int libraryAddress, int bindingCallbacks) {
       .addResourceFormatLoader(Ref(DartResourceFormatLoader()), false);
   ResourceSaver.singleton
       .addResourceFormatSaver(Ref(DartResourceFormatSaver()), false);
+
+  print('Everything loaded a-ok!');
 }
 
 @pragma('vm:entry-point')
 void _unregisterGodot() {
   Engine.singleton.unregisterScriptLanguage(_dartScriptLanguage);
+}
+
+typedef PrintClosure = void Function(String line);
+@pragma('vm:entry-point')
+PrintClosure _getPrintClosure() {
+  return (s) => _globalExtension.dartBindings.print(s);
 }

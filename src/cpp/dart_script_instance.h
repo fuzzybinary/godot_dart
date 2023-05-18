@@ -6,7 +6,8 @@
 
 class DartScriptInstance {
 public:
-  DartScriptInstance();
+  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner);
+  ~DartScriptInstance();
 
   bool set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value);
   bool get(const GDStringName &p_name, GDExtensionTypePtr r_ret);
@@ -45,5 +46,10 @@ public:
   static const GDExtensionScriptInstanceInfo* get_script_instance_info();
 
 private:
+  Dart_PersistentHandle _dart_object;
+  Dart_PersistentHandle _dart_script;
+  GDExtensionObjectPtr _godot_script_obj;
+  GDExtensionObjectPtr _owner;
+
   static GDExtensionScriptInstanceInfo script_instance_info;
 };

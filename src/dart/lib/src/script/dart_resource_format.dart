@@ -2,12 +2,12 @@ import 'dart:ffi';
 
 import '../../godot_dart.dart';
 import 'dart_script.dart';
-import 'dart_script_language.dart';
 
 class DartResourceFormatLoader extends ResourceFormatLoader {
-  static TypeInfo typeInfo = TypeInfo(
+  static TypeInfo sTypeInfo = TypeInfo(
+    DartResourceFormatLoader,
     StringName.fromString('DartResourceFormatLoader'),
-    parentClass: ResourceFormatLoader.typeInfo.className,
+    parentClass: ResourceFormatLoader.sTypeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ResourceFormatLoader.vTable;
@@ -17,12 +17,12 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   }
 
   static void initBindings() {
-    gde.dartBindings
-        .bindClass(DartResourceFormatLoader, DartResourceFormatLoader.typeInfo);
+    gde.dartBindings.bindClass(
+        DartResourceFormatLoader, DartResourceFormatLoader.sTypeInfo);
   }
 
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   @override
   bool vHandlesType(StringName type) {
@@ -86,9 +86,10 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
 }
 
 class DartResourceFormatSaver extends ResourceFormatSaver {
-  static TypeInfo typeInfo = TypeInfo(
+  static TypeInfo sTypeInfo = TypeInfo(
+    DartResourceFormatSaver,
     StringName.fromString('DartResourceFormatSaver'),
-    parentClass: ResourceFormatSaver.typeInfo.className,
+    parentClass: ResourceFormatSaver.sTypeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ResourceFormatSaver.vTable;
@@ -99,17 +100,17 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
   static void initBindings() {
     gde.dartBindings
-        .bindClass(DartResourceFormatSaver, DartResourceFormatSaver.typeInfo);
+        .bindClass(DartResourceFormatSaver, DartResourceFormatSaver.sTypeInfo);
   }
 
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   @override
   GDError vSave(Ref<Resource> resource, GDString path, int flags) {
     if (resource.obj == null) return GDError.errInvalidParameter;
 
-    final script = gde.cast<DartScript>(resource.obj, DartScript.typeInfo);
+    final script = gde.cast<DartScript>(resource.obj, DartScript.sTypeInfo);
     if (script == null) return GDError.errBug;
 
     final file = FileAccess.open(path, FileAccessModeFlags.write);
@@ -135,7 +136,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
   @override
   bool vRecognize(Ref<Resource> resource) {
-    if (gde.cast<DartScript>(resource.obj, DartScript.typeInfo) != null) {
+    if (gde.cast<DartScript>(resource.obj, DartScript.sTypeInfo) != null) {
       return true;
     }
     return false;
