@@ -35,13 +35,12 @@ class Simple extends Sprite2D {
 
   static void bind() {
 	gde.dartBindings.bindClass(Simple, Simple.sTypeInfo);
-	gde.dartBindings.addProperty(Simple.sTypeInfo, 'amplitude',
-		PropertyInfo(type: VariantType.typeFloat, name: 'amplitude'));
+	gde.dartBindings.addProperty(Simple.sTypeInfo,
+		PropertyInfo(typeInfo: TypeInfo.forType(double)!, name: 'amplitude'));
 	gde.dartBindings.addProperty(
 	  Simple.sTypeInfo,
-	  'speed',
 	  PropertyInfo(
-		type: VariantType.typeFloat,
+		typeInfo: TypeInfo.forType(double)!,
 		name: 'speed',
 		hint: PropertyHint.propertyHintRange,
 		hintString: '0,20,0.01',

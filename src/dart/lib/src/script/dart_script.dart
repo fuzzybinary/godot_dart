@@ -55,16 +55,23 @@ class DartScript extends ScriptExtension {
 
     Pointer<Void> scriptInstance =
         gde.dartBindings.createScriptInstance(type, this, forObject.nativePtr);
-    // if (scriptInstance != nullptr) {
-    //   forObject.setScript(convertToVariant(this));
-    // }
 
     return scriptInstance;
   }
 
   @override
   Pointer<Void> vPlaceholderInstanceCreate(GodotObject? forObject) {
+    if (forObject == null) return nullptr;
     print('Placeholder instance create');
+
+    // final scriptPath = getPath().toDartString();
+    // final type = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
+    // if (type == null) return nullptr;
+
+    // Pointer<Void> scriptInstance =
+    //     gde.dartBindings.createScriptInstance(type, this, forObject.nativePtr);
+
+    // return scriptInstance;
     return nullptr;
   }
 }

@@ -187,6 +187,13 @@ Variant convertToVariant(Object? obj) {
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
     c?.call(ret.nativePtr.cast(), ptrToObj.cast());
     malloc.free(ptrToObj);
+  } else if (obj is Pointer) {
+    // Passed in a pointer, assume we know what we're doing and this is actually a
+    // pointer to a Godot object.
+    // TODO: Try to find a way to remove this to prevent abuse.
+    c = _fromTypeConstructor[
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+    c?.call(ret.nativePtr.cast(), obj.cast());
   } else if (obj is BuiltinType) {
     // Builtin type
     var typeInfo = obj.typeInfo;
@@ -238,7 +245,7 @@ Variant convertToVariant(Object? obj) {
 
 Object? convertFromVariant(
   Variant variant,
-  Pointer<Void>? bindingToken,
+  TypeInfo? typeInfo,
 ) {
   Object? ret;
   int variantType = variant.getType();
@@ -252,7 +259,7 @@ Object? convertFromVariant(
     return null;
   }
 
-  // To we have a CoreType that we can use to match?
+  // Do we have a CoreType that we can use to match?
   final builtinConstructor = _dartBuiltinConstructors[variantType];
   if (builtinConstructor != null) {
     var builtin = builtinConstructor();
@@ -293,7 +300,7 @@ Object? convertFromVariant(
         c!(ptr.cast(), variant.nativePtr.cast());
         ret = gde.dartBindings.gdObjectToDartObject(
           ptr.value,
-          bindingToken,
+          typeInfo?.bindingToken,
         );
         break;
 

@@ -39,8 +39,10 @@ GDString::GDString(const Dart_Handle &from_dart) {
     }
 
     const char *dart_cstring;
-    if (Dart_IsError(Dart_StringToCString(from_dart, &dart_cstring))) {
+    Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
+    if (Dart_IsError(result)) {
       GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
+      GD_PRINT_ERROR(Dart_GetError(result));
       _constructor(&_opaque, nullptr);
       return;
     }

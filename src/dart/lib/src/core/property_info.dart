@@ -1,17 +1,15 @@
-import '../gen/global_constants.dart';
+import '../../godot_dart.dart';
 
 class PropertyInfo {
-  final VariantType type;
+  final TypeInfo typeInfo;
   final String name;
-  final String className;
   final PropertyHint hint;
   final String hintString;
   final int flags;
 
   PropertyInfo({
-    required this.type,
+    required this.typeInfo,
     required this.name,
-    this.className = '',
     this.hint = PropertyHint.propertyHintNone,
     this.hintString = '',
     this.flags = 6, // PropertyUsage.propertyUsageDefault

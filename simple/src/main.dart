@@ -5,6 +5,5 @@ import 'simple.dart';
 
 void main() {
   Simple.bind();
-  Player.bind();
   DartScriptLanguage.singleton.addScript('res://src/player.dart', Player);
 }

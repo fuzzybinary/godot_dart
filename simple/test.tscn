@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=3 uid="uid://ylcs4f06tfbg"]
 
-[ext_resource type="Script" uid="uid://" path="res://src/player.dart" id="1_1ad1h"]
 [ext_resource type="Texture2D" uid="uid://ionx3p5q0j5b" path="res://art/playerGrey_up1.png" id="1_mpeg6"]
+[ext_resource type="Script" uid="uid://" path="res://src/player.dart" id="1_snv8n"]
 [ext_resource type="Texture2D" uid="uid://4oyy1s3rmpl1" path="res://art/playerGrey_up2.png" id="2_ykn5m"]
 [ext_resource type="Texture2D" uid="uid://crdt83urfsyi2" path="res://art/playerGrey_walk1.png" id="3_pfqrn"]
 [ext_resource type="Texture2D" uid="uid://6fevpchdyjug" path="res://art/playerGrey_walk2.png" id="4_3tg7f"]
@@ -37,7 +37,7 @@ radius = 27.0
 height = 68.0
 
 [node name="Player" type="Area2D"]
-script = ExtResource("1_1ad1h")
+script = ExtResource("1_snv8n")
 metadata/_edit_group_ = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -49,7 +49,7 @@ animation = &"up"
 shape = SubResource("CapsuleShape2D_ilyen")
 
 [node name="Simple" type="Simple" parent="."]
-position = Vector2(3.28577, 2.58926)
+position = Vector2(6.71405, 19.4447)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("5_m0h7g")
 centered = false

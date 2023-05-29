@@ -105,6 +105,18 @@ class $strClassName extends $strBaseClassName {
     parentClass: $strBaseClassName.typeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable => $strBaseClassName.vTable;
+  static final Map<String, MethodInfo> _methodTable = {
+    '_ready': MethodInfo(
+      methodName: '_ready',
+      dartMethodName: 'vReady',
+      arguments: [],
+    ),
+    '_process': MethodInfo(
+      methodName: '_process',
+      dartMethodName: 'vProcess',
+      arguments: [],
+    ),
+  };
 
   @override
   TypeInfo get staticTypeInfo => typeInfo;
@@ -123,8 +135,9 @@ class $strClassName extends $strBaseClassName {
 
   }
 
-  static void bind() {
-    gde.dartBindings.bindClass($strClassName, $strClassName.typeInfo);
+  @override
+  MethodInfo? getMethodInfo(String methodName) {
+    return _methodTable[methodName];
   }
 }
 ''';

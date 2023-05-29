@@ -80,13 +80,13 @@ GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
     DART_CHECK(method_info, Dart_Invoke(dart_obj, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
 
-    hasMethod = Dart_IsNull(method_info);
+    hasMethod = !Dart_IsNull(method_info);
   });
 
   return hasMethod;
 }
 
-void DartScriptInstance::call(const GDStringName &p_method, const GDExtensionConstVariantPtr *p_args,
+void DartScriptInstance::call(const GDStringName* p_method, const GDExtensionConstVariantPtr *p_args,
                               GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return,
                               GDExtensionCallError *r_error) {
   GodotDartBindings *gde = GodotDartBindings::instance();
@@ -95,14 +95,13 @@ void DartScriptInstance::call(const GDStringName &p_method, const GDExtensionCon
   }
 
   gde->execute_on_dart_thread([&] {
-    Dart_EnterScope();
+    DartBlockScope scope;
 
     Dart_Handle dart_obj = Dart_HandleFromPersistent(_dart_object);
     
-    Dart_Handle method_info_args[] = {p_method.to_dart()};
+    Dart_Handle method_info_args[] = {p_method->to_dart()};
     DART_CHECK(method_info, Dart_Invoke(dart_obj, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args), "Failed getting method");
     if (Dart_IsNull(method_info)) {
-      Dart_ExitScope();
       return;
     }
 
@@ -165,12 +164,11 @@ void DartScriptInstance::call(const GDStringName &p_method, const GDExtensionCon
         GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       }
     }
+
     // TODO - these leak on error
     if (dart_args != nullptr) {
       delete[] dart_args;
     }
-
-    Dart_ExitScope();
   });
 }
 
@@ -190,7 +188,7 @@ GDExtensionBool DartScriptInstance::ref_count_decremented() {
 GDExtensionObjectPtr DartScriptInstance::get_script() {
   if (_godot_script_obj == nullptr) {
     GodotDartBindings::instance()->execute_on_dart_thread([&] {
-      Dart_EnterScope();
+      DartBlockScope scope;
 
       Dart_Handle dart_script_obj = Dart_HandleFromPersistent(_dart_script);
 
@@ -203,8 +201,6 @@ GDExtensionObjectPtr DartScriptInstance::get_script() {
       uint64_t obj_ptr = 0;
       Dart_IntegerToUint64(address, &obj_ptr);
       _godot_script_obj = reinterpret_cast<GDExtensionObjectPtr>(obj_ptr);
-
-      Dart_ExitScope();
     });
   }
 
@@ -313,7 +309,7 @@ void script_instance_call(GDExtensionScriptInstanceDataPtr p_self, GDExtensionCo
                           GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
   const GDStringName *gd_method = reinterpret_cast<const GDStringName *>(p_method);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_self);
-  instance->call(*gd_method, p_args, p_argument_count, r_return, r_error);
+  instance->call(gd_method, p_args, p_argument_count, r_return, r_error);
 }
 
 void script_instance_notification(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what) {

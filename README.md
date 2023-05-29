@@ -19,9 +19,9 @@ working, 🟨 - Partially working, ❌ - Not working)
 | Feature | Support | Note |
 | ------- | :-----: | ---- |
 | Dart as a Godot Extension Language | 🟨 |  |
-| Ref counted object support | ❌ | |
+| Ref counted object support | ✅ | Through `Ref<T>` |
 | Dart Debugging Extension | ✅ | Attach to `http://127.0.0.1:5858` |
-| Dart Available as a Scripting Language | ❌ |
+| Dart Available as a Scripting Language | 🟨 | Very early implementation |
 | Hot Reload | ❌ | |
 | Simplified Binding using build_runner | ❌ |  | 
 | Dart native Variants | ❌ | Needed for performance reasons |
@@ -74,9 +74,15 @@ dart ./bin/binding_generator.dart
 * Add a `main` function to your `main.dart`. This is where you will register
   your Godot classes
 
-You should now be able to write Dart code for Godot! But, there are some
-requirements for any Godot accessible Dart class. Here's the Simple example
-class in `simple/src/simple.dart`
+You should now be able to write Dart code for Godot! 
+
+Note there are two ways to use Dart with Godot: as an extension language and as
+a Script language. Both are only partially implemented
+
+### General Requirements
+
+There are requirements for any Godot accessible Dart class. Here's the Simple
+example class in `simple/src/simple.dart`
 
 ```dart
 class Simple extends Sprite2D {
@@ -126,7 +132,13 @@ class Simple extends Sprite2D {
 }
 ```
 
-Classes need to be registered to Godot in `main.dart`:
+### Dart classes as Extensions
+
+Dart classes used as an Extension will appear as creatable in the "Create New
+Node" interface, but aren't editable or attachable to existing nodes. At the
+moment, you will need to restart the editor for your new classes to appear.
+
+These classes need to be registered to Godot in `main.dart`:
 
 ```dart
 void main() {
@@ -134,8 +146,56 @@ void main() {
 }
 ```
 
-I know this is a very complicated setup. I'll be looking to simplify it in the
-future once more features are working.
+### Dart classes as Scripts
+
+Scripts require a little bit more setup, but can then be attached to exiting
+nodes, just like any other GDScript.  You should be able to create a Dart script
+by using the "Attach Script" command in the editor. This will create the
+necessary boilerplate for a Dart Script.
+
+The two new sections of note are:
+
+```dart
+  // The method table tells the scripting system which methods we implement and how to 
+  // call them. If you override a method or implement a method that Godot needs to "see", you
+  // need to add it here. 
+  static final Map<String, MethodInfo> _methodTable = {
+    '_ready': MethodInfo(
+      methodName: '_ready',
+      dartMethodName: 'vReady',
+      arguments: [],
+    ),
+    '_process': MethodInfo(
+      methodName: '_process',
+      dartMethodName: 'vProcess',
+      arguments: [],
+    ),
+  };
+
+  // Other functions...
+
+  // getMethodInfo is the method that will be called to get the method info. This default implementation is
+  // fine.
+  @override
+  MethodInfo? getMethodInfo(String methodName) {
+    return _methodTable[methodName];
+  }
+```
+
+You also have to register the class to the implementing file in your `main`
+function like so:
+```dart
+void main() {
+  // ... other bindings
+  DartScriptLanguage.singleton.addScript('res://src/player.dart', Player);
+}
+```
+
+# Notes
+
+I know this is a very complicated setup. I'll be looking to simplify it using
+code generation and `build_runner` in the future, once more features are
+working.
 
 # More Info
 

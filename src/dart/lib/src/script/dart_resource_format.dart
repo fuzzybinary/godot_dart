@@ -83,6 +83,11 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
 
     return convertToVariant(script);
   }
+
+  @override
+  int vGetResourceUid(GDString path) {
+    return -1;
+  }
 }
 
 class DartResourceFormatSaver extends ResourceFormatSaver {

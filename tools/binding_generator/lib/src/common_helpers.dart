@@ -328,7 +328,7 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
       if (argument.isRefCounted) {
         o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value, ${argument.rawDartType}.sTypeInfo);');
       } else {
-        o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).value);');
+        o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).cast<Pointer<Pointer<Void>>>().value.value);');
       }
       break;
     case TypeCategory.builtinClass:

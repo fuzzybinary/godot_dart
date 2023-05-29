@@ -16,7 +16,6 @@
   if (Dart_IsError(var)) {                                                                                             \
     GD_PRINT_ERROR("GodotDart: "##message##": ");                                                                      \
     GD_PRINT_ERROR(Dart_GetError(var));                                                                                \
-    Dart_ExitScope();                                                                                                  \
     return ret;                                                                                                        \
   }
 
@@ -37,6 +36,18 @@ struct TypeInfo {
   const GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };
 
+class DartBlockScope {
+
+public:
+  DartBlockScope() {
+    Dart_EnterScope();
+  }
+
+  ~DartBlockScope() {
+    Dart_ExitScope();
+  }
+};
+
 class GodotDartBindings {
 public:
   static GodotDartBindings *instance() {
@@ -52,8 +63,8 @@ public:
   void shutdown();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
-                   const std::vector<TypeInfo> &arg_list, MethodFlags method_flags);
-  void add_property(const TypeInfo &bind_type, const char *property_name, GDExtensionPropertyInfo *prop_info);
+                   Dart_Handle args_list, MethodFlags method_flags);
+  void add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info);
   void execute_on_dart_thread(std::function<void()> work);
   Dart_Handle new_dart_void_pointer(void *ptr);
 

@@ -27,7 +27,8 @@ public:
 
   GDExtensionBool has_method(const GDStringName &p_name);
 
-  void call(const GDStringName &p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, 
+  void call(const GDStringName* p_method, const GDExtensionConstVariantPtr *p_args,
+            GDExtensionInt p_argument_count, 
     GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
   void notification(int32_t p_what);
   void to_string(GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
