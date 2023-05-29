@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=3 uid="uid://ylcs4f06tfbg"]
 
 [ext_resource type="Texture2D" uid="uid://ionx3p5q0j5b" path="res://art/playerGrey_up1.png" id="1_mpeg6"]
-[ext_resource type="Script" uid="uid://" path="res://src/player.dart" id="1_snv8n"]
+[ext_resource type="Script" path="res://src/player.dart" id="1_snv8n"]
 [ext_resource type="Texture2D" uid="uid://4oyy1s3rmpl1" path="res://art/playerGrey_up2.png" id="2_ykn5m"]
 [ext_resource type="Texture2D" uid="uid://crdt83urfsyi2" path="res://art/playerGrey_walk1.png" id="3_pfqrn"]
 [ext_resource type="Texture2D" uid="uid://6fevpchdyjug" path="res://art/playerGrey_walk2.png" id="4_3tg7f"]
@@ -49,7 +49,7 @@ animation = &"up"
 shape = SubResource("CapsuleShape2D_ilyen")
 
 [node name="Simple" type="Simple" parent="."]
-position = Vector2(6.71405, 19.4447)
+position = Vector2(0.0180156, 9.40001)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("5_m0h7g")
 centered = false

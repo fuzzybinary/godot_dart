@@ -119,6 +119,21 @@ class ArgumentProxy {
     required this.defaultValue,
   });
 
+  ArgumentProxy renamed(String newName) {
+    return ArgumentProxy._(
+        name: newName,
+        type: type,
+        rawDartType: rawDartType,
+        dartType: dartType,
+        needsAllocation: needsAllocation,
+        isOptional: isOptional,
+        isPointer: isPointer,
+        isRefCounted: isRefCounted,
+        typeCategory: typeCategory,
+        meta: meta,
+        defaultValue: defaultValue);
+  }
+
   factory ArgumentProxy.fromSingleton(Singleton singleton) {
     final dartType = godotTypeToDartType(singleton.type);
     final isPointer = singleton.type.endsWith('*');

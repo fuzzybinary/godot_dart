@@ -220,16 +220,17 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
     o.nl();
 
     o.b('set ${member.name}(${memberProxy.dartType} value) {', () {
-      withAllocationBlock([memberProxy], null, o, () {
+      var valueMemberProxy = memberProxy.renamed('value');
+      withAllocationBlock([valueMemberProxy], null, o, () {
         String valueCast;
         if (memberProxy.needsAllocation) {
-          valueCast = '${member.name}Ptr.cast()';
-        } else if (member.type == 'String') {
+          valueCast = '${valueMemberProxy.name}Ptr.cast()';
+        } else if (valueMemberProxy.type == 'String') {
           valueCast = 'GDString.fromString(${member.name}).nativePtr.cast()';
-        } else if (memberProxy.isOptional) {
-          valueCast = '${member.name}?.nativePtr.cast() ?? nullptr';
+        } else if (valueMemberProxy.isOptional) {
+          valueCast = '${valueMemberProxy.name}?.nativePtr.cast() ?? nullptr';
         } else {
-          valueCast = '${member.name}.nativePtr.cast()';
+          valueCast = '${valueMemberProxy.name}.nativePtr.cast()';
         }
         o.p('final f = _bindings.member${member.name.toUpperCamelCase()}Setter!.asFunction<void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>(isLeaf: true);');
         o.p('f(nativePtr.cast(), $valueCast);');
