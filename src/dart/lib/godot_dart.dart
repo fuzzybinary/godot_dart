@@ -15,6 +15,7 @@ export 'src/core/type_info.dart';
 export 'src/gen/classes/engine_classes.dart';
 export 'src/gen/global_constants.dart';
 export 'src/gen/variant/builtins.dart';
+export 'src/godot_dart_extensions.dart';
 export 'src/script/dart_script_language.dart';
 export 'src/variant/variant.dart';
 

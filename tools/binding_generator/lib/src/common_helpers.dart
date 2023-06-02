@@ -43,7 +43,7 @@ import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
 import '../../core/type_info.dart';
 import '${forVariant ? '' : '../variant/'}string_name.dart';
-${forVariant ? '' : "import '../../variant/variant.dart';"}
+import '../../variant/variant.dart';
 
 ''');
 

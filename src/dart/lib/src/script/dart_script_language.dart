@@ -41,15 +41,6 @@ class DartScriptLanguage extends ScriptLanguageExtension {
     return type;
   }
 
-  static final Map<String, MethodInfo> _methodTable = {
-    '_init':
-        MethodInfo(methodName: '_init', dartMethodName: 'vInit', arguments: []),
-  };
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return _methodTable[methodName] ?? super.getMethodInfo(methodName);
-  }
-
   @override
   void vInit() {}
 
@@ -100,9 +91,10 @@ import 'package:godot_dart/godot_dart.dart';
 
 class $strClassName extends $strBaseClassName {
   // This is necessary boilerplate at the moment
-  static TypeInfo typeInfo = TypeInfo(
+  static TypeInfo sTypeInfo = TypeInfo(
+    $strClassName,
     StringName.fromString('$strClassName'),
-    parentClass: $strBaseClassName.typeInfo.className,
+    parentClass: $strBaseClassName.sTypeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable => $strBaseClassName.vTable;
   static final Map<String, MethodInfo> _methodTable = {
@@ -119,11 +111,13 @@ class $strClassName extends $strBaseClassName {
   };
 
   @override
-  TypeInfo get staticTypeInfo => typeInfo;
+  TypeInfo get typeInfo => sTypeInfo;
 
   $strClassName() : super() {
     postInitialize();
   }
+
+  $strClassName.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @override
   void vReady() {

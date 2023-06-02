@@ -300,19 +300,21 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   }
 
   // TODO: Double check this logic, godot-cpp hasn't gotten around to implementing this
-  if (builtin.name == 'Array') {
-    o.b('Variant operator [](int index) {', () {
+  if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
+    var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
+    o.b('$dartReturnType operator [](int index) {', () {
       o.p('final ret = Variant();');
       o.p('_bindings.indexedGetter?.asFunction<');
       o.p('        void Function(GDExtensionConstTypePtr, int, GDExtensionTypePtr)>(');
       o.p('    isLeaf: true)(nativePtr.cast(), index, ret.nativePtr.cast());');
-      o.p('return ret;');
+      o.p('return convertFromVariant(ret, null) as $dartReturnType;');
     }, '}');
     o.nl();
-    o.b('void operator []=(int index, Variant value) {', () {
+    o.b('void operator []=(int index, $dartReturnType value) {', () {
+      o.p('var variantValue = convertToVariant(value);');
       o.p('_bindings.indexedSetter?.asFunction<');
       o.p('        void Function(GDExtensionTypePtr, int, GDExtensionTypePtr)>(');
-      o.p('    isLeaf: true)(nativePtr.cast(), index, value.nativePtr.cast());');
+      o.p('    isLeaf: true)(nativePtr.cast(), index, variantValue.nativePtr.cast());');
     }, '}');
     o.nl();
   }

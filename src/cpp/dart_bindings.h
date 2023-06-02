@@ -9,6 +9,8 @@
 #include <dart_api.h>
 #include <godot/gdextension_interface.h>
 
+#include "gde_dart_converters.h"
+
 #define GDE GDEWrapper::instance()->gde()
 
 #define DART_CHECK_RET(var, expr, ret, message)                                                                        \
@@ -25,15 +27,6 @@ enum class MethodFlags : int32_t {
   None,
   PropertyGetter,
   PropertySetter,
-};
-
-struct TypeInfo {
-  GDExtensionStringNamePtr type_name = nullptr;
-  // Can be null
-  GDExtensionStringNamePtr parent_name = nullptr;
-  GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
-  // Can be null
-  const GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };
 
 class DartBlockScope {
@@ -107,6 +100,7 @@ public:
   Dart_PersistentHandle _void_pointer_type;
   Dart_PersistentHandle _void_pointer_optional_type;
   Dart_PersistentHandle _void_pointer_pointer_type;
+  Dart_PersistentHandle _variant_type;
 };
 
 void *get_opaque_address(Dart_Handle variant_handle);

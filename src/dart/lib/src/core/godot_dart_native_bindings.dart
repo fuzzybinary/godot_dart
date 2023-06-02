@@ -41,9 +41,10 @@ class GodotDartNativeBindings {
   late final createScriptInstance = godotDartDylib
       .lookup<
           NativeFunction<
-              Pointer<Void> Function(
-                  Handle, Handle, Pointer<Void>)>>('create_script_instance')
-      .asFunction<Pointer<Void> Function(Type, DartScript, Pointer<Void>)>();
+              Pointer<Void> Function(Handle, Handle, Pointer<Void>,
+                  Bool)>>('create_script_instance')
+      .asFunction<
+          Pointer<Void> Function(Type, DartScript, Pointer<Void>, bool)>();
 
   static DynamicLibrary openLibrary(String libName) {
     var libraryPath = path.join(Directory.current.path, '$libName.so');
@@ -81,6 +82,12 @@ class GodotDartNativeBindings {
   external Object? gdObjectToDartObject(
       GDExtensionObjectPtr object, Pointer<Void>? bindingToken);
 
+  @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotTypeInfo')
+  external TypeInfo getGodotTypeInfo(Type type);
+
+  @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotScriptInfo')
+  external ScriptInfo getGodotScriptInfo(Type type);
+
   Pointer<Void> toPersistentHandle(Object instance) {
     return _newPersistentHandle(instance);
   }
@@ -116,18 +123,30 @@ Variant _convertToVariant(Object? object) {
 
 @pragma('vm:entry-point')
 List<Object?> _variantsToDart(
-    Pointer<Pointer<Void>> variants, int count, List<TypeInfo> typeInfo) {
+    Pointer<Pointer<Void>> variants, int count, List<dynamic> typeInfoList) {
   var result = <Object?>[];
   for (int i = 0; i < count; ++i) {
-    var variant = Variant.fromPointer(variants.elementAt(i).value);
-    if (typeInfo[i].variantType ==
-        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
-      // Keep as variant
-      result.add(variant);
+    var variantPtr = variants.elementAt(i).value;
+    dynamic info = typeInfoList[i];
+    // TODO: this is a hack to get around two different ways of calling this. Please fix.
+    if (info is PropertyInfo) {
+      result.add(_variantPtrToDart(variantPtr, info.typeInfo));
     } else {
-      result.add(convertFromVariant(variant, typeInfo[i]));
+      result.add(_variantPtrToDart(variantPtr, info as TypeInfo));
     }
   }
 
   return result;
+}
+
+@pragma('vm:entry-point')
+Object? _variantPtrToDart(Pointer<Void> variantPtr, TypeInfo typeInfo) {
+  var variant = Variant.fromPointer(variantPtr);
+  if (typeInfo.variantType ==
+      GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
+    // Keep as variant
+    return variant;
+  } else {
+    return convertFromVariant(variant, typeInfo);
+  }
 }

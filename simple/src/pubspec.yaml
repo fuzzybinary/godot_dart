@@ -10,6 +10,7 @@ dependencies:
   ffi: ^2.0.1
   godot_dart:
     path: ../../src/dart
+  collection: ^1.17.2
 
 dev_dependencies:
   lints: ^2.0.0

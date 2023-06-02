@@ -1,5 +1,6 @@
 import 'dart:ffi';
 
+import 'package:collection/collection.dart';
 import 'package:godot_dart/godot_dart.dart';
 
 class Player extends Area2D {
@@ -8,20 +9,33 @@ class Player extends Area2D {
     Player,
     StringName.fromString('Player'),
     parentClass: Area2D.sTypeInfo.className,
+    bindingToken: gde.dartBindings.toPersistentHandle(Player),
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable => Area2D.vTable;
-  static final Map<String, MethodInfo> _methodTable = {
-    '_ready': MethodInfo(
-      methodName: '_ready',
-      dartMethodName: 'vReady',
-      arguments: [],
-    ),
-    '_process': MethodInfo(
-      methodName: '_process',
-      dartMethodName: 'vProcess',
-      arguments: [TypeInfo.forType(double)!],
-    ),
-  };
+  static final sScriptInfo = ScriptInfo(
+    methods: [
+      MethodInfo(
+        name: '_ready',
+        dartMethodName: 'vReady',
+        args: [],
+      ),
+      MethodInfo(
+        name: '_process',
+        dartMethodName: 'vProcess',
+        args: [
+          PropertyInfo(typeInfo: TypeInfo.forType(double)!, name: 'delta'),
+        ],
+      ),
+      MethodInfo(
+        name: 'onBodyEntered',
+        args: [PropertyInfo(typeInfo: Node2D.sTypeInfo, name: 'body')],
+      ),
+    ],
+    signals: [MethodInfo(name: 'hit', args: [])],
+    properties: [
+      PropertyInfo(typeInfo: TypeInfo.forType(int)!, name: 'speed'),
+    ],
+  );
 
   @override
   TypeInfo get typeInfo => sTypeInfo;
@@ -32,11 +46,14 @@ class Player extends Area2D {
 
   Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
-  final _speed = 400;
+  late final Signal _hit =
+      Signal.fromObjectSignal(this, StringName.fromString('hit'));
+  var speed = 400;
   late Vector2 _screenSize;
 
   @override
   void vReady() {
+    hide();
     _screenSize = getViewportRect().size;
   }
 
@@ -57,14 +74,24 @@ class Player extends Area2D {
       velocity.y -= 1;
     }
 
+    final animatedSprite = getNodeT<AnimatedSprite2D>();
+
     if (velocity.length() > 0) {
       velocity = velocity.normalized();
-      velocity.x *= _speed;
-      velocity.y *= _speed;
-      getNodeT<AnimatedSprite2D>(AnimatedSprite2D.sTypeInfo)
-          ?.play(StringName.fromString(''), 1.0, false);
+      velocity.x *= speed;
+      velocity.y *= speed;
+      animatedSprite?.play(StringName.fromString(''), 1.0, false);
+
+      if (velocity.x != 0) {
+        animatedSprite?.setAnimation(StringName.fromString('walk'));
+        animatedSprite?.setFlipV(false);
+        animatedSprite?.setFlipH(velocity.x < 0);
+      } else if (velocity.y != 0) {
+        animatedSprite?.setAnimation(StringName.fromString('up'));
+        animatedSprite?.setFlipV(velocity.y > 0);
+      }
     } else {
-      getNodeT<AnimatedSprite2D>(AnimatedSprite2D.sTypeInfo)?.stop();
+      getNodeT<AnimatedSprite2D>()?.stop();
     }
 
     var position = getPosition();
@@ -73,16 +100,27 @@ class Player extends Area2D {
     setPosition(position);
   }
 
+  void start(Vector2 pos) {
+    setPosition(pos);
+    show();
+    getNodeT<CollisionShape2D>()?.setDisabled(false);
+  }
+
+  void onBodyEntered(Node2D body) {
+    _hit.emit();
+    hide();
+    getNodeT<CollisionShape2D>()?.setDeferred(
+        StringName.fromString('disabled'), convertToVariant(true));
+  }
+
   @override
   MethodInfo? getMethodInfo(String methodName) {
-    return _methodTable[methodName];
+    return sScriptInfo.methods.firstWhereOrNull((e) => e.name == methodName);
   }
-}
 
-extension TNode on Node {
-  T? getNodeT<T>(TypeInfo typeInfo) {
-    final name = GDString.fromStringName(typeInfo.className);
-    var node = getNode(NodePath.fromGDString(name));
-    return gde.cast<T>(node, typeInfo);
+  @override
+  PropertyInfo? getPropertyInfo(String propertyName) {
+    return sScriptInfo.properties
+        .firstWhereOrNull((e) => e.name == propertyName);
   }
 }

@@ -12,6 +12,7 @@
 
 #include "dart_script_instance.h"
 #include "dart_vtable_wrapper.h"
+#include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 
@@ -63,13 +64,22 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
   return ret_obj;
 }
 
-static void __engine_binding_free_callback(void *ptoken, void *p_instance, void *p_binding) {
+static void __engine_binding_free_callback(void *p_token, void *p_instance, void *p_binding) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings) {
     return;
   }
 
   bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(p_token);
+    Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
+    Dart_Handle dart_type_desc = Dart_ToString(dart_type);
+    const char *type_desc = nullptr;
+    Dart_StringToCString(dart_type_desc, &type_desc);
+    GD_PRINT_ERROR(type_desc);
+    
     Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_binding);
     Dart_Handle obj = Dart_HandleFromPersistent(persistent);
     if (!Dart_IsNull(obj)) {
@@ -85,20 +95,15 @@ static void __engine_binding_free_callback(void *ptoken, void *p_instance, void 
 
 static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *p_instance,
                                                            GDExtensionBool p_reference) {
-  return true;
+  // This returns true if the object is allowed to die (meaning Dart is no longer holding onto a reference)
+  // The logic here still needs to be written so, for now, just return false and leak the memory.
+  return false;
 }
 
 static constexpr GDExtensionInstanceBindingCallbacks __engine_binding_callbacks = {
     __engine_binding_create_callback,
     __engine_binding_free_callback,
     __engine_binding_reference_callback,
-};
-
-struct MethodInfo {
-  std::string method_name;
-  TypeInfo return_type;
-  Dart_PersistentHandle args_list;
-  MethodFlags method_flags;
 };
 
 void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
@@ -126,6 +131,13 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
 
   Dart_ExitScope();
 }
+
+struct MethodInfo {
+  std::string method_name;
+  TypeInfo return_type;
+  Dart_PersistentHandle args_list;
+  MethodFlags method_flags;
+};
 
 GodotDartBindings *GodotDartBindings::_instance = nullptr;
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
@@ -485,24 +497,6 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
                                                  gd_getter._native_ptr());
 }
 
-void *get_opaque_address(Dart_Handle variant_handle) {
-  // TODO: Look for a better way convert the variant.
-  Dart_Handle opaque = Dart_GetField(variant_handle, Dart_NewStringFromCString("_opaque"));
-  if (Dart_IsError(opaque)) {
-    GD_PRINT_ERROR(Dart_GetError(opaque));
-    return nullptr;
-  }
-  Dart_Handle address = Dart_GetField(opaque, Dart_NewStringFromCString("address"));
-  if (Dart_IsError(address)) {
-    GD_PRINT_ERROR(Dart_GetError(address));
-    return nullptr;
-  }
-  uint64_t variantDataPtr = 0;
-  Dart_IntegerToUint64(address, &variantDataPtr);
-
-  return reinterpret_cast<void *>(variantDataPtr);
-}
-
 /* Static Callbacks from Godot */
 
 void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,
@@ -513,10 +507,6 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     // oooff
     return;
   }
-  // TODO: This needs to be redone with the new way that DartScripInstance is doing it. I changed
-  // `convertFromVariant` to take a "bindingToken" instead of a binding callback and never changed
-  // `_variantsToDart` to match. `_variantsToDart` now correctly takes a binding token.
-
   gde->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
@@ -876,6 +866,30 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 }
 
+void get_godot_type_info(Dart_NativeArguments args) {
+  Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
+  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
+  if (Dart_IsError(type_info)) {
+    GD_PRINT_ERROR(Dart_GetError(type_info));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(type_info)));
+    return;
+  }
+
+  Dart_SetReturnValue(args, type_info);
+}
+
+void get_godot_script_info(Dart_NativeArguments args) {
+  Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
+  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sScriptInfo"));
+  if (Dart_IsError(type_info)) {
+    GD_PRINT_ERROR(Dart_GetError(type_info));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(type_info)));
+    return;
+  }
+
+  Dart_SetReturnValue(args, type_info);
+}
+
 void dart_object_post_initialize(Dart_NativeArguments args) {
   Dart_Handle dart_self = Dart_GetNativeArgument(args, 0);
   Dart_Handle d_class_type_info = Dart_GetField(dart_self, Dart_NewStringFromCString("typeInfo"));
@@ -936,6 +950,12 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::gdObjectToDartObject")) {
     *auto_setup_scope = true;
     ret = gd_object_to_dart_object;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotTypeInfo")) {
+    *auto_setup_scope = true;
+    ret = get_godot_type_info;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotScriptInfo")) {
+    *auto_setup_scope = true;
+    ret = get_godot_script_info;
   } else if (0 == strcmp(c_name, "ExtensionType::postInitialize")) {
     *auto_setup_scope = true;
     ret = dart_object_post_initialize;
@@ -960,7 +980,7 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   GDE->object_destroy(extention_object);
 }
 
-GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object) {
+GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings || godot_object == nullptr) {
     return nullptr;
@@ -971,7 +991,7 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
   DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
                  "Error creating bindings");
 
-  DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object);
+  DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder);
   GDExtensionScriptInstancePtr godot_script_instance =
       GDE->script_instance_create(DartScriptInstance::get_script_instance_info(),
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));

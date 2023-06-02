@@ -229,20 +229,30 @@ class GodotDart {
 
     final func = interface.ref.object_cast_to.asFunction<
         GDExtensionObjectPtr Function(Pointer<Void>, Pointer<Void>)>();
-    final casted = func(from.nativePtr, getClassTag(typeInfo.className));
-    if (casted == nullptr) {
-      return null;
+    final classTag = getClassTag(typeInfo.className);
+    Pointer<Void> casted;
+    if (classTag != nullptr) {
+      casted = func(from.nativePtr, classTag);
+      if (casted == nullptr) {
+        return null;
+      }
+    } else {
+      casted = from.nativePtr;
     }
 
-    final persistent = interface.ref.object_get_instance_binding.asFunction<
-        Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
-            Pointer<GDExtensionInstanceBindingCallbacks>)>()(
-      casted,
-      typeInfo.bindingToken ?? libraryPtr,
-      gde.engineBindingCallbacks,
-    );
-    final dartObject = dartBindings.fromPersistentHandle(persistent);
+    if (typeInfo.bindingToken != null) {
+      final persistent = interface.ref.object_get_instance_binding.asFunction<
+          Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
+              Pointer<GDExtensionInstanceBindingCallbacks>)>()(
+        casted,
+        typeInfo.bindingToken!,
+        gde.engineBindingCallbacks,
+      );
+      final dartObject = dartBindings.fromPersistentHandle(persistent);
 
-    return dartObject as T;
+      return dartObject as T;
+    }
+
+    return null;
   }
 }

@@ -29,14 +29,6 @@ uint32_t next_available_thunk = 0;
 GDExtensionClassCallVirtual virtual_thunks[MAX_VIRTUAL] = {0};
 GDExtensionClassCallVirtual dart_virtual_func[MAX_VIRTUAL] = {0};
 
-template <int i> void _init_virtual_thunks() {
-  virtual_thunks[i] = &virtual_thunk<i>;
-  _init_virtual_thunks<i - 1>();
-}
-
-template <> void _init_virtual_thunks<-1>() {
-}
-
 template <int i>
 void virtual_thunk(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args,
                    GDExtensionTypePtr r_ret) {
@@ -52,6 +44,14 @@ void virtual_thunk(GDExtensionClassInstancePtr p_instance, const GDExtensionCons
   }
 
   bindings->execute_on_dart_thread([&]() { dart_call(p_instance, p_args, r_ret); });
+}
+
+template <int i> void _init_virtual_thunks() {
+  virtual_thunks[i] = &virtual_thunk<i>;
+  _init_virtual_thunks<i - 1>();
+}
+
+template <> void _init_virtual_thunks<-1>() {
 }
 
 void init_virtual_thunks() {

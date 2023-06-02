@@ -6,11 +6,11 @@
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner);
+  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner, bool is_placeholder);
   ~DartScriptInstance();
 
   bool set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value);
-  bool get(const GDStringName &p_name, GDExtensionTypePtr r_ret);
+  bool get(const GDStringName &p_name, GDExtensionVariantPtr r_ret);
 
   const GDExtensionPropertyInfo *get_property_list(uint32_t *r_count);
   void free_property_list(const GDExtensionPropertyInfo *p_list);
@@ -40,13 +40,14 @@ public:
   GDExtensionBool is_placeholder();
 
   bool set_fallback(const GDStringName &p_name, GDExtensionConstVariantPtr p_value);
-  bool get_fallback(const GDStringName &p_name, GDExtensionTypePtr r_ret);
+  bool get_fallback(const GDStringName &p_name, GDExtensionVariantPtr r_ret);
 
   GDExtensionScriptLanguagePtr get_language();
 
   static const GDExtensionScriptInstanceInfo* get_script_instance_info();
 
 private:
+  bool _is_placeholder;
   Dart_PersistentHandle _dart_object;
   Dart_PersistentHandle _dart_script;
   GDExtensionObjectPtr _godot_script_obj;

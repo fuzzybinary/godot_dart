@@ -99,3 +99,48 @@ class TypeInfo {
     return _typeMapping[type];
   }
 }
+
+class MethodInfo {
+  final String name;
+  final String? dartMethodName;
+  final List<PropertyInfo> args;
+  final PropertyInfo? returnInfo;
+  final MethodFlags flags;
+
+  MethodInfo({
+    required this.name,
+    this.dartMethodName,
+    required this.args,
+    this.returnInfo,
+    this.flags = MethodFlags.methodFlagsDefault,
+  });
+
+  Dictionary asDict() {
+    var dict = Dictionary();
+    dict[convertToVariant('name')] = convertToVariant(name);
+    var argsArray = Array();
+    for (int i = 0; i < args.length; ++i) {
+      argsArray.append(convertToVariant(args[i].asDict()));
+    }
+    dict[convertToVariant('args')] = convertToVariant(argsArray);
+    if (returnInfo != null) {
+      dict[convertToVariant('return')] = convertToVariant(returnInfo?.asDict());
+    }
+    dict[convertToVariant('flags')] = convertToVariant(flags);
+
+    return dict;
+  }
+}
+
+/// ScriptInfo contains information about types accessible as Scripts
+class ScriptInfo {
+  final List<MethodInfo> methods;
+  final List<MethodInfo> signals;
+  final List<PropertyInfo> properties;
+
+  ScriptInfo({
+    required this.methods,
+    required this.signals,
+    required this.properties,
+  });
+}
