@@ -42,6 +42,7 @@ import '../../core/core_types.dart';
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
 import '../../core/type_info.dart';
+import '${forVariant ? '' : '../variant/'}string.dart';
 import '${forVariant ? '' : '../variant/'}string_name.dart';
 import '../../variant/variant.dart';
 
@@ -151,7 +152,8 @@ String getDartMethodName(String name, bool isVirtual) {
   return name;
 }
 
-String makeSignature(BuiltinClassMethod functionData) {
+String makeSignature(BuiltinClassMethod functionData,
+    {bool useGodotStringTypes = false}) {
   var modifiers = '';
   if (functionData.isStatic) {
     modifiers += 'static ';
@@ -169,8 +171,12 @@ String makeSignature(BuiltinClassMethod functionData) {
       final parameter = parameters[i];
 
       // TODO: Default values
-      paramSignature.add(
-          '${parameter.proxy.dartType} ${escapeName(parameter.name).toLowerCamelCase()}');
+      var type = parameter.proxy.dartType;
+      if (useGodotStringTypes && type == 'String') {
+        type = parameter.proxy.type;
+      }
+      paramSignature
+          .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
     }
     signature += paramSignature.join(', ');
   }
@@ -310,19 +316,19 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
 }
 
 void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
-  // TODO: Parameters mostly currently take 'GDString' whereas returns are 'String'
-  // I need to figure out how to make it String across the board.
-  // if (argument.godotType == 'String') {
-  //   // Very sepecial -- needs to be converted to a Dart String
-  //   var ret =
-  //       '${indent}final GDString gd${argument.name} = GDString.fromPointer(args.elementAt($index).value);\n';
-  //   ret +=
-  //       '${indent}final ${argument.name} = gde.dartBindings.gdStringToString(gd${argument.name});\n';
-  //   return ret;
-  // }
+  // Special case, converting to Dart strings from GDString or StringName
+  final varName = escapeName(argument.name).toLowerCamelCase();
+  var decl = 'final ${argument.dartType} $varName';
+  if (argument.type == 'String') {
+    o.p('final GDString gd$varName = GDString.fromPointer(args.elementAt($index).value);');
+    o.p('$decl = gd$varName.toDartString();');
+    return;
+  } else if (argument.type == 'StringName') {
+    o.p('final StringName gd$varName = StringName.fromPointer(args.elementAt($index).value);');
+    o.p('$decl = GDString.fromStringName(gd$varName).toDartString();');
+    return;
+  }
 
-  var decl =
-      'final ${argument.dartType} ${escapeName(argument.name).toLowerCamelCase()}';
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       if (argument.isRefCounted) {
@@ -364,11 +370,15 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
 }
 
 void writePtrReturn(ArgumentProxy argument, CodeSink o) {
-  // if (argument.type == 'String') {
-  //   o.p('final retGdString = GDString.fromString(ret);');
-  //   o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
-  //   return;
-  // }
+  if (argument.type == 'String') {
+    o.p('final retGdString = GDString.fromString(ret);');
+    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
+    return;
+  } else if (argument.type == 'StringName') {
+    o.p('final retGdStringName = StringName.fromString(ret);');
+    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdStringName);');
+    return;
+  }
 
   var ret = '';
   switch (argument.typeCategory) {

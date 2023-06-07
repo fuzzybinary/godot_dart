@@ -24,7 +24,7 @@ class DartScript extends ScriptExtension {
   Type? _scriptType;
   ScriptInfo? _scriptInfo;
 
-  GDString _sourceCode = GDString();
+  String _sourceCode = '';
 
   DartScript() : super() {
     postInitialize();
@@ -36,18 +36,18 @@ class DartScript extends ScriptExtension {
   }
 
   @override
-  void vSetSourceCode(GDString code) {
-    _sourceCode = GDString.copy(code);
+  void vSetSourceCode(String code) {
+    _sourceCode = code;
   }
 
   @override
-  GDString vGetSourceCode() {
+  String vGetSourceCode() {
     return _sourceCode;
   }
 
   @override
   bool vHasSourceCode() {
-    return !_sourceCode.isEmpty();
+    return _sourceCode.isNotEmpty;
   }
 
   @override
@@ -56,12 +56,12 @@ class DartScript extends ScriptExtension {
   }
 
   @override
-  bool vHasMethod(StringName method) {
+  bool vHasMethod(String method) {
     return _findMethod(method) != null;
   }
 
   @override
-  Dictionary vGetMethodInfo(StringName method) {
+  Dictionary vGetMethodInfo(String method) {
     final methodInfo = _findMethod(method);
     return methodInfo?.asDict() ?? Dictionary();
   }
@@ -72,16 +72,15 @@ class DartScript extends ScriptExtension {
   }
 
   @override
-  bool vHasScriptSignal(StringName signal) {
+  bool vHasScriptSignal(String signal) {
     bool hasSignal = false;
     if (_scriptType == null) {
       _refreshType();
     }
 
     if (_scriptInfo != null) {
-      final signalName = GDString.fromStringName(signal).toDartString();
       final signalInfo =
-          _scriptInfo!.signals.firstWhereOrNull((e) => e.name == signalName);
+          _scriptInfo!.signals.firstWhereOrNull((e) => e.name == signal);
       hasSignal = signalInfo != null;
     }
 
@@ -166,7 +165,7 @@ class DartScript extends ScriptExtension {
     if (forObject == null) return nullptr;
     print('Placeholder instance create');
 
-    final scriptPath = getPath().toDartString();
+    final scriptPath = getPath();
     final type = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
     if (type == null) return nullptr;
 
@@ -177,7 +176,7 @@ class DartScript extends ScriptExtension {
   }
 
   void _refreshType() {
-    final scriptPath = getPath().toDartString();
+    final scriptPath = getPath();
     _scriptType = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
     if (_scriptType != null) {
       _scriptInfo = gde.dartBindings.getGodotScriptInfo(_scriptType!);
@@ -186,7 +185,7 @@ class DartScript extends ScriptExtension {
     }
   }
 
-  MethodInfo? _findMethod(StringName methodName) {
+  MethodInfo? _findMethod(String methodName) {
     MethodInfo? info;
     if (_scriptType == null) {
       _refreshType();
@@ -194,8 +193,7 @@ class DartScript extends ScriptExtension {
 
     if (_scriptInfo != null) {
       // TODO: ?
-      final name = GDString.fromStringName(methodName).toDartString();
-      info = _scriptInfo!.methods.firstWhereOrNull((e) => e.name == name);
+      info = _scriptInfo!.methods.firstWhereOrNull((e) => e.name == methodName);
     }
 
     return info;

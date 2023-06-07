@@ -96,6 +96,11 @@ Future<void> generateNativeStructures(
       // Write fields
       for (final field in fields) {
         var dartType = getCorrectedType(field.type);
+        if (field.type == 'StringName') {
+          // Revert that change:
+          dartType = 'StringName';
+        }
+
         var ffiType = getFFITypeFromString(field.type);
         String? comment;
         if (field.type.endsWith('*')) {

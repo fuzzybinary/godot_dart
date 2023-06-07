@@ -1,5 +1,7 @@
 import 'dart:ffi';
 
+import 'package:path/path.dart' as p;
+
 import '../../godot_dart.dart';
 import 'dart_script.dart';
 
@@ -25,45 +27,42 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   TypeInfo get typeInfo => sTypeInfo;
 
   @override
-  bool vHandlesType(StringName type) {
-    final strType = GDString.fromStringName(type).toDartString();
-    return strType == 'Script' || strType == 'DartScript';
+  bool vHandlesType(String type) {
+    return type == 'Script' || type == 'DartScript';
   }
 
   @override
   PackedStringArray vGetRecognizedExtensions() {
     final array = PackedStringArray();
-    array.pushBack(GDString.fromString('dart'));
+    array.pushBack('dart');
     return array;
   }
 
   @override
-  bool vRecognizePath(GDString path, StringName type) {
-    return path.toDartString().endsWith('.dart');
+  bool vRecognizePath(String path, String type) {
+    return path.endsWith('.dart');
   }
 
   @override
-  GDString vGetResourceType(GDString path) {
-    final extension = path.getExtension();
+  String vGetResourceType(String path) {
+    final extension = p.extension(path);
 
-    return extension.toDartString() == 'dart'
-        ? GDString.fromString('DartScript')
-        : GDString.fromString('');
+    return extension == '.dart' ? 'DartScript' : '';
   }
 
   @override
-  GDString vGetResourceScriptClass(GDString path) {
-    return GDString.fromString('DartScript');
+  String vGetResourceScriptClass(String path) {
+    return 'DartScript';
   }
 
   @override
-  bool vExists(GDString path) {
+  bool vExists(String path) {
     return FileAccess.fileExists(path);
   }
 
   @override
   Variant vLoad(
-      GDString path, GDString originalPath, bool useSubThreads, int cacheMode) {
+      String path, String originalPath, bool useSubThreads, int cacheMode) {
     // Can cast directly since this is a direct Dart -> Dart call
     final script = DartScriptLanguage.singleton.vCreateScript() as DartScript?;
 
@@ -85,7 +84,7 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   }
 
   @override
-  int vGetResourceUid(GDString path) {
+  int vGetResourceUid(String path) {
     return -1;
   }
 }
@@ -112,7 +111,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   TypeInfo get typeInfo => sTypeInfo;
 
   @override
-  GDError vSave(Ref<Resource> resource, GDString path, int flags) {
+  GDError vSave(Ref<Resource> resource, String path, int flags) {
     if (resource.obj == null) return GDError.errInvalidParameter;
 
     final script = gde.cast<DartScript>(resource.obj, DartScript.sTypeInfo);
@@ -135,8 +134,8 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   }
 
   @override
-  bool vRecognizePath(Ref<Resource> resource, GDString path) {
-    return path.toDartString().endsWith('.dart');
+  bool vRecognizePath(Ref<Resource> resource, String path) {
+    return path.endsWith('.dart');
   }
 
   @override
@@ -149,6 +148,6 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
   @override
   PackedStringArray vGetRecognizedExtensions(Ref<Resource> resource) {
-    return PackedStringArray()..pushBack(GDString.fromString('dart'));
+    return PackedStringArray()..pushBack('dart');
   }
 }

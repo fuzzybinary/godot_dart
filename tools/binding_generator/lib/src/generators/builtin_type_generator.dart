@@ -154,14 +154,49 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
   for (final constructor in builtin.constructors) {
     final arguments = constructor.arguments?.map((e) => e.proxy).toList() ?? [];
     final constructorName = getConstructorName(builtin.name, constructor);
+    // Special cases -- fromGDString, fromStringName, and copy constructors for GDString and StringName
+    if ((builtin.name == 'String' || builtin.name == 'StringName') &&
+        constructorName == '.copy') {
+      o.b('${builtin.dartName}.copy(final ${builtin.dartName} from) {', () {
+        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
+            () {
+          o.p('from.nativePtr.cast(),');
+        }, ']);');
+      }, '}');
+      o.nl();
+      continue;
+    }
+    if (constructorName == '.fromGDString' ||
+        constructorName == '.fromStringName') {
+      final fromArgument = constructor.arguments!.first;
+      final dartType =
+          fromArgument.type == 'String' ? 'GDString' : 'StringName';
+      o.b('${builtin.dartName}$constructorName(final $dartType from) {', () {
+        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
+            () {
+          o.p('from.nativePtr.cast(),');
+        }, ']);');
+      }, '}');
+      o.nl();
+      continue;
+    }
+
     o.b('${builtin.dartName}$constructorName(', () {
       // Argument list
       for (final argument in arguments) {
-        o.p('final ${argument.dartType} ${escapeName(argument.name).toLowerCamelCase()},');
+        var type = argument.dartType;
+        o.p('final $type ${escapeName(argument.name).toLowerCamelCase()},');
       }
     }, ')', newLine: false);
     o.b(' {', () {
       withAllocationBlock(arguments, null, o, () {
+        var stringArguments = arguments
+            .where((e) => e.type == 'String' || e.type == 'StringName');
+        for (final strArg in stringArguments) {
+          final type = strArg.name == 'String' ? 'GDString' : 'StringName';
+          final escapedName = escapeName(strArg.name).toLowerCamelCase();
+          o.p('final $type gd$escapedName = $type.fromString($escapedName);');
+        }
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
           for (final argument in arguments) {
@@ -170,6 +205,9 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
               o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
               o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
+            } else if (argument.type == 'String' ||
+                argument.type == 'StringName') {
+              o.p('gd$escapedName.nativePtr.cast(),');
             } else {
               o.p('$escapedName.nativePtr.cast(),');
             }
@@ -185,6 +223,7 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     gdStringToDartString(o);
   } else if (builtin.name == 'StringName') {
     stringNameFromString(o);
+    stringNameToDartString(o);
   }
 }
 
@@ -250,6 +289,8 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       if (retArg.typeCategory != TypeCategory.voidType) {
         if (method.returnType == 'String') {
           o.p('GDString retVal = GDString();');
+        } else if (method.returnType == 'StringName') {
+          o.p('StringName retVal = StringName();');
         } else if (retArg.isOptional) {
           o.p('${retArg.dartType} retVal;');
         } else {
@@ -258,10 +299,18 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       }
 
       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+      final stringArguments = method.arguments
+              ?.where((e) => e.type == 'String' || e.type == 'StringName') ??
+          [];
       withAllocationBlock(arguments, retArg, o, () {
         bool extractReturnValue = false;
         if (retArg.typeCategory != TypeCategory.voidType) {
           extractReturnValue = writeReturnAllocation(retArg, o);
+        }
+        for (final strParam in stringArguments) {
+          final type = strParam.name == 'String' ? 'GDString' : 'StringName';
+          final escapedName = escapeName(strParam.name).toLowerCamelCase();
+          o.p('final $type gd$escapedName = $type.fromString($escapedName);');
         }
         final retParam = retArg.typeCategory == TypeCategory.voidType
             ? 'nullptr'
@@ -276,6 +325,9 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
               o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
               o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
+            } else if (argument.type == 'String' ||
+                argument.type == 'StringName') {
+              o.p('gd$escapedName.nativePtr.cast(),');
             } else {
               o.p('$escapedName.nativePtr.cast(),');
             }
@@ -293,7 +345,11 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       });
 
       if (retArg.typeCategory != TypeCategory.voidType) {
-        o.p('return retVal;');
+        if (retArg.type == 'String' || retArg.type == 'StringName') {
+          o.p('return retVal.toDartString();');
+        } else {
+          o.p('return retVal;');
+        }
       }
     }, '}');
     o.nl();

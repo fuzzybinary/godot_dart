@@ -77,7 +77,14 @@ class GodotApiInfo {
 
 // Extensions for getting common info
 extension DartBuiltinExtensions on BuiltinClass {
-  String get dartName => getCorrectedType(name);
+  String get dartName {
+    if (name == 'String') {
+      return 'GDString';
+    } else if (name == 'StringName') {
+      return name;
+    }
+    return getCorrectedType(name);
+  }
 }
 
 extension DartGodotExtensionApiJsonClassExtension

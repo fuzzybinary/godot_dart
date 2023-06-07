@@ -33,3 +33,10 @@ void gdStringToDartString(CodeSink o) {
     o.p('return gde.dartBindings.gdStringToString(this);');
   }, '}');
 }
+
+void stringNameToDartString(CodeSink o) {
+  o.b('String toDartString() {', () {
+    o.p('GDString gdStr = GDString.fromStringName(this);');
+    o.p('return gde.dartBindings.gdStringToString(gdStr);');
+  }, '}');
+}

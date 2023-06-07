@@ -73,7 +73,8 @@ String getCorrectedType(String type, {String? meta}) {
   const typeConversion = {
     'float': 'double',
     'Nil': 'Variant',
-    'String': 'GDString',
+    'String': 'String',
+    'StringName': 'String',
     'Object': 'GodotObject',
     'real_t': 'double',
     'int8_t': 'int',

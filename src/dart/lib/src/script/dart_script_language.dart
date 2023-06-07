@@ -45,13 +45,13 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   void vInit() {}
 
   @override
-  GDString vGetName() {
-    return GDString.fromString('Dart');
+  String vGetName() {
+    return 'Dart';
   }
 
   @override
-  GDString vGetType() {
-    return GDString.fromString('DartScript');
+  String vGetType() {
+    return 'DartScript';
   }
 
   @override
@@ -60,8 +60,8 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  GDString vGetExtension() {
-    return GDString.fromString('dart');
+  String vGetExtension() {
+    return 'dart';
   }
 
   @override
@@ -70,8 +70,8 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  GDString vValidatePath(GDString path) {
-    return GDString.fromString('');
+  String vValidatePath(String path) {
+    return '';
   }
 
   @override
@@ -81,22 +81,19 @@ class DartScriptLanguage extends ScriptLanguageExtension {
 
   @override
   Ref<Script> vMakeTemplate(
-      GDString template, GDString className, GDString baseClassName) {
-    final strClassName = gde.dartBindings.gdStringToString(className);
-    final strBaseClassName = gde.dartBindings.gdStringToString(baseClassName);
-
+      String template, String className, String baseClassName) {
     final source = '''import 'dart:ffi';
 
 import 'package:godot_dart/godot_dart.dart';
 
-class $strClassName extends $strBaseClassName {
+class $className extends $baseClassName {
   // This is necessary boilerplate at the moment
   static TypeInfo sTypeInfo = TypeInfo(
-    $strClassName,
-    StringName.fromString('$strClassName'),
-    parentClass: $strBaseClassName.sTypeInfo.className,
+    $className,
+    StringName.fromString('$className'),
+    parentClass: $baseClassName.sTypeInfo.className,
   );
-  static Map<String, Pointer<GodotVirtualFunction>> get vTable => $strBaseClassName.vTable;
+  static Map<String, Pointer<GodotVirtualFunction>> get vTable => $baseClassName.vTable;
   static final Map<String, MethodInfo> _methodTable = {
     '_ready': MethodInfo(
       methodName: '_ready',
@@ -113,11 +110,11 @@ class $strClassName extends $strBaseClassName {
   @override
   TypeInfo get typeInfo => sTypeInfo;
 
-  $strClassName() : super() {
+  $className() : super() {
     postInitialize();
   }
 
-  $strClassName.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  $className.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @override
   void vReady() {
@@ -136,10 +133,8 @@ class $strClassName extends $strBaseClassName {
 }
 ''';
 
-    final gdSource = GDString.fromString(source);
-
     final script = DartScript();
-    script.setSourceCode(gdSource);
+    script.setSourceCode(source);
     script.setName(className);
     return Ref<Script>(script);
   }
@@ -147,12 +142,12 @@ class $strClassName extends $strBaseClassName {
   @override
   PackedStringArray vGetRecognizedExtensions() {
     final array = PackedStringArray();
-    array.append(GDString.fromString('dart'));
+    array.append('dart');
     return array;
   }
 
   @override
-  Dictionary vValidate(GDString script, GDString path, bool validateFunctions,
+  Dictionary vValidate(String script, String path, bool validateFunctions,
       bool validateErrors, bool validateWarnings, bool validateSafeLines) {
     final validateResponse = Dictionary();
     validateResponse[convertToVariant('valid')] = convertToVariant(true);

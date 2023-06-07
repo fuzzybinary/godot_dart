@@ -46,8 +46,7 @@ class Player extends Area2D {
 
   Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
-  late final Signal _hit =
-      Signal.fromObjectSignal(this, StringName.fromString('hit'));
+  late final Signal _hit = Signal.fromObjectSignal(this, 'hit');
   var speed = 400;
   late Vector2 _screenSize;
 
@@ -61,16 +60,16 @@ class Player extends Area2D {
   void vProcess(double delta) {
     var velocity = Vector2.fromXY(0, 0);
     var input = Input.singleton;
-    if (input.isActionPressed(StringName.fromString('move_right'), false)) {
+    if (input.isActionPressed('move_right', false)) {
       velocity.x += 1;
     }
-    if (input.isActionPressed(StringName.fromString('move_left'), false)) {
+    if (input.isActionPressed('move_left', false)) {
       velocity.x -= 1;
     }
-    if (input.isActionPressed(StringName.fromString('move_down'), false)) {
+    if (input.isActionPressed('move_down', false)) {
       velocity.y += 1;
     }
-    if (input.isActionPressed(StringName.fromString('move_up'), false)) {
+    if (input.isActionPressed('move_up', false)) {
       velocity.y -= 1;
     }
 
@@ -80,14 +79,14 @@ class Player extends Area2D {
       velocity = velocity.normalized();
       velocity.x *= speed;
       velocity.y *= speed;
-      animatedSprite?.play(StringName.fromString(''), 1.0, false);
+      animatedSprite?.play('', 1.0, false);
 
       if (velocity.x != 0) {
-        animatedSprite?.setAnimation(StringName.fromString('walk'));
+        animatedSprite?.setAnimation('walk');
         animatedSprite?.setFlipV(false);
         animatedSprite?.setFlipH(velocity.x < 0);
       } else if (velocity.y != 0) {
-        animatedSprite?.setAnimation(StringName.fromString('up'));
+        animatedSprite?.setAnimation('up');
         animatedSprite?.setFlipV(velocity.y > 0);
       }
     } else {
@@ -109,8 +108,8 @@ class Player extends Area2D {
   void onBodyEntered(Node2D body) {
     _hit.emit();
     hide();
-    getNodeT<CollisionShape2D>()?.setDeferred(
-        StringName.fromString('disabled'), convertToVariant(true));
+    getNodeT<CollisionShape2D>()
+        ?.setDeferred('disabled', convertToVariant(true));
   }
 
   @override

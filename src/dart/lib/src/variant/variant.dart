@@ -287,10 +287,15 @@ Object? convertFromVariant(
         c!(ptr.cast(), variant.nativePtr.cast());
         ret = ptr.value;
         break;
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING_NAME:
+        var gdStringName = StringName();
+        c!(gdStringName.nativePtr.cast(), variant.nativePtr.cast());
+        ret = gdStringName.toDartString();
+        break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
         c!(gdString.nativePtr.cast(), variant.nativePtr.cast());
-        ret = gdString;
+        ret = gdString.toDartString();
         break;
 
       // Or a wrapped object
