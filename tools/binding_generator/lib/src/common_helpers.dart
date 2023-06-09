@@ -164,21 +164,25 @@ String makeSignature(BuiltinClassMethod functionData,
       '$modifiers${godotTypeToDartType(functionData.returnType)} $methodName(';
 
   final parameters = functionData.arguments;
-  if (parameters != null) {
-    List<String> paramSignature = [];
+  if (functionData.isVararg) {
+    signature += '{List<Variant> args = const []}';
+  } else {
+    if (parameters != null) {
+      List<String> paramSignature = [];
 
-    for (int i = 0; i < parameters.length; ++i) {
-      final parameter = parameters[i];
+      for (int i = 0; i < parameters.length; ++i) {
+        final parameter = parameters[i];
 
-      // TODO: Default values
-      var type = parameter.proxy.dartType;
-      if (useGodotStringTypes && type == 'String') {
-        type = parameter.proxy.type;
+        // TODO: Default values
+        var type = parameter.proxy.dartType;
+        if (useGodotStringTypes && type == 'String') {
+          type = parameter.proxy.type;
+        }
+        paramSignature
+            .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
       }
-      paramSignature
-          .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
+      signature += paramSignature.join(', ');
     }
-    signature += paramSignature.join(', ');
   }
 
   signature += ')';

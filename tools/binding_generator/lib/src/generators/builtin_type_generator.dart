@@ -284,6 +284,23 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   for (final method in methods) {
     var methodName = escapeMethodName(method.name);
     o.b('${makeSignature(method)} {', () {
+      final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+
+      if (method.isVararg) {
+        // Special case.. use `variantCall` instead
+        final retValStr = method.returnType != null ? 'Variant retVal = ' : '';
+        o.p('Variant self = convertToVariant(this);');
+        o.p("${retValStr}gde.variantCall(self, '${method.name}', args);");
+        if (method.returnType != null) {
+          if (method.returnType == 'Variant') {
+            o.p('return retVal;');
+          } else {
+            o.p('return convertFromVariant(retVal, null) as ${method.returnType};');
+          }
+        }
+        return;
+      }
+
       final retArg = argumentFromType(method.returnType).proxy;
 
       if (retArg.typeCategory != TypeCategory.voidType) {
@@ -298,7 +315,6 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
         }
       }
 
-      final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
       final stringArguments = method.arguments
               ?.where((e) => e.type == 'String' || e.type == 'StringName') ??
           [];

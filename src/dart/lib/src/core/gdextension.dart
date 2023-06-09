@@ -161,6 +161,36 @@ class GodotDart {
     return ret;
   }
 
+  Variant variantCall(Variant self, String methodName, List<Variant> args) {
+    final callFunc = interface.ref.variant_call.asFunction<
+        void Function(
+            GDExtensionVariantPtr,
+            GDExtensionConstStringNamePtr,
+            Pointer<GDExtensionConstVariantPtr>,
+            int,
+            GDExtensionVariantPtr,
+            Pointer<GDExtensionCallError>)>();
+    final ret = Variant();
+    final gdMethodName = StringName.fromString(methodName);
+    using((arena) {
+      final errorPtr =
+          arena.allocate<GDExtensionCallError>(sizeOf<GDExtensionCallError>());
+      final argArray = arena.allocate<GDExtensionConstTypePtr>(
+          sizeOf<GDExtensionConstVariantPtr>() * args.length);
+      for (int i = 0; i < args.length; ++i) {
+        argArray.elementAt(i).value = args[i].nativePtr.cast();
+      }
+      callFunc(self.nativePtr.cast(), gdMethodName.nativePtr.cast(), argArray,
+          args.length, ret.nativePtr.cast(), errorPtr.cast());
+      if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
+        throw Exception(
+            'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
+      }
+    });
+
+    return ret;
+  }
+
   GDExtensionPtrBuiltInMethod variantGetBuiltinMethod(
     int variantType,
     StringName name,
