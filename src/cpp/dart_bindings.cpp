@@ -730,7 +730,9 @@ void bind_class(Dart_NativeArguments args) {
   }
 
   Dart_Handle type_arg = Dart_GetNativeArgument(args, 1);
-  Dart_Handle type_info = Dart_GetNativeArgument(args, 2);
+  
+  DART_CHECK(type_info, Dart_GetField(type_arg, Dart_NewStringFromCString("sTypeInfo")),
+             "Missing sTypeInfo when trying to bind class!");
 
   // Name and Parent are StringNames and we can get their opaque addresses
   Dart_Handle name = Dart_GetField(type_info, Dart_NewStringFromCString("className"));

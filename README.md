@@ -86,7 +86,8 @@ example class in `simple/src/simple.dart`
 
 ```dart
 class Simple extends Sprite2D {
-  // It's best to statically create a TypeInfo for your class:
+  // Create a static `sTypeInfo`. This is required for various Dart methods
+  // implemented in C++ to gather information about your type.
   static late TypeInfo sTypeInfo = TypeInfo(
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
@@ -109,8 +110,7 @@ class Simple extends Sprite2D {
   Simple() : super() {
     postInitialize();
   }
-  // Classes that are Scripts must have a named constructor
-
+  
   // All virtual functions from Godot should be available, and start
   // with a v instead of an underscore.
   @override
@@ -127,7 +127,7 @@ class Simple extends Sprite2D {
   // The simplest way to bind your class it to create a static function to
   // bind it to Godot. The name doesn't matter
   static void bind() {
-    gde.dartBindings.bindClass(Simple, Simple.typeInfo);  
+    gde.dartBindings.bindClass(Simple);  
   }
 }
 ```
@@ -156,9 +156,11 @@ necessary boilerplate for a Dart Script.
 The two new sections of note are:
 
 ```dart
+// Adding `GodotScriptMixin` adds some boilerplate functions for you.
+class Simple extends Sprite2D with GodotScriptMixin {
   // The method table tells the scripting system which methods we implement and how to 
-  // call them. If you override a method or implement a method that Godot needs to "see", you
-  // need to add it here. 
+  // call them. If you override or implement a method, signal, or property that Godot needs 
+  // to "see", you need to add it here. 
   static final Map<String, MethodInfo> _methodTable = {
     '_ready': MethodInfo(
       methodName: '_ready',
@@ -170,16 +172,23 @@ The two new sections of note are:
       dartMethodName: 'vProcess',
       arguments: [],
     ),
+    signals: [MethodInfo(name: 'hit', args: [])],
+    properties: [
+      PropertyInfo(typeInfo: TypeInfo.forType(int)!, name: 'speed'),
+    ],
   };
+  // And a non-static acccessor is required
+  @override
+  ScriptInfo get scriptInfo => sScriptInfo;
+
+  // Classes that are Scripts must have a named constructor called `withNonNullOwner`. Do not call
+  // `postInitialize` from here.
+  Simple.withNonNullOwner(Pointer<Void> owner)
+      : super.withNonNullOwner(owner);
 
   // Other functions...
 
-  // getMethodInfo is the method that will be called to get the method info. This default implementation is
-  // fine.
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return _methodTable[methodName];
-  }
+}
 ```
 
 You also have to register the class to the implementing file in your `main`

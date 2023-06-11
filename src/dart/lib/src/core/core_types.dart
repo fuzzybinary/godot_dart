@@ -1,5 +1,6 @@
 import 'dart:ffi';
 
+import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
@@ -48,9 +49,6 @@ abstract class ExtensionType implements Finalizable {
     _owner = Pointer.fromAddress(0);
   }
 
-  MethodInfo? getMethodInfo(String methodName) => null;
-  PropertyInfo? getPropertyInfo(String methodName) => null;
-
   @protected
   @pragma('vm:external-name', 'ExtensionType::postInitialize')
   external void postInitialize();
@@ -70,7 +68,8 @@ class Ref<T extends RefCounted> implements Finalizable {
     }
   }
 
-  Ref.fromPointer(Pointer<Void> refPointer, TypeInfo typeInfo) {
+  Ref.fromPointer(Pointer<Void> refPointer) {
+    final typeInfo = gde.dartBindings.getGodotTypeInfo(T);
     final objPtr = gde.interface.ref.ref_get_object
         .asFunction<Pointer<Void> Function(Pointer<Void>)>(
             isLeaf: true)(refPointer);
@@ -83,5 +82,27 @@ class Ref<T extends RefCounted> implements Finalizable {
         _finalizer.attach(this, obj!);
       }
     }
+  }
+}
+
+// TODO: This is a Dart 3.0 interface class
+abstract class GodotDartScript {
+  ScriptInfo get scriptInfo;
+
+  MethodInfo? getMethodInfo(String methodName) => null;
+  PropertyInfo? getPropertyInfo(String methodName) => null;
+}
+
+// Mixes in required functions for working with ScriptInstance
+mixin GodotScriptMixin on GodotObject implements GodotDartScript {
+  @override
+  MethodInfo? getMethodInfo(String methodName) {
+    return scriptInfo.methods.firstWhereOrNull((e) => e.name == methodName);
+  }
+
+  @override
+  PropertyInfo? getPropertyInfo(String propertyName) {
+    return scriptInfo.properties
+        .firstWhereOrNull((e) => e.name == propertyName);
   }
 }

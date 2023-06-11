@@ -252,11 +252,12 @@ class GodotDart {
     func(ref, obj.nativePtr.cast());
   }
 
-  T? cast<T>(GodotObject? from, TypeInfo typeInfo) {
+  T? cast<T>(GodotObject? from) {
     if (from == null) {
       return null;
     }
 
+    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
     final func = interface.ref.object_cast_to.asFunction<
         GDExtensionObjectPtr Function(Pointer<Void>, Pointer<Void>)>();
     final classTag = getClassTag(typeInfo.className);

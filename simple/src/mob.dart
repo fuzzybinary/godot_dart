@@ -1,16 +1,14 @@
 import 'dart:ffi';
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:godot_dart/godot_dart.dart';
 
-class Mob extends RigidBody2D {
+class Mob extends RigidBody2D with GodotScriptMixin {
   // This is necessary boilerplate at the moment
   static TypeInfo sTypeInfo = TypeInfo(
     Mob,
     StringName.fromString('Mob'),
     parentClass: RigidBody2D.sTypeInfo.className,
-    bindingToken: gde.dartBindings.toPersistentHandle(Mob),
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       RigidBody2D.vTable;
@@ -36,6 +34,8 @@ class Mob extends RigidBody2D {
     signals: [],
     properties: [],
   );
+  @override
+  ScriptInfo get scriptInfo => sScriptInfo;
 
   @override
   TypeInfo get typeInfo => sTypeInfo;
@@ -63,16 +63,5 @@ class Mob extends RigidBody2D {
 
   void onVisibleOnScreenNotifier2dScreenExited() {
     queueFree();
-  }
-
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return sScriptInfo.methods.firstWhereOrNull((e) => e.name == methodName);
-  }
-
-  @override
-  PropertyInfo? getPropertyInfo(String propertyName) {
-    return sScriptInfo.properties
-        .firstWhereOrNull((e) => e.name == propertyName);
   }
 }

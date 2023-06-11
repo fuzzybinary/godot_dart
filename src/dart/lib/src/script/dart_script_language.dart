@@ -12,8 +12,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
       ScriptLanguageExtension.vTable;
   static void initBindings() {
-    gde.dartBindings
-        .bindClass(DartScriptLanguage, DartScriptLanguage.sTypeInfo);
+    gde.dartBindings.bindClass(DartScriptLanguage);
   }
 
   static late DartScriptLanguage singleton;

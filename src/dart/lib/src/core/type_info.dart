@@ -30,7 +30,8 @@ class TypeInfo {
 
   /// The token for binding callbacks for a given type. Actually a Dart persistent
   /// handle to the type istelf.
-  final Pointer<Void>? bindingToken;
+  Pointer<Void>? _bindingToken;
+  Pointer<Void>? get bindingToken => _bindingToken;
 
   /// Whether or not this is a Ref<T> type of the specified object
   final bool isReference;
@@ -41,9 +42,16 @@ class TypeInfo {
     this.parentClass,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
     this.size = 0,
-    this.bindingToken,
+    Pointer<Void>? bindingToken,
     this.isReference = false,
-  });
+  }) {
+    _bindingToken = bindingToken;
+    if (variantType == GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT &&
+        bindingToken == null) {
+      // Default to the type as the binding token for objects
+      _bindingToken = gde.dartBindings.toPersistentHandle(type);
+    }
+  }
 
   static late Map<Type?, TypeInfo> _typeMapping;
   static void initTypeMappings() {

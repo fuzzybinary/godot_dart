@@ -47,7 +47,6 @@ Future<void> generateEngineBindings(
         o.p('${classInfo.dartName},');
         o.p("StringName.fromString('${classInfo.name}'),");
         o.p("parentClass: StringName.fromString('${classInfo.inherits}'),");
-        o.p('bindingToken: gde.dartBindings.toPersistentHandle(${classInfo.dartName}),');
       }, ');');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
       o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');

@@ -1,15 +1,13 @@
 import 'dart:ffi';
 
-import 'package:collection/collection.dart';
 import 'package:godot_dart/godot_dart.dart';
 
-class Player extends Area2D {
+class Player extends Area2D with GodotScriptMixin {
   // This is necessary boilerplate at the moment
   static TypeInfo sTypeInfo = TypeInfo(
     Player,
     StringName.fromString('Player'),
     parentClass: Area2D.sTypeInfo.className,
-    bindingToken: gde.dartBindings.toPersistentHandle(Player),
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable => Area2D.vTable;
   static final sScriptInfo = ScriptInfo(
@@ -36,6 +34,8 @@ class Player extends Area2D {
       PropertyInfo(typeInfo: TypeInfo.forType(int)!, name: 'speed'),
     ],
   );
+  @override
+  ScriptInfo get scriptInfo => sScriptInfo;
 
   @override
   TypeInfo get typeInfo => sTypeInfo;
@@ -110,16 +110,5 @@ class Player extends Area2D {
     hide();
     getNodeT<CollisionShape2D>()
         ?.setDeferred('disabled', convertToVariant(true));
-  }
-
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return sScriptInfo.methods.firstWhereOrNull((e) => e.name == methodName);
-  }
-
-  @override
-  PropertyInfo? getPropertyInfo(String propertyName) {
-    return sScriptInfo.properties
-        .firstWhereOrNull((e) => e.name == propertyName);
   }
 }

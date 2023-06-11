@@ -108,6 +108,9 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
       o.p("StringName.fromString('${builtin.name}'),");
       o.p('variantType: $variantEnum,');
       o.p('size: _size,');
+      o.p(
+        'bindingToken: null',
+      );
     }, ');');
 
     final members = builtin.members ?? [];

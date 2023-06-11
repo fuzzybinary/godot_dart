@@ -19,8 +19,7 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   }
 
   static void initBindings() {
-    gde.dartBindings.bindClass(
-        DartResourceFormatLoader, DartResourceFormatLoader.sTypeInfo);
+    gde.dartBindings.bindClass(DartResourceFormatLoader);
   }
 
   @override
@@ -103,8 +102,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   }
 
   static void initBindings() {
-    gde.dartBindings
-        .bindClass(DartResourceFormatSaver, DartResourceFormatSaver.sTypeInfo);
+    gde.dartBindings.bindClass(DartResourceFormatSaver);
   }
 
   @override
@@ -114,7 +112,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   GDError vSave(Ref<Resource> resource, String path, int flags) {
     if (resource.obj == null) return GDError.errInvalidParameter;
 
-    final script = gde.cast<DartScript>(resource.obj, DartScript.sTypeInfo);
+    final script = gde.cast<DartScript>(resource.obj);
     if (script == null) return GDError.errBug;
 
     final file = FileAccess.open(path, FileAccessModeFlags.write);
@@ -140,7 +138,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
   @override
   bool vRecognize(Ref<Resource> resource) {
-    if (gde.cast<DartScript>(resource.obj, DartScript.sTypeInfo) != null) {
+    if (gde.cast<DartScript>(resource.obj) != null) {
       return true;
     }
     return false;

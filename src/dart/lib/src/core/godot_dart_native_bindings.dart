@@ -66,7 +66,7 @@ class GodotDartNativeBindings {
   external void print(String s);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
-  external void bindClass(Type type, TypeInfo typeInfo);
+  external void bindClass(Type type);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::addProperty')
   external void addProperty(TypeInfo typeInfo, PropertyInfo propertyInfo);

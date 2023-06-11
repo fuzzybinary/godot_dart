@@ -18,7 +18,7 @@ class DartScript extends ScriptExtension {
   TypeInfo get typeInfo => sTypeInfo;
 
   static void initBindings() {
-    gde.dartBindings.bindClass(DartScript, DartScript.sTypeInfo);
+    gde.dartBindings.bindClass(DartScript);
   }
 
   Type? _scriptType;

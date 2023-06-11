@@ -34,7 +34,7 @@ class Simple extends Sprite2D {
   }
 
   static void bind() {
-    gde.dartBindings.bindClass(Simple, Simple.sTypeInfo);
+    gde.dartBindings.bindClass(Simple);
     gde.dartBindings.addProperty(Simple.sTypeInfo,
         PropertyInfo(typeInfo: TypeInfo.forType(double)!, name: 'amplitude'));
     gde.dartBindings.addProperty(

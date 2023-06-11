@@ -1,13 +1,12 @@
 import 'dart:ffi';
 import 'dart:math' as math;
 
-import 'package:collection/collection.dart';
 import 'package:godot_dart/godot_dart.dart';
 
 import 'mob.dart';
 import 'player.dart';
 
-class GameLogic extends Node {
+class GameLogic extends Node with GodotScriptMixin {
   // This is necessary boilerplate at the moment
   static TypeInfo sTypeInfo = TypeInfo(
     GameLogic,
@@ -47,6 +46,8 @@ class GameLogic extends Node {
       PropertyInfo(typeInfo: PackedScene.sTypeInfo, name: 'mobScene'),
     ],
   );
+  @override
+  ScriptInfo get scriptInfo => sScriptInfo;
 
   @override
   TypeInfo get typeInfo => sTypeInfo;
@@ -96,8 +97,8 @@ class GameLogic extends Node {
 
   void onMobTimerTimeout() {
     final mob = gde.cast<Mob>(
-        mobScene?.instantiate(PackedSceneGenEditState.genEditStateDisabled),
-        Mob.sTypeInfo);
+      mobScene?.instantiate(PackedSceneGenEditState.genEditStateDisabled),
+    );
     if (mob != null) {
       var mobSpawnLocation =
           getNodeT<PathFollow2D>('MobPath/MobSpawnLocation')!;
@@ -116,16 +117,5 @@ class GameLogic extends Node {
 
       addChild(mob, false, NodeInternalMode.internalModeDisabled);
     }
-  }
-
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return sScriptInfo.methods.firstWhereOrNull((e) => e.name == methodName);
-  }
-
-  @override
-  PropertyInfo? getPropertyInfo(String propertyName) {
-    return sScriptInfo.properties
-        .firstWhereOrNull((e) => e.name == propertyName);
   }
 }
