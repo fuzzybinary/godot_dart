@@ -327,7 +327,7 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
           extractReturnValue = writeReturnAllocation(retArg, o);
         }
         for (final strParam in stringArguments) {
-          final type = strParam.name == 'String' ? 'GDString' : 'StringName';
+          final type = strParam.type == 'String' ? 'GDString' : 'StringName';
           final escapedName = escapeName(strParam.name).toLowerCamelCase();
           o.p('final $type gd$escapedName = $type.fromString($escapedName);');
         }
