@@ -191,6 +191,37 @@ class GodotDart {
     return ret;
   }
 
+  Variant variantGetIndexed(Variant self, int index) {
+    final getter = interface.ref.variant_get_indexed.asFunction<
+        void Function(Pointer<Void>, int, Pointer<Void>, Pointer<Uint8>,
+            Pointer<Uint8>)>();
+    Variant ret = Variant();
+    using((arena) {
+      final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
+      final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
+      getter(self.nativePtr.cast(), index, ret.nativePtr.cast(), valid, oob);
+      if (oob.value != 0) {
+        throw RangeError.index(index, self);
+      }
+    });
+
+    return ret;
+  }
+
+  void variantSetIndexed(Variant self, int index, Variant value) {
+    final getter = interface.ref.variant_set_indexed.asFunction<
+        void Function(Pointer<Void>, int, Pointer<Void>, Pointer<Uint8>,
+            Pointer<Uint8>)>();
+    using((arena) {
+      final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
+      final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
+      getter(self.nativePtr.cast(), index, value.nativePtr.cast(), valid, oob);
+      if (oob.value != 0) {
+        throw RangeError.index(index, self);
+      }
+    });
+  }
+
   GDExtensionPtrBuiltInMethod variantGetBuiltinMethod(
     int variantType,
     StringName name,

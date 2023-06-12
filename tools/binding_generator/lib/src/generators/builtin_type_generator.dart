@@ -374,22 +374,20 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
     o.nl();
   }
 
-  // TODO: Double check this logic, godot-cpp hasn't gotten around to implementing this
+  // TODO: This can be made more efficient for PackedXArray, but for now we're going
+  // to just use Variant's indexed getter / setters
   if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
     var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
     o.b('$dartReturnType operator [](int index) {', () {
-      o.p('final ret = Variant();');
-      o.p('_bindings.indexedGetter?.asFunction<');
-      o.p('        void Function(GDExtensionConstTypePtr, int, GDExtensionTypePtr)>(');
-      o.p('    isLeaf: true)(nativePtr.cast(), index, ret.nativePtr.cast());');
+      o.p('final self = convertToVariant(this);');
+      o.p('final ret = gde.variantGetIndexed(self, index);');
       o.p('return convertFromVariant(ret, null) as $dartReturnType;');
     }, '}');
     o.nl();
     o.b('void operator []=(int index, $dartReturnType value) {', () {
-      o.p('var variantValue = convertToVariant(value);');
-      o.p('_bindings.indexedSetter?.asFunction<');
-      o.p('        void Function(GDExtensionTypePtr, int, GDExtensionTypePtr)>(');
-      o.p('    isLeaf: true)(nativePtr.cast(), index, variantValue.nativePtr.cast());');
+      o.p('final self = convertToVariant(this);');
+      o.p('final variantValue = convertToVariant(value);');
+      o.p('gde.variantSetIndexed(self, index, variantValue);');
     }, '}');
     o.nl();
   }
