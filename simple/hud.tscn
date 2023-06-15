@@ -1,7 +1,13 @@
-[gd_scene load_steps=3 format=3 uid="uid://6a3aidlclhn4"]
+[gd_scene load_steps=5 format=3 uid="uid://6a3aidlclhn4"]
 
 [ext_resource type="FontFile" uid="uid://1gfxjxcqjg3d" path="res://fonts/Xolonium-Regular.ttf" id="1_mybpw"]
 [ext_resource type="Script" path="res://src/hud.dart" id="1_p2b4l"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_hagdm"]
+keycode = 4194309
+
+[sub_resource type="Shortcut" id="Shortcut_mx2s7"]
+events = [SubResource("InputEventKey_hagdm")]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_p2b4l")
@@ -50,6 +56,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/font = ExtResource("1_mybpw")
 theme_override_font_sizes/font_size = 64
+shortcut = SubResource("Shortcut_mx2s7")
 text = "Start"
 
 [node name="MessageTimer" type="Timer" parent="."]

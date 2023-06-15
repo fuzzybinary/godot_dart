@@ -85,13 +85,15 @@ class GameLogic extends Node with GodotScriptMixin {
 	getNodeT<Hud>('HUD')?.showGameOver();
 
 	getTree()?.callGroup('mobs', 'queue_free');
+	getNodeT<AudioStreamPlayer>('Music')?.stop();
+	getNodeT<AudioStreamPlayer>('DeathSound')?.play(0.0);
   }
 
   void newGame() {
 	_score = 0;
 	var startPosition = getNodeT<Marker2D>('StartPosition')!;
 	var player = getNodeT<Player>();
-	print('Got Player: $player');
+
 	player?.start(startPosition.getPosition());
 
 	getNodeT<Timer>('StartTimer')?.start(-1);
@@ -99,6 +101,8 @@ class GameLogic extends Node with GodotScriptMixin {
 	final hud = getNodeT<Hud>('HUD');
 	hud?.updateScore(_score);
 	hud?.showMessage('Get Ready!');
+
+	getNodeT<AudioStreamPlayer>('Music')?.play(0.0);
   }
 
   void onScoreTimerTimeout() {
@@ -124,7 +128,7 @@ class GameLogic extends Node with GodotScriptMixin {
 
 	  mob.setPosition(mobSpawnLocation.getPosition());
 
-	  direction += (math.pi / 4) + _random.nextDouble() * (math.pi / 2);
+	  direction += -(math.pi / 4) + _random.nextDouble() * (math.pi / 2);
 	  mob.setRotation(direction);
 
 	  var velocity = Vector2.fromXY(150 + _random.nextDouble() * 100, 0);
