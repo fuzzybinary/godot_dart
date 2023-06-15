@@ -30,6 +30,9 @@ class DartScript extends ScriptExtension {
     postInitialize();
   }
 
+  DartScript.withNonNullOwner(Pointer<Void> owner)
+      : super.withNonNullOwner(owner);
+
   @override
   DartScriptLanguage? vGetLanguage() {
     return DartScriptLanguage.singleton;

@@ -74,12 +74,6 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
     DartBlockScope scope;
 
     Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(p_token);
-    Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
-    Dart_Handle dart_type_desc = Dart_ToString(dart_type);
-    const char *type_desc = nullptr;
-    Dart_StringToCString(dart_type_desc, &type_desc);
-    GD_PRINT_ERROR(type_desc);
-    
     Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_binding);
     Dart_Handle obj = Dart_HandleFromPersistent(persistent);
     if (!Dart_IsNull(obj)) {

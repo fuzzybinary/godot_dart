@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://tnm416ggiork"]
+[gd_scene load_steps=6 format=3 uid="uid://tnm416ggiork"]
 
 [ext_resource type="Script" path="res://src/game_logic.dart" id="1_724d8"]
 [ext_resource type="PackedScene" uid="uid://j6e8fjrrm1xp" path="res://mob.tscn" id="2_7ma3k"]
 [ext_resource type="PackedScene" uid="uid://ylcs4f06tfbg" path="res://player.tscn" id="2_eccq4"]
+[ext_resource type="PackedScene" uid="uid://6a3aidlclhn4" path="res://hud.tscn" id="4_abxjl"]
 
 [sub_resource type="Curve2D" id="Curve2D_iytm4"]
 _data = {
@@ -37,6 +38,10 @@ curve = SubResource("Curve2D_iytm4")
 position = Vector2(-2, -2)
 rotation = 0.00414935
 
+[node name="HUD" parent="." instance=ExtResource("4_abxjl")]
+
+[connection signal="hit" from="Player" to="." method="gameOver"]
 [connection signal="timeout" from="MobTimer" to="." method="onMobTimerTimeout"]
 [connection signal="timeout" from="ScoreTimer" to="." method="onScoreTimerTimeout"]
 [connection signal="timeout" from="StartTimer" to="." method="onStartTimerTimeout"]
+[connection signal="start_game" from="HUD" to="." method="newGame"]

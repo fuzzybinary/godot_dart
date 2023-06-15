@@ -85,7 +85,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
 
 import 'package:godot_dart/godot_dart.dart';
 
-class $className extends $baseClassName {
+class $className extends $baseClassName with GodotScriptMixin {
   // This is necessary boilerplate at the moment
   static TypeInfo sTypeInfo = TypeInfo(
     $className,
@@ -93,18 +93,26 @@ class $className extends $baseClassName {
     parentClass: $baseClassName.sTypeInfo.className,
   );
   static Map<String, Pointer<GodotVirtualFunction>> get vTable => $baseClassName.vTable;
-  static final Map<String, MethodInfo> _methodTable = {
-    '_ready': MethodInfo(
-      methodName: '_ready',
-      dartMethodName: 'vReady',
-      arguments: [],
-    ),
-    '_process': MethodInfo(
-      methodName: '_process',
-      dartMethodName: 'vProcess',
-      arguments: [],
-    ),
-  };
+  static final sScriptInfo = ScriptInfo(
+    methods: [
+      MethodInfo(
+        name: '_ready',
+        dartMethodName: 'vReady',
+        args: [],
+      ),
+      MethodInfo(
+        name: '_process',
+        dartMethodName: 'vProcess',
+        args: [
+          PropertyInfo(typeInfo: TypeInfo.forType(double)!, name: 'delta'),
+        ],
+      ),
+    ],
+    signals: [],
+    properties: [],
+  );
+  @override
+  ScriptInfo get scriptInfo => sScriptInfo;
 
   @override
   TypeInfo get typeInfo => sTypeInfo;
@@ -123,11 +131,6 @@ class $className extends $baseClassName {
   @override
   void vProcess(double delta) {
 
-  }
-
-  @override
-  MethodInfo? getMethodInfo(String methodName) {
-    return _methodTable[methodName];
   }
 }
 ''';

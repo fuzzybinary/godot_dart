@@ -272,6 +272,8 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   }
   // TODO: Figure out wth placeholders do
   if (_is_placeholder) {
+    // Placeholders always return CALL_ERROR_INVALID_METHOD
+    r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD; 
     return;
   }
 

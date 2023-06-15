@@ -38,6 +38,8 @@ void _registerGodot(int gdeAddress, int libraryAddress, int bindingCallbacks) {
   initVariantBindings(extensionInterface.ref);
   TypeInfo.initTypeMappings();
 
+  SignalAwaiter.bind();
+
   DartScriptLanguage.initBindings();
   DartScript.initBindings();
   DartResourceFormatLoader.initBindings();
