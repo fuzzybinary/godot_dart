@@ -155,6 +155,11 @@ class $className extends $baseClassName with GodotScriptMixin {
     validateResponse[convertToVariant('valid')] = convertToVariant(true);
     return validateResponse;
   }
+
+  @override
+  String vAutoIndentCode(String code, int fromLine, int toLine) {
+    return code;
+  }
 }
 
 class _TypeScriptMapping {

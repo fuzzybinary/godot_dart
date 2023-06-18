@@ -149,7 +149,6 @@ class DartScript extends ScriptExtension {
   @override
   Pointer<Void> vInstanceCreate(GodotObject? forObject) {
     if (forObject == null) return nullptr;
-    print('Instance create');
 
     if (_scriptType == null) {
       _refreshType();
@@ -166,7 +165,6 @@ class DartScript extends ScriptExtension {
   @override
   Pointer<Void> vPlaceholderInstanceCreate(GodotObject? forObject) {
     if (forObject == null) return nullptr;
-    print('Placeholder instance create');
 
     final scriptPath = getPath();
     final type = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
