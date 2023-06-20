@@ -12,8 +12,6 @@ import 'src/godot_api_info.dart';
 import 'src/string_extensions.dart';
 import 'src/type_helpers.dart';
 
-const String templateLocation = 'lib/src/templates';
-
 class GenerationOptions {
   final String apiJsonLocation;
   final String outputDirectory;

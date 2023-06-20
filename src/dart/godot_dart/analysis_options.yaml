@@ -1,0 +1,19 @@
+include: package:lints/recommended.yaml
+
+# Uncomment the following section to specify additional rules.
+
+analyzer:
+  exclude:
+    - lib/src/core/gdextension_ffi_bindings.dart
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+  
+  errors:
+    native_function_body_in_non_sdk_code: ignore
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_relative_imports: true
+    unawaited_futures: true

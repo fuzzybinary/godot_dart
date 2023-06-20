@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://6a3aidlclhn4"]
 
 [ext_resource type="FontFile" uid="uid://1gfxjxcqjg3d" path="res://fonts/Xolonium-Regular.ttf" id="1_mybpw"]
-[ext_resource type="Script" path="res://src/hud.dart" id="1_p2b4l"]
+[ext_resource type="Script" path="res://src/lib/hud.dart" id="1_p2b4l"]
 
 [sub_resource type="InputEventKey" id="InputEventKey_hagdm"]
 keycode = 4194309

@@ -47,22 +47,23 @@ Future<void> generateEngineBindings(
         o.p('${classInfo.dartName},');
         o.p("StringName.fromString('${classInfo.name}'),");
         o.p("parentClass: StringName.fromString('${classInfo.inherits}'),");
+        o.p('vTable: _getVTable(),');
       }, ');');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
-      o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');
-      o.b('static Map<String, Pointer<GodotVirtualFunction>> get vTable {', () {
-        o.b('if (_vTable == null) {', () {
-          o.p('_initVTable();');
-        }, '}');
-        o.p('return _vTable!;');
-      }, '}');
+      // o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');
+      // o.b('static Map<String, Pointer<GodotVirtualFunction>> get vTable {', () {
+      //   o.b('if (_vTable == null) {', () {
+      //     o.p('_initVTable();');
+      //   }, '}');
+      //   o.p('return _vTable!;');
+      // }, '}');
       o.nl();
 
       o.p('@override');
       o.p('TypeInfo get typeInfo => sTypeInfo;');
       o.nl();
 
-      o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');
+      //o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');
 
       _writeSingleton(o, classInfo);
       _writeConstructors(o, classInfo);
@@ -244,18 +245,19 @@ void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   final virtualMethods = classInfo.methods?.where((e) => e.isVirtual) ?? [];
 
   o.p('// Virtual functions');
-  o.b('static void _initVTable() {', () {
-    o.p('_vTable = {};');
+  o.b('static Map<String, Pointer<GodotVirtualFunction>> _getVTable() {', () {
+    o.p('Map<String, Pointer<GodotVirtualFunction>> vTable = {};');
 
     if (classInfo.inherits != null) {
       final correctedInherits = getCorrectedType(classInfo.inherits!);
-      o.p('_vTable!.addAll($correctedInherits.vTable);\n');
+      o.p('vTable.addAll($correctedInherits.sTypeInfo.vTable);\n');
     }
 
     for (final method in virtualMethods) {
       final methodName = escapeMethodName(method.name).toLowerCamelCase();
-      o.p("_vTable!['${method.name}'] = Pointer.fromFunction(__$methodName);");
+      o.p("vTable['${method.name}'] = Pointer.fromFunction(__$methodName);");
     }
+    o.p('return vTable;');
   }, '}');
   o.nl();
 

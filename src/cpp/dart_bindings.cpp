@@ -680,7 +680,8 @@ GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata
 
     Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
-    DART_CHECK(vtable, Dart_GetField(type, Dart_NewStringFromCString("vTable")), "Error finding typeInfo on object");
+    DART_CHECK(typeInfo, Dart_GetField(type, Dart_NewStringFromCString("sTypeInfo")), "Error finding sTypeInfo on Type");
+    DART_CHECK(vtable, Dart_GetField(typeInfo, Dart_NewStringFromCString("vTable")), "Error finding vTable from TypeInfo");
     if (Dart_IsNull(vtable)) {
       return;
     }
@@ -876,14 +877,15 @@ void get_godot_type_info(Dart_NativeArguments args) {
 
 void get_godot_script_info(Dart_NativeArguments args) {
   Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
-  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sScriptInfo"));
-  if (Dart_IsError(type_info)) {
-    GD_PRINT_ERROR(Dart_GetError(type_info));
-    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(type_info)));
+  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
+  Dart_Handle script_info = Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo"));
+  if (Dart_IsError(script_info)) {
+    GD_PRINT_ERROR(Dart_GetError(script_info));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(script_info)));
     return;
   }
 
-  Dart_SetReturnValue(args, type_info);
+  Dart_SetReturnValue(args, script_info);
 }
 
 void dart_object_post_initialize(Dart_NativeArguments args) {

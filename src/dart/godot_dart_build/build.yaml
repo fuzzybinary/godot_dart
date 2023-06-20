@@ -1,0 +1,16 @@
+targets:
+  $default:
+    builders:
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+          - lines_longer_than_80_chars
+
+builders:
+  godot_dart_build:
+    import: "package:godot_dart_build/builder.dart"
+    builder_factories: ["godotDartBuilder"]
+    build_extensions: {".dart": ["godot_dart_build.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]

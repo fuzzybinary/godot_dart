@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:godot_dart/godot_dart.dart';
@@ -8,9 +7,8 @@ class Simple extends Sprite2D {
     Simple,
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
+    vTable: Sprite2D.sTypeInfo.vTable,
   );
-  static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
-      Sprite2D.vTable;
 
   @override
   TypeInfo get typeInfo => sTypeInfo;

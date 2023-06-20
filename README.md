@@ -8,22 +8,17 @@ And I want to use it in Godot.
 
 # Current State
 
-Currently, Dart can be initialized as a language usable as a GDExtension, but
-not as a scripting language. This means you can create Dart classes and Nodes
-and add them to you scene tree, and they will execute both in editor and in
-game.
-
 Here's a list of planned features and work still to be done ( ✅ - Seems to be
 working, 🟨 - Partially working, ❌ - Not working)
 
 | Feature | Support | Note |
 | ------- | :-----: | ---- |
 | Dart as a Godot Extension Language | 🟨 |  |
-| Ref counted object support | ✅ | Through `Ref<T>` |
+| Ref counted object support | 🟨 | Through `Ref<T>`, need to have DartScriptInstance actually support being a Ref |
 | Dart Debugging Extension | ✅ | Attach to `http://127.0.0.1:5858` |
 | Dart Available as a Scripting Language | 🟨 | Very early implementation |
 | Hot Reload | ❌ | |
-| Simplified Binding using build_runner | ❌ |  | 
+| Simplified Binding using build_runner | 🟨 | Early implementation | 
 | Dart native Variants | ❌ | Needed for performance reasons |
 | Memory efficiency / Leak prevention | ❌ | |
 
@@ -31,9 +26,13 @@ working, 🟨 - Partially working, ❌ - Not working)
 Some notes about the current state:
 * The binding is likely leaking both Dart objects and native allocations. I
   intend on making a pass through to make sure all of that is cleaned up at some
-  point and correctly utilize native finalizers.
+  point and correctly utilizes native finalizers.
 * Right now Godot will crash on exit because the binding isn't cleaning up after
-  itself and it tried to free Dart objects after Dart has aready been shut down. 
+  itself and it tried to free Dart objects after Dart has aready been shut down.
+* The binding has a possibility of taking 1 ms of time every frame waiting for messages
+  from Dart, because of the call to `Dart_WaitForEvent(1)`. If there are no events in
+  queue, this method will wait for 1ms before moving on. I'll need to add a "no wait"
+  version to Dart directly (or have the Dart team do it) in order to fix.
 
 # Using
 
@@ -45,7 +44,7 @@ I have only tested this on Windows. I know for certain it will only work on 'flo
 
 * A clone of this repo.
 * Dart (2.19 Current Stable, not tested with 3.0)
-* Godot 4.0.2 or a custom build compatible with 4.0.2
+* Godot 4.0.x or a custom build compatible with 4.0.x
 * A build of the [Dart Shared
   Library](https://github.com/fuzzybinary/dart_shared_libray). Windows x64 .dlls
   for Dart 2.19 are provided in `src/dart_dll/bin/win64`.
@@ -79,9 +78,9 @@ You should now be able to write Dart code for Godot!
 Note there are two ways to use Dart with Godot: as an extension language and as
 a Script language. Both are only partially implemented
 
-### General Requirements
+### Dart classes as Extensions
 
-There are requirements for any Godot accessible Dart class. Here's the Simple
+There are requirements for almost any Godot accessible Dart class. Here's the Simple
 example class in `simple/src/simple.dart`
 
 ```dart
@@ -91,13 +90,11 @@ class Simple extends Sprite2D {
   static late TypeInfo sTypeInfo = TypeInfo(
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
+    // a vTable getter is required for classes that will be used from extensions.
+    // If you are not adding any virtual functions, just return the base class's vTable.
+    // If the class is only used from scripts, this is likely not necessary.
+    vTable: Sprite2D.sTypeInfo.vTable;
   );
-  // a vTable getter is required for classes that will be used from extensions.
-  // If you are not adding any virtual functions, just return the base class's vTable.
-  // If the class is only used from scripts, this is likely not necessary.
-  static Map<String, Pointer<GodotVirtualFunction>> get vTable =>
-      Sprite2D.vTable;
-
   // An override of [typeInfo] is required. This is how
   // the bindings understand the what types it's looking at.
   @override
@@ -132,8 +129,6 @@ class Simple extends Sprite2D {
 }
 ```
 
-### Dart classes as Extensions
-
 Dart classes used as an Extension will appear as creatable in the "Create New
 Node" interface, but aren't editable or attachable to existing nodes. At the
 moment, you will need to restart the editor for your new classes to appear.
@@ -153,41 +148,43 @@ nodes, just like any other GDScript.  You should be able to create a Dart script
 by using the "Attach Script" command in the editor. This will create the
 necessary boilerplate for a Dart Script.
 
-The two new sections of note are:
+While not required, the easiest way to create a scripts is to use `build_runner`
+and the `godot_dart_builder` package. After creating your script, run `build_runner`
+and the necessary boilerplate will be generated.
+
 
 ```dart
-// Adding `GodotScriptMixin` adds some boilerplate functions for you.
-class Simple extends Sprite2D with GodotScriptMixin {
-  // The method table tells the scripting system which methods we implement and how to 
-  // call them. If you override or implement a method, signal, or property that Godot needs 
-  // to "see", you need to add it here. 
-  static final Map<String, MethodInfo> _methodTable = {
-    '_ready': MethodInfo(
-      methodName: '_ready',
-      dartMethodName: 'vReady',
-      arguments: [],
-    ),
-    '_process': MethodInfo(
-      methodName: '_process',
-      dartMethodName: 'vProcess',
-      arguments: [],
-    ),
-    signals: [MethodInfo(name: 'hit', args: [])],
-    properties: [
-      PropertyInfo(typeInfo: TypeInfo.forType(int)!, name: 'speed'),
-    ],
-  };
-  // And a non-static acccessor is required
-  @override
-  ScriptInfo get scriptInfo => sScriptInfo;
+// Include the <file>.g.dart with the generated code
+part 'simple_script.g.dart';
 
-  // Classes that are Scripts must have a named constructor called `withNonNullOwner`. Do not call
-  // `postInitialize` from here.
+// Generate the boilerplate for this object to be an accessible Godot script
+@GodotScript()
+class SimpleScript extends Sprite2D  {
+  // Return the type info that was generated...
+  static TypeInfo get sTypeInfo => _$GameLogicTypeInfo();
+  // And provide an instance method to get the type info
+  @override
+  TypeInfo get typeInfo => SimpleScript.sTypeInfo;
+  
+  // Required constructor
+  Simple() : super() {
+    postInitialize();
+  }
+
+  // Second required contructor. Classes that are Scripts must have a named constructor 
+  // called `withNonNullOwner`. Do not call `postInitialize` from here.
   Simple.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 
-  // Other functions...
+  // You can export fields as properties
+  @GodotProperty()
+  int speed = 400
 
+  // Any method that needs to be seen by a signal needs to be exported
+  @GodotExport()
+  void onSignal() {
+
+  }
 }
 ```
 
@@ -196,15 +193,9 @@ function like so:
 ```dart
 void main() {
   // ... other bindings
-  DartScriptLanguage.singleton.addScript('res://src/player.dart', Player);
+  DartScriptLanguage.singleton.addScript('res://src/lib/player.dart', SimpleScript);
 }
 ```
-
-# Notes
-
-I know this is a very complicated setup. I'll be looking to simplify it using
-code generation and `build_runner` in the future, once more features are
-working.
 
 # More Info
 
