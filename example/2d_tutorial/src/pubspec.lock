@@ -196,14 +196,14 @@ packages:
   godot_dart:
     dependency: "direct main"
     description:
-      path: "../../src/dart/godot_dart"
+      path: "../../../src/dart/godot_dart"
       relative: true
     source: path
     version: "1.0.0"
   godot_dart_build:
     dependency: "direct dev"
     description:
-      path: "../../src/dart/godot_dart_build"
+      path: "../../../src/dart/godot_dart_build"
       relative: true
     source: path
     version: "1.0.0"
