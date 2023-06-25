@@ -13,8 +13,22 @@ typedef struct _Dart_Handle* Dart_Handle;
   #define DART_DLL_EXPORT
 #endif
 
+extern "C" {
+
+struct DartDllConfig {
+  bool start_service_isolate;
+  int service_port;
+
+  DartDllConfig()
+    : start_service_isolate(true)
+    , service_port(5858)
+  {
+    
+  }
+};
+
 // Initialize Dart
-DART_DLL_EXPORT bool DartDll_Initialize();
+DART_DLL_EXPORT bool DartDll_Initialize(const DartDllConfig& config);
 
 // Load a script, with an optional package configuration location. The package
 // configuration is usually in ".dart_tool/package_config.json".
@@ -33,3 +47,5 @@ DART_DLL_EXPORT Dart_Handle DartDll_DrainMicrotaskQueue();
 
 // Shutdown Dart
 DART_DLL_EXPORT bool DartDll_Shutdown();
+
+}

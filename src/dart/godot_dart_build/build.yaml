@@ -14,3 +14,10 @@ builders:
     auto_apply: dependents
     build_to: cache
     applies_builders: ["source_gen|combining_builder"]
+  godot_dart_index:
+    import: "package:godot_dart_build/builder.dart"
+    builder_factories: ["godotDartIndex"]
+    auto_apply: dependents
+    build_extensions: {"$package$": ["^lib/godot_dart_scripts.g.dart"]}
+    build_to: source
+  

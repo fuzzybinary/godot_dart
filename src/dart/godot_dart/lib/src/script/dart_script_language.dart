@@ -1,6 +1,8 @@
 import '../../godot_dart.dart';
 import 'dart_script.dart';
 
+typedef ScriptTypeResolver = Type? Function(String scriptPath);
+
 class DartScriptLanguage extends ScriptLanguageExtension {
   static TypeInfo sTypeInfo = TypeInfo(
     DartScriptLanguage,
@@ -15,7 +17,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
 
   static late DartScriptLanguage singleton;
 
-  final _TypeScriptMapping _scriptMapping = _TypeScriptMapping();
+  ScriptTypeResolver typeResolver = (_) => null;
 
   DartScriptLanguage() : super() {
     postInitialize();
@@ -25,12 +27,8 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   @override
   TypeInfo get typeInfo => sTypeInfo;
 
-  void addScript(String scriptPath, Type type) {
-    _scriptMapping.put(scriptPath, type);
-  }
-
   Type? getTypeForScript(String scriptPath) {
-    final type = _scriptMapping.getType(scriptPath);
+    final type = typeResolver(scriptPath);
     if (type == null) {
       print(
           'Unable to find registered Dart type for script at path $scriptPath');
@@ -133,23 +131,5 @@ class $className extends $baseClassName  {
   @override
   String vAutoIndentCode(String code, int fromLine, int toLine) {
     return code;
-  }
-}
-
-class _TypeScriptMapping {
-  final _map = <String, Type>{};
-  final _inverse = <Type, String>{};
-
-  void put(String scriptFile, Type type) {
-    _map[scriptFile] = type;
-    _inverse[type] = scriptFile;
-  }
-
-  Type? getType(String scriptFile) {
-    return _map[scriptFile];
-  }
-
-  String? getScript(Type type) {
-    return _inverse[type];
   }
 }

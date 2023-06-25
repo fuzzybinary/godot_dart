@@ -29,18 +29,20 @@ public:
   }
 
   bool initialize();
+  bool is_editor_hint();
 
   const GDExtensionInterface *gde() {
     return _gde_interface;
   }
   GDExtensionClassLibraryPtr lib() {
     return _library;
-  }
+  }  
 
 private:
   static GDEWrapper *_instance;
 
   const GDExtensionInterface *_gde_interface = nullptr;
   GDExtensionClassLibraryPtr _library = nullptr;
+  GDExtensionMethodBindPtr _is_editor_hint_method = nullptr;
   void *token = nullptr;
 };

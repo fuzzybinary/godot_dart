@@ -143,7 +143,11 @@ GodotDartBindings::~GodotDartBindings() {
 bool GodotDartBindings::initialize(const char *script_path, const char *package_config) {
   dart_vtable_wrapper::init_virtual_thunks();
 
-  DartDll_Initialize();
+  DartDllConfig config;
+  if (GDEWrapper::instance()->is_editor_hint()) {
+    config.service_port = 6222;
+  }
+  DartDll_Initialize(config);
 
   _isolate = DartDll_LoadScript(script_path, package_config);
   if (_isolate == nullptr) {

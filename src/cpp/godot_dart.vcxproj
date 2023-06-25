@@ -93,12 +93,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)../dart_dll/include;$(ProjectDir)../../godot-headers;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)../../simple</OutDir>
+    <OutDir>$(ProjectDir)../../example/2d_tutorial</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)../dart_dll/include;$(ProjectDir)../../godot-headers;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)../../simple</OutDir>
+    <OutDir>$(ProjectDir)../../example/2d_tutorial</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

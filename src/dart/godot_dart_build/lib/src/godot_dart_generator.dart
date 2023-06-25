@@ -1,187 +1,121 @@
-import 'package:analyzer/dart/constant/value.dart';
+import 'dart:async';
+
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:code_builder/code_builder.dart' as c;
+import 'package:dart_style/dart_style.dart';
+import 'package:glob/glob.dart';
 import 'package:godot_dart/godot_dart.dart';
+import 'package:logging/logging.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:source_gen/source_gen.dart';
 
-const _godotExportChecker = TypeChecker.fromRuntime(GodotExport);
-const _godotSignalChecker = TypeChecker.fromRuntime(GodotSignal);
-const _godotPropertyChecker = TypeChecker.fromRuntime(GodotProperty);
+const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
 
-class GodotDartGenerator extends GeneratorForAnnotation<GodotScript> {
+class GodotDartBuilder extends Builder {
   @override
-  Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
-    if (element is! ClassElement || element is EnumElement) {
-      throw InvalidGenerationSourceError(
-        '`@GodotScript` can only be used on classes.',
-        element: element,
+  Future<void> build(BuildStep buildStep) async {
+    final pubspecSrc = await buildStep
+        .readAsString(AssetId(buildStep.inputId.package, 'pubspec.yaml'));
+    final pubspec = Pubspec.parse(pubspecSrc);
+    final packageName = pubspec.name;
+
+    final assets = await buildStep
+        .findAssets(Glob(r'**/*.dart', recursive: true))
+        .toList();
+
+    final libraryBuilder = c.LibraryBuilder();
+    libraryBuilder.comments.add('GENERATED FILE - DO NOT MODIFY');
+    libraryBuilder.directives
+        .add(c.Directive.import('package:godot_dart/godot_dart.dart'));
+
+    await _generateScriptResolver(
+        buildStep, packageName, assets, libraryBuilder);
+    _generateAttachMethod(libraryBuilder);
+
+    final c.DartEmitter emitter = c.DartEmitter(useNullSafetySyntax: true);
+    final DartFormatter formatter = DartFormatter();
+
+    final outputId =
+        AssetId(buildStep.inputId.package, 'godot_dart_scripts.g.dart');
+
+    await buildStep.writeAsString(
+      outputId,
+      formatter.format(libraryBuilder.build().accept(emitter).toString()),
+    );
+  }
+
+  @override
+  // TODO: implement buildExtensions
+  Map<String, List<String>> get buildExtensions => {
+        r'$package$': ['godot_dart_scripts.g.dart'],
+      };
+
+  Future<void> _generateScriptResolver(BuildStep buildStep, String packageName,
+      List<AssetId> assets, c.LibraryBuilder libraryBuilder) async {
+    final methodBuilder = c.MethodBuilder()
+      ..name = '_resolveScriptToType'
+      ..returns = c.refer('Type?')
+      ..requiredParameters.add(
+        c.Parameter((p) => p
+          ..type = c.refer('String')
+          ..name = 'scriptPath'),
       );
-    }
+    final methodBody = StringBuffer();
+    methodBody.writeln('final fileTypeMap = {');
 
-    log.info('Trying to write output for ${element.name}');
-    yield _createTypeInfo(element);
-  }
+    for (var asset in assets) {
+      if (!await buildStep.resolver.isLibrary(asset)) continue;
 
-  String _createTypeInfo(ClassElement element) {
-    final buffer = StringBuffer();
+      final library = await buildStep.resolver.libraryFor(asset);
+      final libraryReader = LibraryReader(library);
+      for (var annotatedElement
+          in libraryReader.annotatedWith(_godotScriptChecker)) {
+        var element = annotatedElement.element;
+        if (element is! ClassElement || element is EnumElement) {
+          throw InvalidGenerationSourceError(
+            '`@GodotScript` can only be used on classes.',
+            element: element,
+          );
+        }
 
-    buffer.writeln('TypeInfo _\$${element.name}TypeInfo() => TypeInfo(');
-    buffer.writeln('  ${element.name},');
-    buffer.writeln('  StringName.fromString(\'${element.name}\'),');
-    buffer.writeln('  parentClass: ${element.supertype}.sTypeInfo.className,');
-    buffer.writeln('  vTable: ${element.supertype}.sTypeInfo.vTable,');
-    buffer.writeln('  scriptInfo: ScriptInfo(');
+        final relativeName =
+            _removePackage(library.librarySource.fullName, packageName);
+        libraryBuilder.directives.add(c.Directive.import(relativeName));
 
-    // Methods
-    buffer.writeln('    methods: [');
-    for (final method in element.methods) {
-      final exportAnnotation = _godotExportChecker.firstAnnotationOf(method,
-          throwOnUnresolved: false);
-      if (method.hasOverride || exportAnnotation != null) {
-        buffer.write(_buildMethodInfo(method, exportAnnotation));
-        buffer.writeln(',');
-      }
-    }
-    buffer.writeln('    ],');
+        // TODO: Need to make this a builder option
+        final godotPrefix = 'res://src';
 
-    List<FieldElement> signalFields = [];
-    List<FieldElement> propertyFields = [];
-    for (final field in element.fields) {
-      if (_godotSignalChecker.hasAnnotationOf(field,
-          throwOnUnresolved: false)) {
-        signalFields.add(field);
-      } else if (_godotPropertyChecker.hasAnnotationOf(field,
-          throwOnUnresolved: false)) {
-        propertyFields.add(field);
+        log.log(Level.INFO, '$relativeName => ${element.name}');
+
+        methodBody.writeln("'$godotPrefix/$relativeName': ${element.name},");
       }
     }
 
-    buffer.writeln('    signals: [');
-    for (final signalField in signalFields) {
-      final signalAnnotation =
-          _godotSignalChecker.firstAnnotationOf(signalField);
-      buffer.write(_buildSignalInfo(signalField, signalAnnotation));
-      buffer.writeln(',');
-    }
-    buffer.writeln('    ],');
+    methodBody.writeln('};');
+    methodBody.writeln('return fileTypeMap[scriptPath];');
 
-    buffer.writeln('    properties: [');
-    for (final propertyField in propertyFields) {
-      final propertyAnnotation =
-          _godotPropertyChecker.firstAnnotationOf(propertyField);
-      buffer.write(_generatePropertyInfo(propertyField, propertyAnnotation));
-      buffer.writeln(',');
-    }
-    buffer.writeln('    ],');
-
-    buffer.writeln('  ),');
-    buffer.writeln(');');
-
-    buffer.writeln();
-
-    return buffer.toString();
+    methodBuilder.body = c.Code(methodBody.toString());
+    libraryBuilder.body.add(methodBuilder.build());
   }
 
-  String _buildMethodInfo(MethodElement element, DartObject? exportAnnotation) {
-    final buffer = StringBuffer();
-    buffer.writeln('MethodInfo(');
+  void _generateAttachMethod(c.LibraryBuilder libraryBuilder) {
+    final methodBuilder = c.MethodBuilder()
+      ..name = 'attachScriptResolver'
+      ..returns = c.refer('void')
+      ..requiredParameters.add(
+        c.Parameter((p) => p
+          ..type = c.refer('DartScriptLanguage')
+          ..name = 'dart'),
+      );
+    final methodBody = StringBuffer();
+    methodBody.writeln('dart.typeResolver = _resolveScriptToType;');
 
-    if (exportAnnotation != null) {
-      final reader = ConstantReader(exportAnnotation);
-      final nameReader = reader.read('name');
-      String? exportName =
-          nameReader.isNull ? element.name : nameReader.stringValue;
-      buffer.writeln('  name: \'$exportName\',');
-      buffer.writeln('  dartMethodName: \'${element.name}\',');
-    } else if (element.hasOverride) {
-      // TODO - I might change the naming scheme here
-      final godotMethodName = _convertVirtualMethodName(element.name);
-      buffer.writeln('  name: \'$godotMethodName\',');
-      buffer.writeln('  dartMethodName: \'${element.name}\',');
-    }
-
-    buffer.writeln('  args: [');
-
-    for (final argument in element.parameters) {
-      buffer.write(_generateArgumentPropertyInfo(argument));
-      buffer.writeln(',');
-    }
-
-    buffer.writeln('  ],');
-    buffer.write(')');
-
-    return buffer.toString();
+    methodBuilder.body = c.Code(methodBody.toString());
+    libraryBuilder.body.add(methodBuilder.build());
   }
 
-  String _buildSignalInfo(FieldElement element, DartObject? signalAnnotation) {
-    final buffer = StringBuffer();
-    buffer.writeln('MethodInfo(');
-
-    final reader = ConstantReader(signalAnnotation);
-    final signalName = reader.read('signalName').stringValue;
-    buffer.writeln('  name: \'$signalName\',');
-
-    // TODO: Signals that take parameters....
-    buffer.writeln('  args:  [],');
-    buffer.write(')');
-
-    return buffer.toString();
-  }
-
-  String _generateArgumentPropertyInfo(ParameterElement parameter) {
-    final buffer = StringBuffer();
-
-    buffer.writeln('PropertyInfo(');
-    buffer.writeln('  name: \'${parameter.name}\',');
-    buffer.writeln('  typeInfo: ${_typeInfoForType(parameter.type)},');
-    buffer.write(')');
-
-    return buffer.toString();
-  }
-
-  String _generatePropertyInfo(
-      FieldElement field, DartObject? propertyAnnotation) {
-    final buffer = StringBuffer();
-
-    final reader = ConstantReader(propertyAnnotation);
-    final nameReader = reader.read('name');
-    String? exportName =
-        nameReader.isNull ? field.name : nameReader.stringValue;
-
-    buffer.writeln('PropertyInfo(');
-    buffer.writeln('  name: \'$exportName\',');
-    buffer.writeln('  typeInfo: ${_typeInfoForType(field.type)},');
-    buffer.write(')');
-
-    return buffer.toString();
-  }
-
-  String _typeInfoForType(DartType type) {
-    bool isPrimitive(DartType type) {
-      return type.isDartCoreBool ||
-          type.isDartCoreDouble ||
-          type.isDartCoreInt ||
-          type.isDartCoreString;
-    }
-
-    if (isPrimitive(type)) {
-      return 'TypeInfo.forType(${type.getDisplayString(withNullability: false)})!';
-    } else if (type.getDisplayString(withNullability: false) == 'Variant') {
-      return 'TypeInfo.forType(Variant)';
-    } else if (type is VoidType) {
-      return 'TypeInfo.forType(null)';
-    } else {
-      return '${type.getDisplayString(withNullability: false)}.sTypeInfo';
-    }
-  }
-
-  String _convertVirtualMethodName(String methodName) {
-    var name = methodName;
-    if (methodName.startsWith(RegExp('v[A-Z]'))) {
-      name = '_${name.substring(1, 2).toLowerCase()}${name.substring(2)}';
-    }
-    return name;
+  String _removePackage(String fullName, String packageName) {
+    return fullName.replaceFirst('/$packageName/', '');
   }
 }
