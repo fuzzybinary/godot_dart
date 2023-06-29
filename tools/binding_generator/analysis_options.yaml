@@ -1,8 +1,11 @@
 include: package:lints/recommended.yaml
 
 analyzer:
-  strong-mode:
-    implicit-dynamic: false
+  exclude:
+    - lib/src/godot_extension_api_json.dart
+  language:
+    strict-casts: true
+    strict-raw-types: true
   
 linter:
   rules:

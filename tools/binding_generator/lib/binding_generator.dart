@@ -65,7 +65,9 @@ Future<void> generateGlobalConstants(
 
   o.write(header);
 
-  for (Map<String, dynamic> constant in apiInfo.api.globalConstants) {
+  final globalConstants =
+      apiInfo.api.globalConstants as List<Map<String, dynamic>>;
+  for (Map<String, dynamic> constant in globalConstants) {
     final name = constant['name'] as String;
     o.p('const int ${escapeName(name).toLowerCamelCase()} = ${constant['value']};');
   }

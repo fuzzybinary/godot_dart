@@ -242,34 +242,39 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   }
 
   if (api['constructors'] != null) {
-    for (Map<String, dynamic> constructor in api['constructors']) {
+    final constructors = api['constructors'] as List<Map<String, dynamic>>;
+    for (Map<String, dynamic> constructor in constructors) {
       if (constructor['arguments'] != null) {
-        for (Map<String, dynamic> arg in constructor['arguments']) {
-          usedTypes.add(nakedType(arg['type']));
+        final args = constructor['arguments'] as List<Map<String, dynamic>>;
+        for (Map<String, dynamic> arg in args) {
+          usedTypes.add(nakedType(arg['type'] as String));
         }
       }
     }
   }
 
   if (api['methods'] != null) {
-    for (Map<String, dynamic> method in api['methods']) {
+    final methods = api['methods'] as List<Map<String, dynamic>>;
+    for (Map<String, dynamic> method in methods) {
       if (method['arguments'] != null) {
-        for (Map<String, dynamic> arg in method['arguments']) {
-          usedTypes.add(nakedType(arg['type']));
+        final args = method['arguments'] as List<Map<String, dynamic>>;
+        for (Map<String, dynamic> arg in args) {
+          usedTypes.add(nakedType(arg['type'] as String));
         }
       }
       if (method['return_type'] != null) {
-        usedTypes.add(nakedType(method['return_type']));
+        usedTypes.add(nakedType(method['return_type'] as String));
       } else if (method['return_value'] != null) {
         final returnValue = method['return_value'] as Map<String, dynamic>;
-        usedTypes.add(nakedType(returnValue['type']));
+        usedTypes.add(nakedType(returnValue['type'] as String));
       }
     }
   }
 
   if (api['members'] != null) {
-    for (Map<String, dynamic> member in api['members']) {
-      usedTypes.add(nakedType(member['type']));
+    final members = api['members'] as List<Map<String, dynamic>>;
+    for (Map<String, dynamic> member in members) {
+      usedTypes.add(nakedType(member['type'] as String));
     }
   }
 

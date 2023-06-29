@@ -5,9 +5,9 @@ include: package:lints/recommended.yaml
 analyzer:
   exclude:
     - lib/src/core/gdextension_ffi_bindings.dart
-  strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
+  language:
+    strict-casts: true
+    strict-raw-types: true
   
   errors:
     native_function_body_in_non_sdk_code: ignore

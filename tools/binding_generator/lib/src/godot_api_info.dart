@@ -43,7 +43,7 @@ class GodotApiInfo {
   }
 
   bool isRefCounted(String godotType) {
-    Tuple2 strippedType = _getStrippedType(godotType);
+    final strippedType = _getStrippedType(godotType);
     final engineType = engineClasses[strippedType.item1];
     return engineType?.isRefcounted ?? false;
   }
@@ -51,7 +51,7 @@ class GodotApiInfo {
   TypeCategory getTypeCategory(String? godotType) {
     if (godotType == null) return TypeCategory.voidType;
 
-    Tuple2 strippedType = _getStrippedType(godotType);
+    final strippedType = _getStrippedType(godotType);
     if (hasDartType(strippedType.item1)) {
       return TypeCategory.primitive;
     } else if (builtinClasses.containsKey(strippedType.item1)) {
