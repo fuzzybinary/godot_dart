@@ -11,10 +11,6 @@ class GodotDartNativeBindings {
   late final DynamicLibrary dartDylib;
   late final DynamicLibrary godotDartDylib;
 
-  late final _newPersistentHandle = dartDylib
-      .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
-          'Dart_NewPersistentHandle')
-      .asFunction<Pointer<Void> Function(Object)>();
   late final _handleFromPersistent = dartDylib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'Dart_HandleFromPersistent')
@@ -45,6 +41,10 @@ class GodotDartNativeBindings {
                   Bool)>>('create_script_instance')
       .asFunction<
           Pointer<Void> Function(Type, DartScript, Pointer<Void>, bool)>();
+  late final _safeNewPersistentHandle = godotDartDylib
+      .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
+          'safe_new_persistent_handle')
+      .asFunction<Pointer<Void> Function(Object)>();
 
   static DynamicLibrary openLibrary(String libName) {
     var libraryPath = path.join(Directory.current.path, '$libName.so');
@@ -89,7 +89,7 @@ class GodotDartNativeBindings {
   external ScriptInfo getGodotScriptInfo(Type type);
 
   Pointer<Void> toPersistentHandle(Object instance) {
-    return _newPersistentHandle(instance);
+    return _safeNewPersistentHandle(instance);
   }
 
   Object? fromPersistentHandle(Pointer<Void> handle) {

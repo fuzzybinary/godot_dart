@@ -9,6 +9,7 @@ struct TypeInfo {
   // Can be null
   GDExtensionStringNamePtr parent_name = nullptr;
   GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
+  void *binding_token = nullptr;
   // Can be null
   const GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };

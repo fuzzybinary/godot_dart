@@ -83,6 +83,7 @@ import 'package:godot_dart/godot_dart.dart';
 
 part '$className.g.dart';
 
+@GodotScript()
 class $className extends $baseClassName  {
   static TypeInfo get sTypeInfo => _\$${className}TypeInfo();
   @override

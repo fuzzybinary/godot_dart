@@ -16,10 +16,6 @@
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 
-void GodotDartBindings::thread_callback(GodotDartBindings *bindings) {
-  bindings->thread_main();
-}
-
 /* Binding callbacks -- Used for Dart defined types and Variants */
 
 static void *__binding_create_callback(void *p_token, void *p_instance) {
@@ -118,8 +114,15 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   Dart_IntegerToInt64(variant_type, &temp);
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
   if (Dart_IsNull(binding_token)) {
+    type_info->binding_token = nullptr;
     type_info->binding_callbacks = nullptr;
   } else {
+    Dart_Handle dart_address = Dart_GetField(binding_token, Dart_NewStringFromCString("address"));
+
+    uint64_t address = 0;
+    Dart_IntegerToUint64(dart_address, &address);
+
+    type_info->binding_token = (void*)address;
     type_info->binding_callbacks = &__engine_binding_callbacks;
   }
 
@@ -155,6 +158,7 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     return false;
   }
 
+  _isolate_current_thread = std::this_thread::get_id();
   Dart_EnterIsolate(_isolate);
   {
     DartBlockScope scope;
@@ -260,22 +264,13 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     }
   }
 
-  // Create a thread for doing Dart work
   Dart_ExitIsolate();
-  _dart_thread = new std::thread(GodotDartBindings::thread_callback, this);
+  _isolate_current_thread = std::thread::id();
 
   return true;
 }
 
 void GodotDartBindings::shutdown() {
-  _stopRequested = true;
-  execute_on_dart_thread([]() {});
-
-  // Unset Dart thread. All future execution should now happen on this thread.
-  _dart_thread->join();
-  delete _dart_thread;
-  _dart_thread = nullptr;
-
   Dart_EnterIsolate(_isolate);
   Dart_EnterScope();
 
@@ -300,34 +295,20 @@ void GodotDartBindings::shutdown() {
   //DartDll_Shutdown();
 }
 
-void GodotDartBindings::thread_main() {
-
-  Dart_EnterIsolate(_isolate);
-
-  while (!_stopRequested) {
-    _work_semaphore.acquire();
-
-    _pendingWork();
-    _pendingWork = []() {};
-
-    _done_semaphore.release();
-  }
-
-  Dart_ExitIsolate();
-}
-
-void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
-  if (_dart_thread == nullptr || std::this_thread::get_id() == _dart_thread->get_id()) {
+void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {  
+  std::thread::id current_thread_id = std::this_thread::get_id();
+  if (_isolate_current_thread == current_thread_id) {
     work();
     return;
   }
 
   _work_lock.lock();
+  _isolate_current_thread = std::this_thread::get_id();
+  Dart_EnterIsolate(_isolate);
+  work();
 
-  _pendingWork = work;
-  _work_semaphore.release();
-  _done_semaphore.acquire();
-
+  Dart_ExitIsolate();
+  _isolate_current_thread = std::thread::id();
   _work_lock.unlock();
 }
 
@@ -898,6 +879,7 @@ void dart_object_post_initialize(Dart_NativeArguments args) {
   if (Dart_IsError(d_class_type_info)) {
     GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
     GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
+    return;
   }
 
   TypeInfo class_type_info;
@@ -907,12 +889,14 @@ void dart_object_post_initialize(Dart_NativeArguments args) {
   if (Dart_IsError(owner)) {
     GD_PRINT_ERROR("GodotDart: Error finding owner member for object: ");
     GD_PRINT_ERROR(Dart_GetError(owner));
+    return;
   }
 
   Dart_Handle owner_address = Dart_GetField(owner, Dart_NewStringFromCString("address"));
   if (Dart_IsError(owner_address)) {
     GD_PRINT_ERROR("GodotDart: Error getting address for object: ");
     GD_PRINT_ERROR(Dart_GetError(owner_address));
+    return;
   }
 
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(dart_self);
@@ -921,9 +905,11 @@ void dart_object_post_initialize(Dart_NativeArguments args) {
   uint64_t real_address = 0;
   Dart_IntegerToUint64(owner_address, &real_address);
 
+
+
   GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
                            reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
-  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), gde->lib(), persistent_handle,
+  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.binding_token, persistent_handle,
                                    &__binding_callbacks);
 }
 
@@ -1015,4 +1001,27 @@ GDE_EXPORT void perform_frame_maintenance() {
 
   Dart_ExitScope();
 }
+
+GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
+  Dart_EnterScope();
+
+  if (Dart_IsNull(handle)) {
+    GD_PRINT_ERROR("GodotDart: `null` is not a valid value to pass to newPersistentHandle!");
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  Dart_PersistentHandle result = Dart_NewPersistentHandle(handle);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
+    GD_PRINT_ERROR(Dart_GetError(result));
+    Dart_ExitScope();
+    return nullptr;
+  }
+
+  Dart_ExitScope();
+
+  return (void *)result;
+}
+
 }

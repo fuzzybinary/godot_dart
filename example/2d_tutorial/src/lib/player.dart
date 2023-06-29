@@ -19,7 +19,9 @@ class Player extends Area2D {
   @GodotSignal('hit')
   late final Signal _hit = Signal.fromObjectSignal(this, 'hit');
 
+  @GodotProperty()
   var speed = 400;
+
   late Vector2 _screenSize;
 
   @override
