@@ -60,6 +60,9 @@ import '../../variant/variant.dart';
         out.p("import '../../variant/typed_array.dart';");
       } else if (used == 'GlobalConstants') {
         out.p("import '../global_constants.dart';");
+      } else if (hasCustomImplementation(used)) {
+        // Should be exported in variant.dart
+        continue;
       } else {
         var prefix = api.builtinClasses.containsKey(used)
             ? builtinPreface
@@ -242,11 +245,13 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   }
 
   if (api['constructors'] != null) {
-    final constructors = api['constructors'] as List<Map<String, dynamic>>;
-    for (Map<String, dynamic> constructor in constructors) {
+    final constructors = api['constructors'] as List<dynamic>;
+    for (Map<String, dynamic> constructor
+        in constructors.map((e) => e as Map<String, dynamic>)) {
       if (constructor['arguments'] != null) {
-        final args = constructor['arguments'] as List<Map<String, dynamic>>;
-        for (Map<String, dynamic> arg in args) {
+        final args = constructor['arguments'] as List<dynamic>;
+        for (Map<String, dynamic> arg
+            in args.map((e) => e as Map<String, dynamic>)) {
           usedTypes.add(nakedType(arg['type'] as String));
         }
       }
@@ -254,11 +259,13 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   }
 
   if (api['methods'] != null) {
-    final methods = api['methods'] as List<Map<String, dynamic>>;
-    for (Map<String, dynamic> method in methods) {
+    final methods = api['methods'] as List<dynamic>;
+    for (Map<String, dynamic> method
+        in methods.map((e) => e as Map<String, dynamic>)) {
       if (method['arguments'] != null) {
-        final args = method['arguments'] as List<Map<String, dynamic>>;
-        for (Map<String, dynamic> arg in args) {
+        final args = method['arguments'] as List<dynamic>;
+        for (Map<String, dynamic> arg
+            in args.map((e) => e as Map<String, dynamic>)) {
           usedTypes.add(nakedType(arg['type'] as String));
         }
       }
@@ -272,8 +279,9 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   }
 
   if (api['members'] != null) {
-    final members = api['members'] as List<Map<String, dynamic>>;
-    for (Map<String, dynamic> member in members) {
+    final members = api['members'] as List<dynamic>;
+    for (Map<String, dynamic> member
+        in members.map((e) => e as Map<String, dynamic>)) {
       usedTypes.add(nakedType(member['type'] as String));
     }
   }

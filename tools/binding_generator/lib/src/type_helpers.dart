@@ -25,6 +25,16 @@ bool hasDartType(String typeName) {
   return dartTypes.contains(typeName);
 }
 
+// Variant Types that were custom implemented to avoid back
+// and forth with Godot
+final customImplementedTypes = [
+  'Vector3',
+];
+
+bool hasCustomImplementation(String typeName) {
+  return customImplementedTypes.contains(typeName);
+}
+
 final typeToFFIType = {
   'bool': 'Bool',
   'real_t': 'Float',

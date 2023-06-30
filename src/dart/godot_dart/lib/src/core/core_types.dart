@@ -8,7 +8,8 @@ import 'gdextension_ffi_bindings.dart';
 
 /// Core interface for types that can convert to Variant (the builtin types)
 abstract class BuiltinType {
-  static final Finalizer<Pointer<Uint8>> _finalizer = Finalizer((mem) {
+  @internal
+  static final Finalizer<Pointer<Uint8>> finalizer = Finalizer((mem) {
     calloc.free(mem);
   });
 
@@ -16,8 +17,13 @@ abstract class BuiltinType {
   Pointer<Uint8> get nativePtr;
 
   BuiltinType() {
-    _finalizer.attach(this, nativePtr);
+    finalizer.attach(this, nativePtr);
   }
+
+  /// This const constructor allows classes that we implement to lazily
+  /// initialize their nativePtr members and add them to the finalizer
+  /// at that point. It also allows those classes to have const constructors
+  const BuiltinType.nonFinalized();
 }
 
 /// Core interface for engine classes

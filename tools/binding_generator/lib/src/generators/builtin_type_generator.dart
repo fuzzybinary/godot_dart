@@ -31,7 +31,9 @@ Future<void> generateBuiltinBindings(
     if (hasDartType(builtin.name)) {
       continue;
     }
-    // Check for types we've implemented ourselves
+    if (hasCustomImplementation(builtin.name)) {
+      continue;
+    }
 
     final size = builtinSizes[builtin.name]!;
 

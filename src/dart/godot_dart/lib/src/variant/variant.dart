@@ -1,9 +1,12 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import '../core/gdextension_ffi_bindings.dart';
+
+export 'vector3.dart';
 
 typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
@@ -53,8 +56,6 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
   _dartBuiltinConstructors[Vector2.sTypeInfo.variantType] = Vector2.new;
   Vector2i.initBindings();
   _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] = Vector2i.new;
-  Vector3.initBindings();
-  _dartBuiltinConstructors[Vector3.sTypeInfo.variantType] = Vector3.new;
   Vector3i.initBindings();
   _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] = Vector3i.new;
   Vector4.initBindings();
@@ -120,6 +121,11 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
   PackedColorArray.initBindings();
   _dartBuiltinConstructors[PackedColorArray.sTypeInfo.variantType] =
       PackedColorArray.new;
+}
+
+@internal
+GDExtensionTypeFromVariantConstructorFunc? getToTypeConstructor(int type) {
+  return _toTypeConstructor[type];
 }
 
 // TODO: Variant probably shouldn't extend BuiltinType?
@@ -296,6 +302,11 @@ Object? convertFromVariant(
         var gdString = GDString();
         c!(gdString.nativePtr.cast(), variant.nativePtr.cast());
         ret = gdString.toDartString();
+        break;
+
+      // Or a hand-implemented object
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
+        ret = Vector3.fromVariant(variant);
         break;
 
       // Or a wrapped object

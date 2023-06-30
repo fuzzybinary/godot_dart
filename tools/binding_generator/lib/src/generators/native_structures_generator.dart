@@ -86,7 +86,8 @@ Future<void> generateNativeStructures(
         o.p("import '${field.type.toSnakeCase()}.dart';");
       }
       if (api.builtinClasses.containsKey(field.type) &&
-          !hasDartType(field.type)) {
+          !hasDartType(field.type) &&
+          !hasCustomImplementation(field.type)) {
         o.p("import '../variant/${field.type.toSnakeCase()}.dart';");
       }
     }

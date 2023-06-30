@@ -18,7 +18,7 @@ export 'src/gen/global_constants.dart';
 export 'src/gen/variant/builtins.dart';
 export 'src/godot_dart_extensions.dart';
 export 'src/script/dart_script_language.dart';
-export 'src/variant/variant.dart';
+export 'src/variant/variant.dart' hide getToTypeConstructor;
 
 // ignore: unused_element
 late GodotDart _globalExtension;
