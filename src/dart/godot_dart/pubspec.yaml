@@ -20,4 +20,6 @@ ffigen:
   name: GDExtensionFFI
   headers:
     entry-points:
-      - '../../../godot-headers/godot/gdextension_interface.h'
+      - '../../cpp/gde_c_interface.h'
+  compiler-opts:
+      - '-I../../../godot-headers/'

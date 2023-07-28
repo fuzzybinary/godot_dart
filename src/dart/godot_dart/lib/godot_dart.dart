@@ -5,6 +5,7 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/core/godot_dart_native_bindings.dart';
 import 'src/script/dart_resource_format.dart';
 import 'src/script/dart_script.dart';
 
@@ -25,18 +26,18 @@ late GodotDart _globalExtension;
 DartScriptLanguage? _dartScriptLanguage;
 
 @pragma('vm:entry-point')
-void _registerGodot(int gdeAddress, int libraryAddress, int bindingCallbacks) {
-  final extensionInterface =
-      Pointer<GDExtensionInterface>.fromAddress(gdeAddress);
+void _registerGodot(int libraryAddress, int bindingCallbacks) {
+  final godotDart = GodotDartNativeBindings.openLibrary('godot_dart');
+  final ffiInterface = GDExtensionFFI(godotDart);
+
   final libraryPtr = GDExtensionClassLibraryPtr.fromAddress(libraryAddress);
   final bindingCallbackPtr =
       Pointer<GDExtensionInstanceBindingCallbacks>.fromAddress(
           bindingCallbacks);
   // TODO: Assert everything is how we expect.
-  _globalExtension =
-      GodotDart(extensionInterface, libraryPtr, bindingCallbackPtr);
+  _globalExtension = GodotDart(ffiInterface, libraryPtr, bindingCallbackPtr);
 
-  initVariantBindings(extensionInterface.ref);
+  initVariantBindings(ffiInterface);
   TypeInfo.initTypeMappings();
 
   SignalAwaiter.bind();

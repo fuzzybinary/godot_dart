@@ -100,7 +100,7 @@ bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionVariantPtr r
 
     void *variantDataPtr = get_opaque_address(variant_result);
     if (variantDataPtr) {
-      GDE->variant_new_copy(r_ret, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+      gde_variant_new_copy(r_ret, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       got_value = true;
     }
   });
@@ -364,7 +364,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
     } else {
       void *variantDataPtr = get_opaque_address(variant_result);
       if (variantDataPtr) {
-        GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+        gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       }
     }
 

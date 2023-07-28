@@ -208,6 +208,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
             final escapedName = escapeName(argument.name).toLowerCamelCase();
             if (argument.needsAllocation) {
               o.p('${escapedName}Ptr.cast(),');
+            } else if (argument.typeCategory == TypeCategory.engineClass) {
+              o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
               o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
             } else if (argument.type == 'String' ||
@@ -257,6 +259,9 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
 
       if (member.type == 'String') {
         o.p('return retVal.toDartString();');
+      } else if (hasCustomImplementation(member.type)) {
+        o.p('retVal.updateFromOpaque();');
+        o.p('return retVal;');
       } else {
         o.p('return retVal;');
       }
@@ -344,6 +349,8 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
             final escapedName = escapeName(argument.name).toLowerCamelCase();
             if (argument.needsAllocation) {
               o.p('${escapedName}Ptr.cast(),');
+            } else if (argument.typeCategory == TypeCategory.engineClass) {
+              o.p('${escapedName}Ptr.cast(),');
             } else if (argument.isOptional) {
               o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
             } else if (argument.type == 'String' ||
@@ -368,6 +375,9 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       if (retArg.typeCategory != TypeCategory.voidType) {
         if (retArg.type == 'String' || retArg.type == 'StringName') {
           o.p('return retVal.toDartString();');
+        } else if (hasCustomImplementation(retArg.type)) {
+          o.p('retVal.updateFromOpaque();');
+          o.p('return retVal;');
         } else {
           o.p('return retVal;');
         }

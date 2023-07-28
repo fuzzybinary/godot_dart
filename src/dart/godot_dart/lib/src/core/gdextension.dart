@@ -17,13 +17,13 @@ typedef GodotVirtualFunction = NativeFunction<
 class GodotDart {
   static GodotDart? instance;
 
-  final Pointer<GDExtensionInterface> interface;
+  final GDExtensionFFI ffiBindings;
   final GDExtensionClassLibraryPtr libraryPtr;
   final Pointer<GDExtensionInstanceBindingCallbacks> engineBindingCallbacks;
 
   late GodotDartNativeBindings dartBindings;
 
-  GodotDart(this.interface, this.libraryPtr, this.engineBindingCallbacks) {
+  GodotDart(this.ffiBindings, this.libraryPtr, this.engineBindingCallbacks) {
     instance = this;
 
     dartBindings = GodotDartNativeBindings();
@@ -35,40 +35,30 @@ class GodotDart {
     int variantType,
     int index,
   ) {
-    GDExtensionPtrConstructor Function(int, int) func = interface
-        .ref.variant_get_ptr_constructor
-        .asFunction<GDExtensionPtrConstructor Function(int, int)>();
-    return func(variantType, index);
+    return ffiBindings.gde_variant_get_ptr_constructor(variantType, index);
   }
 
   GDExtensionPtrDestructor variantGetDestructor(int variantType) {
-    return interface.ref.variant_get_ptr_destructor
-        .asFunction<GDExtensionPtrDestructor Function(int)>()(variantType);
+    return ffiBindings.gde_variant_get_ptr_destructor(variantType);
   }
 
   GDExtensionPtrGetter variantGetPtrGetter(int variantType, StringName name) {
-    return interface.ref.variant_get_ptr_getter.asFunction<
-            GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>(
-        isLeaf: true)(variantType, name.nativePtr.cast());
+    return ffiBindings.gde_variant_get_ptr_getter(
+        variantType, name.nativePtr.cast());
   }
 
   GDExtensionPtrGetter variantGetPtrSetter(int variantType, StringName name) {
-    return interface.ref.variant_get_ptr_setter.asFunction<
-            GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>(
-        isLeaf: true)(variantType, name.nativePtr.cast());
+    return ffiBindings.gde_variant_get_ptr_setter(
+        variantType, name.nativePtr.cast());
   }
 
   GDExtensionObjectPtr globalGetSingleton(StringName name) {
-    return interface.ref.global_get_singleton.asFunction<
-            GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>(
-        isLeaf: true)(name.nativePtr.cast());
+    return ffiBindings.gde_global_get_singleton(name.nativePtr.cast());
   }
 
   GDExtensionMethodBindPtr classDbGetMethodBind(
       StringName className, StringName methodName, int hash) {
-    return interface.ref.classdb_get_method_bind.asFunction<
-            GDExtensionMethodBindPtr Function(GDExtensionConstStringNamePtr,
-                GDExtensionConstStringNamePtr, int)>(isLeaf: true)(
+    return ffiBindings.gde_classdb_get_method_bind(
         className.nativePtr.cast(), methodName.nativePtr.cast(), hash);
   }
 
@@ -113,10 +103,6 @@ class GodotDart {
     Pointer<Void> ret,
     List<GDExtensionConstTypePtr> args,
   ) {
-    final callFunc = interface.ref.object_method_bind_ptrcall.asFunction<
-        void Function(GDExtensionMethodBindPtr, GDExtensionObjectPtr,
-            Pointer<GDExtensionConstTypePtr>, GDExtensionTypePtr)>();
-
     using((arena) {
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
           sizeOf<GDExtensionConstTypePtr>() * args.length);
@@ -124,7 +110,8 @@ class GodotDart {
         argArray.elementAt(i).value = args[i];
       }
 
-      callFunc(function, instance?.nativePtr ?? nullptr, argArray, ret);
+      ffiBindings.gde_object_method_bind_ptrcall(
+          function, instance?.nativePtr ?? nullptr, argArray, ret);
     });
   }
 
@@ -133,14 +120,6 @@ class GodotDart {
     ExtensionType? instance,
     List<Variant> args,
   ) {
-    final callFunc = interface.ref.object_method_bind_call.asFunction<
-        void Function(
-            GDExtensionMethodBindPtr,
-            GDExtensionObjectPtr,
-            Pointer<GDExtensionConstVariantPtr>,
-            int,
-            GDExtensionVariantPtr,
-            Pointer<GDExtensionCallError>)>();
     final ret = Variant();
     using((arena) {
       final errorPtr =
@@ -150,8 +129,14 @@ class GodotDart {
       for (int i = 0; i < args.length; ++i) {
         argArray.elementAt(i).value = args[i].nativePtr.cast();
       }
-      callFunc(function, instance?.nativePtr.cast() ?? nullptr.cast(), argArray,
-          args.length, ret.nativePtr.cast(), errorPtr.cast());
+      ffiBindings.gde_object_method_bind_call(
+        function,
+        instance?.nativePtr.cast() ?? nullptr.cast(),
+        argArray,
+        args.length,
+        ret.nativePtr.cast(),
+        errorPtr.cast(),
+      );
       if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
         throw Exception(
             'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
@@ -162,14 +147,6 @@ class GodotDart {
   }
 
   Variant variantCall(Variant self, String methodName, List<Variant> args) {
-    final callFunc = interface.ref.variant_call.asFunction<
-        void Function(
-            GDExtensionVariantPtr,
-            GDExtensionConstStringNamePtr,
-            Pointer<GDExtensionConstVariantPtr>,
-            int,
-            GDExtensionVariantPtr,
-            Pointer<GDExtensionCallError>)>();
     final ret = Variant();
     final gdMethodName = StringName.fromString(methodName);
     using((arena) {
@@ -180,8 +157,14 @@ class GodotDart {
       for (int i = 0; i < args.length; ++i) {
         argArray.elementAt(i).value = args[i].nativePtr.cast();
       }
-      callFunc(self.nativePtr.cast(), gdMethodName.nativePtr.cast(), argArray,
-          args.length, ret.nativePtr.cast(), errorPtr.cast());
+      ffiBindings.gde_variant_call(
+        self.nativePtr.cast(),
+        gdMethodName.nativePtr.cast(),
+        argArray,
+        args.length,
+        ret.nativePtr.cast(),
+        errorPtr.cast(),
+      );
       if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
         throw Exception(
             'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
@@ -192,14 +175,12 @@ class GodotDart {
   }
 
   Variant variantGetIndexed(Variant self, int index) {
-    final getter = interface.ref.variant_get_indexed.asFunction<
-        void Function(Pointer<Void>, int, Pointer<Void>, Pointer<Uint8>,
-            Pointer<Uint8>)>();
     Variant ret = Variant();
     using((arena) {
       final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
       final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
-      getter(self.nativePtr.cast(), index, ret.nativePtr.cast(), valid, oob);
+      ffiBindings.gde_variant_get_indexed(
+          self.nativePtr.cast(), index, ret.nativePtr.cast(), valid, oob);
       if (oob.value != 0) {
         throw RangeError.index(index, self);
       }
@@ -209,13 +190,11 @@ class GodotDart {
   }
 
   void variantSetIndexed(Variant self, int index, Variant value) {
-    final getter = interface.ref.variant_set_indexed.asFunction<
-        void Function(Pointer<Void>, int, Pointer<Void>, Pointer<Uint8>,
-            Pointer<Uint8>)>();
     using((arena) {
       final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
       final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
-      getter(self.nativePtr.cast(), index, value.nativePtr.cast(), valid, oob);
+      ffiBindings.gde_variant_set_indexed(
+          self.nativePtr.cast(), index, value.nativePtr.cast(), valid, oob);
       if (oob.value != 0) {
         throw RangeError.index(index, self);
       }
@@ -227,60 +206,42 @@ class GodotDart {
     StringName name,
     int hash,
   ) {
-    return interface.ref.variant_get_ptr_builtin_method.asFunction<
-        GDExtensionPtrBuiltInMethod Function(int, GDExtensionConstStringNamePtr,
-            int)>()(variantType, name.nativePtr.cast(), hash);
+    return ffiBindings.gde_variant_get_ptr_builtin_method(
+        variantType, name.nativePtr.cast(), hash);
   }
 
   GDExtensionPtrIndexedSetter variantGetIndexedSetter(int variantType) {
-    return interface.ref.variant_get_ptr_indexed_setter
-        .asFunction<GDExtensionPtrIndexedSetter Function(int)>(
-            isLeaf: true)(variantType);
+    return ffiBindings.gde_variant_get_ptr_indexed_setter(variantType);
   }
 
   GDExtensionPtrIndexedGetter variantGetIndexedGetter(int variantType) {
-    return interface.ref.variant_get_ptr_indexed_getter
-        .asFunction<GDExtensionPtrIndexedGetter Function(int)>(
-            isLeaf: true)(variantType);
+    return ffiBindings.gde_variant_get_ptr_indexed_getter(variantType);
   }
 
   GDExtensionPtrKeyedSetter variantGetKeyedSetter(int variantType) {
-    return interface.ref.variant_get_ptr_keyed_setter
-        .asFunction<GDExtensionPtrKeyedSetter Function(int)>(
-            isLeaf: true)(variantType);
+    return ffiBindings.gde_variant_get_ptr_keyed_setter(variantType);
   }
 
   GDExtensionPtrKeyedGetter variantGetKeyedGetter(int variantType) {
-    return interface.ref.variant_get_ptr_keyed_getter
-        .asFunction<GDExtensionPtrKeyedGetter Function(int)>(
-            isLeaf: true)(variantType);
+    return ffiBindings.gde_variant_get_ptr_keyed_getter(variantType);
   }
 
   GDExtensionPtrKeyedChecker variantGetKeyedChecker(int variantType) {
-    return interface.ref.variant_get_ptr_keyed_checker
-        .asFunction<GDExtensionPtrKeyedChecker Function(int)>(
-            isLeaf: true)(variantType);
+    return ffiBindings.gde_variant_get_ptr_keyed_checker(variantType);
   }
 
   GDExtensionObjectPtr constructObject(StringName className) {
-    final func = interface.ref.classdb_construct_object.asFunction<
-        GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
-    return func(className.nativePtr.cast());
+    return ffiBindings.gde_classdb_construct_object(className.nativePtr.cast());
   }
 
   Pointer<Void> getClassTag(StringName className) {
-    final func = interface.ref.classdb_get_class_tag
-        .asFunction<Pointer<Void> Function(GDExtensionConstStringNamePtr)>(
-            isLeaf: true);
-    return func(className.nativePtr.cast());
+    return ffiBindings.gde_classdb_get_class_tag(className.nativePtr.cast());
   }
 
   void refSetObject(Pointer<Void> ref, RefCounted? obj) {
     if (obj == null) return;
 
-    final func = interface.ref.ref_set_object
-        .asFunction<void Function(Pointer<Void>, Pointer<Void>)>(isLeaf: true);
-    func(ref, obj.nativePtr.cast());
+    gde.ffiBindings.gde_ref_set_object(ref, obj.nativePtr.cast());
   }
 
   T? cast<T>(GodotObject? from) {
@@ -289,12 +250,10 @@ class GodotDart {
     }
 
     var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final func = interface.ref.object_cast_to.asFunction<
-        GDExtensionObjectPtr Function(Pointer<Void>, Pointer<Void>)>();
     final classTag = getClassTag(typeInfo.className);
     Pointer<Void> casted;
     if (classTag != nullptr) {
-      casted = func(from.nativePtr, classTag);
+      casted = gde.ffiBindings.gde_object_cast_to(from.nativePtr, classTag);
       if (casted == nullptr) {
         return null;
       }
@@ -303,9 +262,7 @@ class GodotDart {
     }
 
     if (typeInfo.bindingToken != null) {
-      final persistent = interface.ref.object_get_instance_binding.asFunction<
-          Pointer<Void> Function(Pointer<Void>, Pointer<Void>,
-              Pointer<GDExtensionInstanceBindingCallbacks>)>()(
+      final persistent = gde.ffiBindings.gde_object_get_instance_binding(
         casted,
         typeInfo.bindingToken!,
         gde.engineBindingCallbacks,

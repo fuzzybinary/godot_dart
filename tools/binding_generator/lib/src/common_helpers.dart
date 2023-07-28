@@ -74,11 +74,15 @@ import '../../variant/variant.dart';
 }
 
 String? argumentAllocation(ArgumentProxy arg) {
-  if (!arg.needsAllocation) return null;
-
-  var ffiType = getFFIType(arg);
-  final argName = escapeName(arg.name).toLowerCamelCase();
-  return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName;';
+  if (arg.needsAllocation) {
+    var ffiType = getFFIType(arg);
+    final argName = escapeName(arg.name).toLowerCamelCase();
+    return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName;';
+  } else if (arg.typeCategory == TypeCategory.engineClass) {
+    final argName = escapeName(arg.name).toLowerCamelCase();
+    return 'final ${argName}Ptr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>())..value = ($argName?.nativePtr ?? nullptr);';
+  }
+  return null;
 }
 
 bool writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {

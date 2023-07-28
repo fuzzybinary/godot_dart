@@ -11,8 +11,6 @@
 
 #include "gde_dart_converters.h"
 
-#define GDE GDEWrapper::instance()->gde()
-
 #define DART_CHECK_RET(var, expr, ret, message)                                                                        \
   Dart_Handle var = (expr);                                                                                            \
   if (Dart_IsError(var)) {                                                                                             \

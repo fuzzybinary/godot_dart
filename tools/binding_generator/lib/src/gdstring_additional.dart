@@ -8,9 +8,7 @@ import 'code_sink.dart';
 void gdStringFromString(CodeSink o) {
   o.b('GDString.fromString(String string) {', () {
     o.p('final native = string.toNativeUtf8();');
-    o.p('final f = gde.interface.ref.string_new_with_utf8_chars');
-    o.p('  .asFunction<void Function(GDExtensionStringPtr, Pointer<Char>)>();');
-    o.p('f(nativePtr.cast(), native.cast());');
+    o.p('gde.ffiBindings.gde_string_new_with_utf8_chars(nativePtr.cast(), native.cast());');
     o.nl();
 
     o.p('malloc.free(native);');

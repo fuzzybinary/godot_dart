@@ -182,8 +182,23 @@ class GodotScriptAnnotationGenerator
   String _convertVirtualMethodName(String methodName) {
     var name = methodName;
     if (methodName.startsWith(RegExp('v[A-Z]'))) {
-      name = '_${name.substring(1, 2).toLowerCase()}${name.substring(2)}';
+      name =
+          '_${name.substring(1, 2).toLowerCase()}${name.substring(2).toSnakeCase()}';
     }
     return name;
+  }
+}
+
+extension StringHelper on String {
+  String toSnakeCase() {
+    return replaceAllMapped(RegExp('(.)([A-Z][a-z]+)'), (match) {
+      return '${match.group(1)}_${match.group(2)}';
+    })
+        .replaceAllMapped(RegExp('([a-z0-9])([A-Z])'), (match) {
+          return '${match.group(1)}_${match.group(2)}';
+        })
+        .replaceAll('2_D', '2d')
+        .replaceAll('3_D', '3d')
+        .toLowerCase();
   }
 }

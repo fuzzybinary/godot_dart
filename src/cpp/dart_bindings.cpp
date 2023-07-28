@@ -248,11 +248,10 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     {
       GDEWrapper *wrapper = GDEWrapper::instance();
       Dart_Handle args[] = {
-          Dart_NewInteger((int64_t)wrapper->gde()),
-          Dart_NewInteger((int64_t)wrapper->lib()),
+          Dart_NewInteger((int64_t)wrapper->get_library_ptr()),
           Dart_NewInteger(((int64_t)&__engine_binding_callbacks)),
       };
-      DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 3, args),
+      DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args),
                      false, "Error calling '_registerGodot'");
     }
 
@@ -330,7 +329,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
   GDEWrapper *gde = GDEWrapper::instance();
 
   uint8_t gd_empty_string[GD_STRING_NAME_MAX_SIZE];
-  GDE->string_new_with_utf8_chars(&gd_empty_string, "");
+  gde_string_new_with_utf8_chars(&gd_empty_string, "");
 
   GDExtensionPropertyInfo ret_info = {
       ret_type_info.variant_type,
@@ -399,7 +398,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
       nullptr,
   };
 
-  GDE->classdb_register_extension_class_method(gde->lib(), bind_type.type_name, &method_info);
+  gde_classdb_register_extension_class_method(gde->get_library_ptr(), bind_type.type_name, &method_info);
 
   delete[] arg_info;
   delete[] arg_meta_info;
@@ -472,7 +471,7 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   GDStringName gd_setter(property_setter_name.c_str());
 
   GDEWrapper *gde = GDEWrapper::instance();
-  GDE->classdb_register_extension_class_property(gde->lib(), bind_type.type_name, &prop_info, gd_setter._native_ptr(),
+  gde_classdb_register_extension_class_property(gde->get_library_ptr(), bind_type.type_name, &prop_info, gd_setter._native_ptr(),
                                                  gd_getter._native_ptr());
 }
 
@@ -570,7 +569,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
       } else {
         void *variantDataPtr = get_opaque_address(variant_result);
         if (variantDataPtr) {
-          GDE->variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
+          gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
         }
       }
     }
@@ -737,7 +736,7 @@ void bind_class(Dart_NativeArguments args) {
   info.free_instance_func = GodotDartBindings::class_free_instance;
   info.get_virtual_func = GodotDartBindings::get_virtual_func;
 
-  GDE->classdb_register_extension_class(GDEWrapper::instance()->lib(), sn_name, sn_parent, &info);
+  gde_classdb_register_extension_class(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
 }
 
 void bind_method(Dart_NativeArguments args) {
@@ -817,7 +816,8 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
-  void *token = gde->lib();
+  // TODO: Check this -- I think I changed what the token should be
+  void *token = gde->get_library_ptr();
   Dart_Handle bindings_token = Dart_GetNativeArgument(args, 2);
   const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &__binding_callbacks;
   if (!Dart_IsNull(bindings_token)) {
@@ -833,7 +833,7 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
     bindings_callbacks = &__engine_binding_callbacks;
   }
 
-  Dart_PersistentHandle dart_persistent = (Dart_PersistentHandle)GDE->object_get_instance_binding(
+  Dart_PersistentHandle dart_persistent = (Dart_PersistentHandle)gde_object_get_instance_binding(
       reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, bindings_callbacks);
   if (dart_persistent == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
@@ -907,9 +907,9 @@ void dart_object_post_initialize(Dart_NativeArguments args) {
 
 
 
-  GDE->object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
+  gde_object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
                            reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
-  GDE->object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.binding_token, persistent_handle,
+  gde_object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.binding_token, persistent_handle,
                                    &__binding_callbacks);
 }
 
@@ -965,7 +965,7 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
     return;
   }
 
-  GDE->object_destroy(extention_object);
+  gde_object_destroy(extention_object);
 }
 
 GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder) {
@@ -981,7 +981,7 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
 
   DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder);
   GDExtensionScriptInstancePtr godot_script_instance =
-      GDE->script_instance_create(DartScriptInstance::get_script_instance_info(),
+      gde_script_instance_create(DartScriptInstance::get_script_instance_info(),
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
 
   return godot_script_instance;

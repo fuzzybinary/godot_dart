@@ -75,9 +75,7 @@ class Ref<T extends RefCounted> implements Finalizable {
 
   Ref.fromPointer(Pointer<Void> refPointer) {
     final typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final objPtr = gde.interface.ref.ref_get_object
-        .asFunction<Pointer<Void> Function(Pointer<Void>)>(
-            isLeaf: true)(refPointer);
+    final objPtr = gde.ffiBindings.gde_ref_get_object(refPointer);
     final maybeObj =
         gde.dartBindings.gdObjectToDartObject(objPtr, typeInfo.bindingToken);
     if (maybeObj is T) {

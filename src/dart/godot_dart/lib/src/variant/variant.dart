@@ -10,24 +10,25 @@ export 'vector3.dart';
 
 typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
+typedef GDExtensionTypeFromVariant = void Function(
+    GDExtensionVariantPtr, GDExtensionTypePtr);
 
 late List<GDExtensionVariantFromType?> _fromTypeConstructor;
-late List<GDExtensionTypeFromVariantConstructorFunc?> _toTypeConstructor;
+late List<GDExtensionTypeFromVariant?> _toTypeConstructor;
 
 typedef BuiltinConstructor = BuiltinType Function();
 Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
-void initVariantBindings(GDExtensionInterface gdeInterface) {
+void initVariantBindings(GDExtensionFFI ffIinterface) {
   _fromTypeConstructor = List.generate(
     GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
     (variantType) {
       if (variantType == 0) {
         return null;
       }
-      GDExtensionVariantFromTypeConstructorFunc Function(int) f;
-      f = gdeInterface.get_variant_from_type_constructor
+      return ffIinterface
+          .gde_get_variant_from_type_constructor(variantType)
           .asFunction(isLeaf: true);
-      return f(variantType).asFunction(isLeaf: true);
     },
   );
   _toTypeConstructor = List.generate(
@@ -36,9 +37,9 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
       if (variantType == 0) {
         return null;
       }
-      GDExtensionTypeFromVariantConstructorFunc Function(int) f;
-      f = gdeInterface.get_variant_to_type_constructor.asFunction(isLeaf: true);
-      return f(variantType);
+      return ffIinterface
+          .gde_get_variant_to_type_constructor(variantType)
+          .asFunction(isLeaf: true);
     },
   );
 
@@ -124,7 +125,7 @@ void initVariantBindings(GDExtensionInterface gdeInterface) {
 }
 
 @internal
-GDExtensionTypeFromVariantConstructorFunc? getToTypeConstructor(int type) {
+GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
   return _toTypeConstructor[type];
 }
 
@@ -154,9 +155,7 @@ class Variant extends BuiltinType {
   }
 
   int getType() {
-    int Function(Pointer<Void>) getType =
-        gde.interface.ref.variant_get_type.asFunction();
-    return getType(_opaque.cast());
+    return gde.ffiBindings.gde_variant_get_type(_opaque.cast());
   }
 }
 
@@ -167,15 +166,11 @@ Variant convertToVariant(Object? obj) {
 
   // First easy checks, are we null?
   if (obj == null) {
-    GodotDart.instance!.interface.ref.variant_new_nil
-        .asFunction<void Function(GDExtensionVariantPtr)>(
-            isLeaf: true)(ret.nativePtr.cast());
+    gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
   } else if (obj is Ref) {
     final referencedObj = obj.obj;
     if (referencedObj == null) {
-      GodotDart.instance!.interface.ref.variant_new_nil
-          .asFunction<void Function(GDExtensionVariantPtr)>(
-              isLeaf: true)(ret.nativePtr.cast());
+      gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
     } else {
       // Already an Object, but constructor expects a pointer to the object
       Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
@@ -239,9 +234,7 @@ Variant convertToVariant(Object? obj) {
         // TODO: All the other variant types (dictionary? List?)
         default:
           // If we got here, return nil variant
-          GodotDart.instance!.interface.ref.variant_new_nil
-              .asFunction<void Function(GDExtensionVariantPtr)>(
-                  isLeaf: true)(ret.nativePtr.cast());
+          gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
       }
     });
   }
@@ -257,7 +250,7 @@ Object? convertFromVariant(
   int variantType = variant.getType();
   void Function(GDExtensionTypePtr, GDExtensionVariantPtr)? c;
   if (variantType > 0 && variantType < _toTypeConstructor.length) {
-    c = _toTypeConstructor[variantType]?.asFunction();
+    c = _toTypeConstructor[variantType];
   }
 
   if (c == null) {

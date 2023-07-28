@@ -68,14 +68,13 @@ class Vector3 extends BuiltinType {
   }
 
   factory Vector3.forward() {
-    return Vector3(x: 1, y: 0, z: 0);
+    return Vector3(x: 0, y: 0, z: -1);
   }
 
   Vector3.fromVariant(Variant variant) : super.nonFinalized() {
     _allocateOpaque();
     final c = getToTypeConstructor(
-            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3)
-        ?.asFunction<void Function(Pointer<Void>, Pointer<Void>)>(isLeaf: true);
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
     if (c == null) return;
 
     c(_opaque.cast(), variant.nativePtr.cast());
@@ -204,12 +203,27 @@ class Vector3 extends BuiltinType {
   }
 
   Vector3 rotated(Vector3 axis, double angle) {
-    final b = Basis.fromAxisAngle(axis, angle);
-    return Vector3(
-      x: b.x.dot(this),
-      y: b.y.dot(this),
-      z: b.z.dot(this),
-    );
+    final q = Quaternion.fromAxisAngle(axis, angle);
+    final v = Vector3.copy(this)..applyQuaternion(q);
+    return v;
+  }
+
+  void applyQuaternion(Quaternion arg) {
+    //final argStorage = arg._qStorage;
+    final v0 = _data[0];
+    final v1 = _data[1];
+    final v2 = _data[2];
+    final qx = arg.x;
+    final qy = arg.y;
+    final qz = arg.z;
+    final qw = arg.w;
+    final ix = qw * v0 + qy * v2 - qz * v1;
+    final iy = qw * v1 + qz * v0 - qx * v2;
+    final iz = qw * v2 + qx * v1 - qy * v0;
+    final iw = -qx * v0 - qy * v1 - qz * v2;
+    _data[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+    _data[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+    _data[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
   }
 
   Vector3 lerp(Vector3 to, double weight) {
@@ -439,6 +453,13 @@ class Vector3 extends BuiltinType {
   Vector3 operator *(num scale) => Vector3.copy(this)..scale(scale);
 
   Vector3 operator /(num scale) => Vector3.copy(this)..scale(1.0 / scale);
+
+  void updateFromOpaque() {
+    final byteData = _data.buffer.asByteData();
+    for (int i = 0; i < byteData.lengthInBytes; ++i) {
+      byteData.setUint8(i, _opaque[i]);
+    }
+  }
 
   void _updateOpaque() {
     if (_opaque == nullptr) {

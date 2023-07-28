@@ -26,7 +26,7 @@ public:
 
   Dart_Handle to_dart() const;
 
-  static void init_from_gde(const GDExtensionInterface *gde);
+  static void init();
 
 private:
   uint8_t _opaque[MAX_SIZE] = {0};
@@ -54,7 +54,7 @@ public:
 
   Dart_Handle to_dart() const;
 
-  static void init_from_gde(const GDExtensionInterface *gde);
+  static void init();
 
 private:
   uint8_t _opaque[MAX_SIZE];

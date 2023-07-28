@@ -174,6 +174,903 @@ class GDExtensionFFI {
   late final ___threadhandlePtr =
       _lookup<ffi.NativeFunction<ffi.UintPtr Function()>>('__threadhandle');
   late final ___threadhandle = ___threadhandlePtr.asFunction<int Function()>();
+
+  void gde_init_c_interface(
+    GDExtensionInterfaceGetProcAddress p_get_proc_address,
+  ) {
+    return _gde_init_c_interface(
+      p_get_proc_address,
+    );
+  }
+
+  late final _gde_init_c_interfacePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionInterfaceGetProcAddress)>>('gde_init_c_interface');
+  late final _gde_init_c_interface = _gde_init_c_interfacePtr
+      .asFunction<void Function(GDExtensionInterfaceGetProcAddress)>();
+
+  void gde_get_library_path(
+    GDExtensionClassLibraryPtr p_library,
+    GDExtensionUninitializedStringPtr r_path,
+  ) {
+    return _gde_get_library_path(
+      p_library,
+      r_path,
+    );
+  }
+
+  late final _gde_get_library_pathPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(GDExtensionClassLibraryPtr,
+              GDExtensionUninitializedStringPtr)>>('gde_get_library_path');
+  late final _gde_get_library_path = _gde_get_library_pathPtr.asFunction<
+      void Function(
+          GDExtensionClassLibraryPtr, GDExtensionUninitializedStringPtr)>();
+
+  void gde_print_error(
+    ffi.Pointer<ffi.Char> p_description,
+    ffi.Pointer<ffi.Char> p_function,
+    ffi.Pointer<ffi.Char> p_file,
+    int p_line,
+    int p_editor_notify,
+  ) {
+    return _gde_print_error(
+      p_description,
+      p_function,
+      p_file,
+      p_line,
+      p_editor_notify,
+    );
+  }
+
+  late final _gde_print_errorPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Int32,
+              GDExtensionBool)>>('gde_print_error');
+  late final _gde_print_error = _gde_print_errorPtr.asFunction<
+      void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>, int, int)>();
+
+  void gde_print_warning(
+    ffi.Pointer<ffi.Char> p_description,
+    ffi.Pointer<ffi.Char> p_function,
+    ffi.Pointer<ffi.Char> p_file,
+    int p_line,
+    int p_editor_notify,
+  ) {
+    return _gde_print_warning(
+      p_description,
+      p_function,
+      p_file,
+      p_line,
+      p_editor_notify,
+    );
+  }
+
+  late final _gde_print_warningPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Int32,
+              GDExtensionBool)>>('gde_print_warning');
+  late final _gde_print_warning = _gde_print_warningPtr.asFunction<
+      void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>, int, int)>();
+
+  ffi.Pointer<ffi.Void> gde_mem_alloc(
+    int p_bytes,
+  ) {
+    return _gde_mem_alloc(
+      p_bytes,
+    );
+  }
+
+  late final _gde_mem_allocPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(ffi.Size)>>(
+          'gde_mem_alloc');
+  late final _gde_mem_alloc =
+      _gde_mem_allocPtr.asFunction<ffi.Pointer<ffi.Void> Function(int)>();
+
+  GDExtensionPtrConstructor gde_variant_get_ptr_constructor(
+    int p_type,
+    int p_constructor,
+  ) {
+    return _gde_variant_get_ptr_constructor(
+      p_type,
+      p_constructor,
+    );
+  }
+
+  late final _gde_variant_get_ptr_constructorPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionPtrConstructor Function(
+              ffi.Int32, ffi.Int32)>>('gde_variant_get_ptr_constructor');
+  late final _gde_variant_get_ptr_constructor =
+      _gde_variant_get_ptr_constructorPtr
+          .asFunction<GDExtensionPtrConstructor Function(int, int)>();
+
+  GDExtensionPtrDestructor gde_variant_get_ptr_destructor(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_destructor(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_destructorPtr =
+      _lookup<ffi.NativeFunction<GDExtensionPtrDestructor Function(ffi.Int32)>>(
+          'gde_variant_get_ptr_destructor');
+  late final _gde_variant_get_ptr_destructor =
+      _gde_variant_get_ptr_destructorPtr
+          .asFunction<GDExtensionPtrDestructor Function(int)>();
+
+  void gde_variant_new_copy(
+    GDExtensionUninitializedVariantPtr r_dest,
+    GDExtensionConstVariantPtr p_src,
+  ) {
+    return _gde_variant_new_copy(
+      r_dest,
+      p_src,
+    );
+  }
+
+  late final _gde_variant_new_copyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(GDExtensionUninitializedVariantPtr,
+              GDExtensionConstVariantPtr)>>('gde_variant_new_copy');
+  late final _gde_variant_new_copy = _gde_variant_new_copyPtr.asFunction<
+      void Function(
+          GDExtensionUninitializedVariantPtr, GDExtensionConstVariantPtr)>();
+
+  void gde_variant_new_nil(
+    GDExtensionUninitializedVariantPtr r_dest,
+  ) {
+    return _gde_variant_new_nil(
+      r_dest,
+    );
+  }
+
+  late final _gde_variant_new_nilPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionUninitializedVariantPtr)>>('gde_variant_new_nil');
+  late final _gde_variant_new_nil = _gde_variant_new_nilPtr
+      .asFunction<void Function(GDExtensionUninitializedVariantPtr)>();
+
+  GDExtensionPtrBuiltInMethod gde_variant_get_ptr_builtin_method(
+    int p_type,
+    GDExtensionConstStringNamePtr p_method,
+    int p_hash,
+  ) {
+    return _gde_variant_get_ptr_builtin_method(
+      p_type,
+      p_method,
+      p_hash,
+    );
+  }
+
+  late final _gde_variant_get_ptr_builtin_methodPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionPtrBuiltInMethod Function(
+              ffi.Int32,
+              GDExtensionConstStringNamePtr,
+              GDExtensionInt)>>('gde_variant_get_ptr_builtin_method');
+  late final _gde_variant_get_ptr_builtin_method =
+      _gde_variant_get_ptr_builtin_methodPtr.asFunction<
+          GDExtensionPtrBuiltInMethod Function(
+              int, GDExtensionConstStringNamePtr, int)>();
+
+  GDExtensionVariantFromTypeConstructorFunc
+      gde_get_variant_from_type_constructor(
+    int p_type,
+  ) {
+    return _gde_get_variant_from_type_constructor(
+      p_type,
+    );
+  }
+
+  late final _gde_get_variant_from_type_constructorPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionVariantFromTypeConstructorFunc Function(
+              ffi.Int32)>>('gde_get_variant_from_type_constructor');
+  late final _gde_get_variant_from_type_constructor =
+      _gde_get_variant_from_type_constructorPtr.asFunction<
+          GDExtensionVariantFromTypeConstructorFunc Function(int)>();
+
+  GDExtensionTypeFromVariantConstructorFunc gde_get_variant_to_type_constructor(
+    int p_type,
+  ) {
+    return _gde_get_variant_to_type_constructor(
+      p_type,
+    );
+  }
+
+  late final _gde_get_variant_to_type_constructorPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionTypeFromVariantConstructorFunc Function(
+              ffi.Int32)>>('gde_get_variant_to_type_constructor');
+  late final _gde_get_variant_to_type_constructor =
+      _gde_get_variant_to_type_constructorPtr.asFunction<
+          GDExtensionTypeFromVariantConstructorFunc Function(int)>();
+
+  int gde_variant_get_type(
+    GDExtensionConstVariantPtr p_self,
+  ) {
+    return _gde_variant_get_type(
+      p_self,
+    );
+  }
+
+  late final _gde_variant_get_typePtr = _lookup<
+          ffi.NativeFunction<ffi.Int32 Function(GDExtensionConstVariantPtr)>>(
+      'gde_variant_get_type');
+  late final _gde_variant_get_type = _gde_variant_get_typePtr
+      .asFunction<int Function(GDExtensionConstVariantPtr)>();
+
+  void gde_variant_call(
+    GDExtensionVariantPtr p_self,
+    GDExtensionConstStringNamePtr p_method,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    int p_argument_count,
+    GDExtensionUninitializedVariantPtr r_return,
+    ffi.Pointer<GDExtensionCallError> r_error,
+  ) {
+    return _gde_variant_call(
+      p_self,
+      p_method,
+      p_args,
+      p_argument_count,
+      r_return,
+      r_error,
+    );
+  }
+
+  late final _gde_variant_callPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionVariantPtr,
+              GDExtensionConstStringNamePtr,
+              ffi.Pointer<GDExtensionConstVariantPtr>,
+              GDExtensionInt,
+              GDExtensionUninitializedVariantPtr,
+              ffi.Pointer<GDExtensionCallError>)>>('gde_variant_call');
+  late final _gde_variant_call = _gde_variant_callPtr.asFunction<
+      void Function(
+          GDExtensionVariantPtr,
+          GDExtensionConstStringNamePtr,
+          ffi.Pointer<GDExtensionConstVariantPtr>,
+          int,
+          GDExtensionUninitializedVariantPtr,
+          ffi.Pointer<GDExtensionCallError>)>();
+
+  GDExtensionPtrGetter gde_variant_get_ptr_getter(
+    int p_type,
+    GDExtensionConstStringNamePtr p_member,
+  ) {
+    return _gde_variant_get_ptr_getter(
+      p_type,
+      p_member,
+    );
+  }
+
+  late final _gde_variant_get_ptr_getterPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionPtrGetter Function(ffi.Int32,
+              GDExtensionConstStringNamePtr)>>('gde_variant_get_ptr_getter');
+  late final _gde_variant_get_ptr_getter =
+      _gde_variant_get_ptr_getterPtr.asFunction<
+          GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>();
+
+  GDExtensionPtrSetter gde_variant_get_ptr_setter(
+    int p_type,
+    GDExtensionConstStringNamePtr p_member,
+  ) {
+    return _gde_variant_get_ptr_setter(
+      p_type,
+      p_member,
+    );
+  }
+
+  late final _gde_variant_get_ptr_setterPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionPtrSetter Function(ffi.Int32,
+              GDExtensionConstStringNamePtr)>>('gde_variant_get_ptr_setter');
+  late final _gde_variant_get_ptr_setter =
+      _gde_variant_get_ptr_setterPtr.asFunction<
+          GDExtensionPtrSetter Function(int, GDExtensionConstStringNamePtr)>();
+
+  GDExtensionPtrIndexedGetter gde_variant_get_ptr_indexed_getter(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_indexed_getter(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_indexed_getterPtr = _lookup<
+          ffi.NativeFunction<GDExtensionPtrIndexedGetter Function(ffi.Int32)>>(
+      'gde_variant_get_ptr_indexed_getter');
+  late final _gde_variant_get_ptr_indexed_getter =
+      _gde_variant_get_ptr_indexed_getterPtr
+          .asFunction<GDExtensionPtrIndexedGetter Function(int)>();
+
+  GDExtensionPtrIndexedSetter gde_variant_get_ptr_indexed_setter(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_indexed_setter(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_indexed_setterPtr = _lookup<
+          ffi.NativeFunction<GDExtensionPtrIndexedSetter Function(ffi.Int32)>>(
+      'gde_variant_get_ptr_indexed_setter');
+  late final _gde_variant_get_ptr_indexed_setter =
+      _gde_variant_get_ptr_indexed_setterPtr
+          .asFunction<GDExtensionPtrIndexedSetter Function(int)>();
+
+  GDExtensionPtrKeyedSetter gde_variant_get_ptr_keyed_setter(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_keyed_setter(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_keyed_setterPtr = _lookup<
+          ffi.NativeFunction<GDExtensionPtrKeyedSetter Function(ffi.Int32)>>(
+      'gde_variant_get_ptr_keyed_setter');
+  late final _gde_variant_get_ptr_keyed_setter =
+      _gde_variant_get_ptr_keyed_setterPtr
+          .asFunction<GDExtensionPtrKeyedSetter Function(int)>();
+
+  GDExtensionPtrKeyedGetter gde_variant_get_ptr_keyed_getter(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_keyed_getter(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_keyed_getterPtr = _lookup<
+          ffi.NativeFunction<GDExtensionPtrKeyedGetter Function(ffi.Int32)>>(
+      'gde_variant_get_ptr_keyed_getter');
+  late final _gde_variant_get_ptr_keyed_getter =
+      _gde_variant_get_ptr_keyed_getterPtr
+          .asFunction<GDExtensionPtrKeyedGetter Function(int)>();
+
+  GDExtensionPtrKeyedChecker gde_variant_get_ptr_keyed_checker(
+    int p_type,
+  ) {
+    return _gde_variant_get_ptr_keyed_checker(
+      p_type,
+    );
+  }
+
+  late final _gde_variant_get_ptr_keyed_checkerPtr = _lookup<
+          ffi.NativeFunction<GDExtensionPtrKeyedChecker Function(ffi.Int32)>>(
+      'gde_variant_get_ptr_keyed_checker');
+  late final _gde_variant_get_ptr_keyed_checker =
+      _gde_variant_get_ptr_keyed_checkerPtr
+          .asFunction<GDExtensionPtrKeyedChecker Function(int)>();
+
+  void gde_variant_get_indexed(
+    GDExtensionConstVariantPtr p_self,
+    int p_index,
+    GDExtensionUninitializedVariantPtr r_ret,
+    ffi.Pointer<GDExtensionBool> r_valid,
+    ffi.Pointer<GDExtensionBool> r_oob,
+  ) {
+    return _gde_variant_get_indexed(
+      p_self,
+      p_index,
+      r_ret,
+      r_valid,
+      r_oob,
+    );
+  }
+
+  late final _gde_variant_get_indexedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionConstVariantPtr,
+              GDExtensionInt,
+              GDExtensionUninitializedVariantPtr,
+              ffi.Pointer<GDExtensionBool>,
+              ffi.Pointer<GDExtensionBool>)>>('gde_variant_get_indexed');
+  late final _gde_variant_get_indexed = _gde_variant_get_indexedPtr.asFunction<
+      void Function(
+          GDExtensionConstVariantPtr,
+          int,
+          GDExtensionUninitializedVariantPtr,
+          ffi.Pointer<GDExtensionBool>,
+          ffi.Pointer<GDExtensionBool>)>();
+
+  void gde_variant_set_indexed(
+    GDExtensionVariantPtr p_self,
+    int p_index,
+    GDExtensionConstVariantPtr p_value,
+    ffi.Pointer<GDExtensionBool> r_valid,
+    ffi.Pointer<GDExtensionBool> r_oob,
+  ) {
+    return _gde_variant_set_indexed(
+      p_self,
+      p_index,
+      p_value,
+      r_valid,
+      r_oob,
+    );
+  }
+
+  late final _gde_variant_set_indexedPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionVariantPtr,
+              GDExtensionInt,
+              GDExtensionConstVariantPtr,
+              ffi.Pointer<GDExtensionBool>,
+              ffi.Pointer<GDExtensionBool>)>>('gde_variant_set_indexed');
+  late final _gde_variant_set_indexed = _gde_variant_set_indexedPtr.asFunction<
+      void Function(GDExtensionVariantPtr, int, GDExtensionConstVariantPtr,
+          ffi.Pointer<GDExtensionBool>, ffi.Pointer<GDExtensionBool>)>();
+
+  void gde_string_new_with_utf8_chars(
+    GDExtensionUninitializedStringPtr r_dest,
+    ffi.Pointer<ffi.Char> p_contents,
+  ) {
+    return _gde_string_new_with_utf8_chars(
+      r_dest,
+      p_contents,
+    );
+  }
+
+  late final _gde_string_new_with_utf8_charsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(GDExtensionUninitializedStringPtr,
+              ffi.Pointer<ffi.Char>)>>('gde_string_new_with_utf8_chars');
+  late final _gde_string_new_with_utf8_chars =
+      _gde_string_new_with_utf8_charsPtr.asFunction<
+          void Function(
+              GDExtensionUninitializedStringPtr, ffi.Pointer<ffi.Char>)>();
+
+  int gde_string_to_utf8_chars(
+    GDExtensionConstStringPtr p_self,
+    ffi.Pointer<ffi.Char> r_text,
+    int p_max_write_length,
+  ) {
+    return _gde_string_to_utf8_chars(
+      p_self,
+      r_text,
+      p_max_write_length,
+    );
+  }
+
+  late final _gde_string_to_utf8_charsPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionInt Function(
+              GDExtensionConstStringPtr,
+              ffi.Pointer<ffi.Char>,
+              GDExtensionInt)>>('gde_string_to_utf8_chars');
+  late final _gde_string_to_utf8_chars =
+      _gde_string_to_utf8_charsPtr.asFunction<
+          int Function(
+              GDExtensionConstStringPtr, ffi.Pointer<ffi.Char>, int)>();
+
+  int gde_string_to_utf16_chars(
+    GDExtensionConstStringPtr p_self,
+    ffi.Pointer<char16_t> r_text,
+    int p_max_write_length,
+  ) {
+    return _gde_string_to_utf16_chars(
+      p_self,
+      r_text,
+      p_max_write_length,
+    );
+  }
+
+  late final _gde_string_to_utf16_charsPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionInt Function(
+              GDExtensionConstStringPtr,
+              ffi.Pointer<char16_t>,
+              GDExtensionInt)>>('gde_string_to_utf16_chars');
+  late final _gde_string_to_utf16_chars =
+      _gde_string_to_utf16_charsPtr.asFunction<
+          int Function(
+              GDExtensionConstStringPtr, ffi.Pointer<char16_t>, int)>();
+
+  GDExtensionObjectPtr gde_global_get_singleton(
+    GDExtensionConstStringNamePtr p_name,
+  ) {
+    return _gde_global_get_singleton(
+      p_name,
+    );
+  }
+
+  late final _gde_global_get_singletonPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionObjectPtr Function(
+              GDExtensionConstStringNamePtr)>>('gde_global_get_singleton');
+  late final _gde_global_get_singleton =
+      _gde_global_get_singletonPtr.asFunction<
+          GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
+
+  ffi.Pointer<ffi.Void> gde_classdb_get_class_tag(
+    GDExtensionConstStringNamePtr p_classname,
+  ) {
+    return _gde_classdb_get_class_tag(
+      p_classname,
+    );
+  }
+
+  late final _gde_classdb_get_class_tagPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+              GDExtensionConstStringNamePtr)>>('gde_classdb_get_class_tag');
+  late final _gde_classdb_get_class_tag =
+      _gde_classdb_get_class_tagPtr.asFunction<
+          ffi.Pointer<ffi.Void> Function(GDExtensionConstStringNamePtr)>();
+
+  void gde_classdb_register_extension_class(
+    GDExtensionClassLibraryPtr p_library,
+    GDExtensionConstStringNamePtr p_class_name,
+    GDExtensionConstStringNamePtr p_parent_class_name,
+    ffi.Pointer<GDExtensionClassCreationInfo> p_extension_funcs,
+  ) {
+    return _gde_classdb_register_extension_class(
+      p_library,
+      p_class_name,
+      p_parent_class_name,
+      p_extension_funcs,
+    );
+  }
+
+  late final _gde_classdb_register_extension_classPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  GDExtensionClassLibraryPtr,
+                  GDExtensionConstStringNamePtr,
+                  GDExtensionConstStringNamePtr,
+                  ffi.Pointer<GDExtensionClassCreationInfo>)>>(
+      'gde_classdb_register_extension_class');
+  late final _gde_classdb_register_extension_class =
+      _gde_classdb_register_extension_classPtr.asFunction<
+          void Function(
+              GDExtensionClassLibraryPtr,
+              GDExtensionConstStringNamePtr,
+              GDExtensionConstStringNamePtr,
+              ffi.Pointer<GDExtensionClassCreationInfo>)>();
+
+  void gde_classdb_register_extension_class_method(
+    GDExtensionClassLibraryPtr p_library,
+    GDExtensionConstStringNamePtr p_class_name,
+    ffi.Pointer<GDExtensionClassMethodInfo> p_method_info,
+  ) {
+    return _gde_classdb_register_extension_class_method(
+      p_library,
+      p_class_name,
+      p_method_info,
+    );
+  }
+
+  late final _gde_classdb_register_extension_class_methodPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  GDExtensionClassLibraryPtr,
+                  GDExtensionConstStringNamePtr,
+                  ffi.Pointer<GDExtensionClassMethodInfo>)>>(
+      'gde_classdb_register_extension_class_method');
+  late final _gde_classdb_register_extension_class_method =
+      _gde_classdb_register_extension_class_methodPtr.asFunction<
+          void Function(
+              GDExtensionClassLibraryPtr,
+              GDExtensionConstStringNamePtr,
+              ffi.Pointer<GDExtensionClassMethodInfo>)>();
+
+  void gde_classdb_register_extension_class_property(
+    GDExtensionClassLibraryPtr p_library,
+    GDExtensionConstStringNamePtr p_class_name,
+    ffi.Pointer<GDExtensionPropertyInfo> p_info,
+    GDExtensionConstStringNamePtr p_setter,
+    GDExtensionConstStringNamePtr p_getter,
+  ) {
+    return _gde_classdb_register_extension_class_property(
+      p_library,
+      p_class_name,
+      p_info,
+      p_setter,
+      p_getter,
+    );
+  }
+
+  late final _gde_classdb_register_extension_class_propertyPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  GDExtensionClassLibraryPtr,
+                  GDExtensionConstStringNamePtr,
+                  ffi.Pointer<GDExtensionPropertyInfo>,
+                  GDExtensionConstStringNamePtr,
+                  GDExtensionConstStringNamePtr)>>(
+      'gde_classdb_register_extension_class_property');
+  late final _gde_classdb_register_extension_class_property =
+      _gde_classdb_register_extension_class_propertyPtr.asFunction<
+          void Function(
+              GDExtensionClassLibraryPtr,
+              GDExtensionConstStringNamePtr,
+              ffi.Pointer<GDExtensionPropertyInfo>,
+              GDExtensionConstStringNamePtr,
+              GDExtensionConstStringNamePtr)>();
+
+  GDExtensionMethodBindPtr gde_classdb_get_method_bind(
+    GDExtensionConstStringNamePtr p_classname,
+    GDExtensionConstStringNamePtr p_methodname,
+    int p_hash,
+  ) {
+    return _gde_classdb_get_method_bind(
+      p_classname,
+      p_methodname,
+      p_hash,
+    );
+  }
+
+  late final _gde_classdb_get_method_bindPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionMethodBindPtr Function(
+              GDExtensionConstStringNamePtr,
+              GDExtensionConstStringNamePtr,
+              GDExtensionInt)>>('gde_classdb_get_method_bind');
+  late final _gde_classdb_get_method_bind =
+      _gde_classdb_get_method_bindPtr.asFunction<
+          GDExtensionMethodBindPtr Function(GDExtensionConstStringNamePtr,
+              GDExtensionConstStringNamePtr, int)>();
+
+  GDExtensionObjectPtr gde_classdb_construct_object(
+    GDExtensionConstStringNamePtr p_classname,
+  ) {
+    return _gde_classdb_construct_object(
+      p_classname,
+    );
+  }
+
+  late final _gde_classdb_construct_objectPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionObjectPtr Function(
+              GDExtensionConstStringNamePtr)>>('gde_classdb_construct_object');
+  late final _gde_classdb_construct_object =
+      _gde_classdb_construct_objectPtr.asFunction<
+          GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>();
+
+  void gde_object_method_bind_call(
+    GDExtensionMethodBindPtr p_method_bind,
+    GDExtensionObjectPtr p_instance,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    int p_arg_count,
+    GDExtensionUninitializedVariantPtr r_ret,
+    ffi.Pointer<GDExtensionCallError> r_error,
+  ) {
+    return _gde_object_method_bind_call(
+      p_method_bind,
+      p_instance,
+      p_args,
+      p_arg_count,
+      r_ret,
+      r_error,
+    );
+  }
+
+  late final _gde_object_method_bind_callPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  GDExtensionMethodBindPtr,
+                  GDExtensionObjectPtr,
+                  ffi.Pointer<GDExtensionConstVariantPtr>,
+                  GDExtensionInt,
+                  GDExtensionUninitializedVariantPtr,
+                  ffi.Pointer<GDExtensionCallError>)>>(
+      'gde_object_method_bind_call');
+  late final _gde_object_method_bind_call =
+      _gde_object_method_bind_callPtr.asFunction<
+          void Function(
+              GDExtensionMethodBindPtr,
+              GDExtensionObjectPtr,
+              ffi.Pointer<GDExtensionConstVariantPtr>,
+              int,
+              GDExtensionUninitializedVariantPtr,
+              ffi.Pointer<GDExtensionCallError>)>();
+
+  void gde_object_method_bind_ptrcall(
+    GDExtensionMethodBindPtr p_method_bind,
+    GDExtensionObjectPtr p_instance,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret,
+  ) {
+    return _gde_object_method_bind_ptrcall(
+      p_method_bind,
+      p_instance,
+      p_args,
+      r_ret,
+    );
+  }
+
+  late final _gde_object_method_bind_ptrcallPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionMethodBindPtr,
+              GDExtensionObjectPtr,
+              ffi.Pointer<GDExtensionConstTypePtr>,
+              GDExtensionTypePtr)>>('gde_object_method_bind_ptrcall');
+  late final _gde_object_method_bind_ptrcall =
+      _gde_object_method_bind_ptrcallPtr.asFunction<
+          void Function(GDExtensionMethodBindPtr, GDExtensionObjectPtr,
+              ffi.Pointer<GDExtensionConstTypePtr>, GDExtensionTypePtr)>();
+
+  ffi.Pointer<ffi.Void> gde_object_get_instance_binding(
+    GDExtensionObjectPtr p_o,
+    ffi.Pointer<ffi.Void> p_token,
+    ffi.Pointer<GDExtensionInstanceBindingCallbacks> p_callbacks,
+  ) {
+    return _gde_object_get_instance_binding(
+      p_o,
+      p_token,
+      p_callbacks,
+    );
+  }
+
+  late final _gde_object_get_instance_bindingPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Pointer<ffi.Void> Function(
+                  GDExtensionObjectPtr,
+                  ffi.Pointer<ffi.Void>,
+                  ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>>(
+      'gde_object_get_instance_binding');
+  late final _gde_object_get_instance_binding =
+      _gde_object_get_instance_bindingPtr.asFunction<
+          ffi.Pointer<ffi.Void> Function(
+              GDExtensionObjectPtr,
+              ffi.Pointer<ffi.Void>,
+              ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>();
+
+  void gde_object_set_instance_binding(
+    GDExtensionObjectPtr p_o,
+    ffi.Pointer<ffi.Void> p_token,
+    ffi.Pointer<ffi.Void> p_binding,
+    ffi.Pointer<GDExtensionInstanceBindingCallbacks> p_callbacks,
+  ) {
+    return _gde_object_set_instance_binding(
+      p_o,
+      p_token,
+      p_binding,
+      p_callbacks,
+    );
+  }
+
+  late final _gde_object_set_instance_bindingPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  GDExtensionObjectPtr,
+                  ffi.Pointer<ffi.Void>,
+                  ffi.Pointer<ffi.Void>,
+                  ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>>(
+      'gde_object_set_instance_binding');
+  late final _gde_object_set_instance_binding =
+      _gde_object_set_instance_bindingPtr.asFunction<
+          void Function(
+              GDExtensionObjectPtr,
+              ffi.Pointer<ffi.Void>,
+              ffi.Pointer<ffi.Void>,
+              ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>();
+
+  void gde_object_set_instance(
+    GDExtensionObjectPtr p_o,
+    GDExtensionConstStringNamePtr p_classname,
+    GDExtensionClassInstancePtr p_instance,
+  ) {
+    return _gde_object_set_instance(
+      p_o,
+      p_classname,
+      p_instance,
+    );
+  }
+
+  late final _gde_object_set_instancePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(GDExtensionObjectPtr, GDExtensionConstStringNamePtr,
+              GDExtensionClassInstancePtr)>>('gde_object_set_instance');
+  late final _gde_object_set_instance = _gde_object_set_instancePtr.asFunction<
+      void Function(GDExtensionObjectPtr, GDExtensionConstStringNamePtr,
+          GDExtensionClassInstancePtr)>();
+
+  GDExtensionObjectPtr gde_object_cast_to(
+    GDExtensionConstObjectPtr p_object,
+    ffi.Pointer<ffi.Void> p_class_tag,
+  ) {
+    return _gde_object_cast_to(
+      p_object,
+      p_class_tag,
+    );
+  }
+
+  late final _gde_object_cast_toPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionObjectPtr Function(GDExtensionConstObjectPtr,
+              ffi.Pointer<ffi.Void>)>>('gde_object_cast_to');
+  late final _gde_object_cast_to = _gde_object_cast_toPtr.asFunction<
+      GDExtensionObjectPtr Function(
+          GDExtensionConstObjectPtr, ffi.Pointer<ffi.Void>)>();
+
+  void gde_object_destroy(
+    GDExtensionObjectPtr p_o,
+  ) {
+    return _gde_object_destroy(
+      p_o,
+    );
+  }
+
+  late final _gde_object_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(GDExtensionObjectPtr)>>(
+          'gde_object_destroy');
+  late final _gde_object_destroy =
+      _gde_object_destroyPtr.asFunction<void Function(GDExtensionObjectPtr)>();
+
+  GDExtensionObjectPtr gde_ref_get_object(
+    GDExtensionConstRefPtr p_ref,
+  ) {
+    return _gde_ref_get_object(
+      p_ref,
+    );
+  }
+
+  late final _gde_ref_get_objectPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionObjectPtr Function(
+              GDExtensionConstRefPtr)>>('gde_ref_get_object');
+  late final _gde_ref_get_object = _gde_ref_get_objectPtr
+      .asFunction<GDExtensionObjectPtr Function(GDExtensionConstRefPtr)>();
+
+  void gde_ref_set_object(
+    GDExtensionRefPtr p_ref,
+    GDExtensionObjectPtr p_object,
+  ) {
+    return _gde_ref_set_object(
+      p_ref,
+      p_object,
+    );
+  }
+
+  late final _gde_ref_set_objectPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              GDExtensionRefPtr, GDExtensionObjectPtr)>>('gde_ref_set_object');
+  late final _gde_ref_set_object = _gde_ref_set_objectPtr
+      .asFunction<void Function(GDExtensionRefPtr, GDExtensionObjectPtr)>();
+
+  GDExtensionScriptInstancePtr gde_script_instance_create(
+    ffi.Pointer<GDExtensionScriptInstanceInfo> p_info,
+    GDExtensionScriptInstanceDataPtr p_instance_data,
+  ) {
+    return _gde_script_instance_create(
+      p_info,
+      p_instance_data,
+    );
+  }
+
+  late final _gde_script_instance_createPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionScriptInstancePtr Function(
+              ffi.Pointer<GDExtensionScriptInstanceInfo>,
+              GDExtensionScriptInstanceDataPtr)>>('gde_script_instance_create');
+  late final _gde_script_instance_create =
+      _gde_script_instance_createPtr.asFunction<
+          GDExtensionScriptInstancePtr Function(
+              ffi.Pointer<GDExtensionScriptInstanceInfo>,
+              GDExtensionScriptInstanceDataPtr)>();
 }
 
 typedef va_list = ffi.Pointer<ffi.Char>;
@@ -673,906 +1570,6 @@ typedef GDExtensionScriptLanguagePtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionScriptInstanceFree = ffi.Pointer<
     ffi.NativeFunction<ffi.Void Function(GDExtensionScriptInstanceDataPtr)>>;
 
-class GDExtensionInterface extends ffi.Struct {
-  @ffi.Uint32()
-  external int version_major;
-
-  @ffi.Uint32()
-  external int version_minor;
-
-  @ffi.Uint32()
-  external int version_patch;
-
-  external ffi.Pointer<ffi.Char> version_string;
-
-  external ffi
-          .Pointer<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(ffi.Size)>>
-      mem_alloc;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Size)>>
-      mem_realloc;
-
-  external ffi
-          .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      mem_free;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>, ffi.Int32, GDExtensionBool)>> print_error;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32,
-              GDExtensionBool)>> print_error_with_message;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32,
-              GDExtensionBool)>> print_warning;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32,
-              GDExtensionBool)>> print_warning_with_message;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32,
-              GDExtensionBool)>> print_script_error;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Pointer<ffi.Char>,
-              ffi.Int32,
-              GDExtensionBool)>> print_script_error_with_message;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Uint64 Function(GDExtensionConstStringNamePtr)>>
-      get_native_struct_size;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionVariantPtr, GDExtensionConstVariantPtr)>>
-      variant_new_copy;
-
-  external ffi
-          .Pointer<ffi.NativeFunction<ffi.Void Function(GDExtensionVariantPtr)>>
-      variant_new_nil;
-
-  external ffi
-          .Pointer<ffi.NativeFunction<ffi.Void Function(GDExtensionVariantPtr)>>
-      variant_destroy;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionVariantPtr,
-              GDExtensionConstStringNamePtr,
-              ffi.Pointer<GDExtensionConstVariantPtr>,
-              GDExtensionInt,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionCallError>)>> variant_call;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int32,
-              GDExtensionConstStringNamePtr,
-              ffi.Pointer<GDExtensionConstVariantPtr>,
-              GDExtensionInt,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionCallError>)>> variant_call_static;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int32,
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_evaluate;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionVariantPtr,
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_set;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionVariantPtr,
-              GDExtensionConstStringNamePtr,
-              GDExtensionConstVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_set_named;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionVariantPtr,
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_set_keyed;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionVariantPtr,
-              GDExtensionInt,
-              GDExtensionConstVariantPtr,
-              ffi.Pointer<GDExtensionBool>,
-              ffi.Pointer<GDExtensionBool>)>> variant_set_indexed;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_get;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionConstStringNamePtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_get_named;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_get_keyed;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionInt,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>,
-              ffi.Pointer<GDExtensionBool>)>> variant_get_indexed;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionBool Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_iter_init;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionBool Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_iter_next;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionVariantPtr,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_iter_get;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstVariantPtr)>> variant_hash;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionInt Function(
-                  GDExtensionConstVariantPtr, GDExtensionInt)>>
-      variant_recursive_hash;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionBool Function(
-                  GDExtensionConstVariantPtr, GDExtensionConstVariantPtr)>>
-      variant_hash_compare;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionBool Function(GDExtensionConstVariantPtr)>>
-      variant_booleanize;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(GDExtensionConstVariantPtr, GDExtensionVariantPtr,
-              GDExtensionBool)>> variant_duplicate;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionConstVariantPtr, GDExtensionStringPtr)>>
-      variant_stringify;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<ffi.Int32 Function(GDExtensionConstVariantPtr)>>
-      variant_get_type;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionBool Function(
-                  GDExtensionConstVariantPtr, GDExtensionConstStringNamePtr)>>
-      variant_has_method;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionBool Function(
-              ffi.Int32, GDExtensionConstStringNamePtr)>> variant_has_member;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionBool Function(
-              GDExtensionConstVariantPtr,
-              GDExtensionConstVariantPtr,
-              ffi.Pointer<GDExtensionBool>)>> variant_has_key;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(ffi.Int32, GDExtensionStringPtr)>>
-      variant_get_type_name;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionBool Function(ffi.Int32, ffi.Int32)>>
-      variant_can_convert;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionBool Function(ffi.Int32, ffi.Int32)>>
-      variant_can_convert_strict;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionVariantFromTypeConstructorFunc Function(ffi.Int32)>>
-      get_variant_from_type_constructor;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypeFromVariantConstructorFunc Function(ffi.Int32)>>
-      get_variant_to_type_constructor;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrOperatorEvaluator Function(
-                  ffi.Int32, ffi.Int32, ffi.Int32)>>
-      variant_get_ptr_operator_evaluator;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrBuiltInMethod Function(
-                  ffi.Int32, GDExtensionConstStringNamePtr, GDExtensionInt)>>
-      variant_get_ptr_builtin_method;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrConstructor Function(ffi.Int32, ffi.Int32)>>
-      variant_get_ptr_constructor;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrDestructor Function(ffi.Int32)>>
-      variant_get_ptr_destructor;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int32,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionConstVariantPtr>,
-              ffi.Int32,
-              ffi.Pointer<GDExtensionCallError>)>> variant_construct;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrSetter Function(
-                  ffi.Int32, GDExtensionConstStringNamePtr)>>
-      variant_get_ptr_setter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrGetter Function(
-                  ffi.Int32, GDExtensionConstStringNamePtr)>>
-      variant_get_ptr_getter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrIndexedSetter Function(ffi.Int32)>>
-      variant_get_ptr_indexed_setter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrIndexedGetter Function(ffi.Int32)>>
-      variant_get_ptr_indexed_getter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrKeyedSetter Function(ffi.Int32)>>
-      variant_get_ptr_keyed_setter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrKeyedGetter Function(ffi.Int32)>>
-      variant_get_ptr_keyed_getter;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionPtrKeyedChecker Function(ffi.Int32)>>
-      variant_get_ptr_keyed_checker;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int32, GDExtensionConstStringNamePtr,
-              GDExtensionVariantPtr)>> variant_get_constant_value;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionPtrUtilityFunction Function(
-                  GDExtensionConstStringNamePtr, GDExtensionInt)>>
-      variant_get_ptr_utility_function;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.Char>)>>
-      string_new_with_latin1_chars;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.Char>)>>
-      string_new_with_utf8_chars;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<char16_t>)>>
-      string_new_with_utf16_chars;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<char32_t>)>>
-      string_new_with_utf32_chars;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.WChar>)>>
-      string_new_with_wide_chars;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionStringPtr, ffi.Pointer<ffi.Char>, GDExtensionInt)>>
-      string_new_with_latin1_chars_and_len;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionStringPtr, ffi.Pointer<ffi.Char>, GDExtensionInt)>>
-      string_new_with_utf8_chars_and_len;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionStringPtr, ffi.Pointer<char16_t>, GDExtensionInt)>>
-      string_new_with_utf16_chars_and_len;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionStringPtr, ffi.Pointer<char32_t>, GDExtensionInt)>>
-      string_new_with_utf32_chars_and_len;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.WChar>,
-              GDExtensionInt)>> string_new_with_wide_chars_and_len;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstStringPtr,
-              ffi.Pointer<ffi.Char>, GDExtensionInt)>> string_to_latin1_chars;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstStringPtr,
-              ffi.Pointer<ffi.Char>, GDExtensionInt)>> string_to_utf8_chars;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstStringPtr,
-              ffi.Pointer<char16_t>, GDExtensionInt)>> string_to_utf16_chars;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstStringPtr,
-              ffi.Pointer<char32_t>, GDExtensionInt)>> string_to_utf32_chars;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionInt Function(GDExtensionConstStringPtr,
-              ffi.Pointer<ffi.WChar>, GDExtensionInt)>> string_to_wide_chars;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Pointer<char32_t> Function(
-              GDExtensionStringPtr, GDExtensionInt)>> string_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<char32_t> Function(
-                  GDExtensionConstStringPtr, GDExtensionInt)>>
-      string_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionStringPtr, GDExtensionConstStringPtr)>>
-      string_operator_plus_eq_string;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<ffi.Void Function(GDExtensionStringPtr, char32_t)>>
-      string_operator_plus_eq_char;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.Char>)>>
-      string_operator_plus_eq_cstr;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<ffi.WChar>)>>
-      string_operator_plus_eq_wcstr;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionStringPtr, ffi.Pointer<char32_t>)>>
-      string_operator_plus_eq_c32str;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionInt Function(
-                  GDExtensionObjectPtr, ffi.Pointer<ffi.Uint8>, ffi.Size)>>
-      xml_parser_open_buffer;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionObjectPtr, ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>
-      file_access_store_buffer;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Uint64 Function(GDExtensionConstObjectPtr, ffi.Pointer<ffi.Uint8>,
-              ffi.Uint64)>> file_access_get_buffer;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Int64 Function(
-                  GDExtensionObjectPtr,
-                  ffi.Pointer<
-                      ffi.NativeFunction<
-                          ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Uint32)>>,
-                  ffi.Pointer<ffi.Void>,
-                  ffi.Int,
-                  ffi.Int,
-                  GDExtensionBool,
-                  GDExtensionConstStringPtr)>>
-      worker_thread_pool_add_native_group_task;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Int64 Function(
-              GDExtensionObjectPtr,
-              ffi.Pointer<
-                  ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>,
-              ffi.Pointer<ffi.Void>,
-              GDExtensionBool,
-              GDExtensionConstStringPtr)>> worker_thread_pool_add_native_task;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Uint8> Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_byte_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Uint8> Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_byte_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(GDExtensionTypePtr, GDExtensionInt)>>
-      packed_color_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_color_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Float> Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_float32_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Float> Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_float32_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Double> Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_float64_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Double> Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_float64_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Int32> Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_int32_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Int32> Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_int32_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Int64> Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_int64_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Int64> Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_int64_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionStringPtr Function(
-                  GDExtensionTypePtr, GDExtensionInt)>>
-      packed_string_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionStringPtr Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_string_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(GDExtensionTypePtr, GDExtensionInt)>>
-      packed_vector2_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_vector2_array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(GDExtensionTypePtr, GDExtensionInt)>>
-      packed_vector3_array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionTypePtr Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      packed_vector3_array_operator_index_const;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionVariantPtr Function(
-              GDExtensionTypePtr, GDExtensionInt)>> array_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionVariantPtr Function(
-                  GDExtensionConstTypePtr, GDExtensionInt)>>
-      array_operator_index_const;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionTypePtr, GDExtensionConstTypePtr)>>
-      array_ref;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionTypePtr,
-              ffi.Int32,
-              GDExtensionConstStringNamePtr,
-              GDExtensionConstVariantPtr)>> array_set_typed;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionVariantPtr Function(
-                  GDExtensionTypePtr, GDExtensionConstVariantPtr)>>
-      dictionary_operator_index;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionVariantPtr Function(
-                  GDExtensionConstTypePtr, GDExtensionConstVariantPtr)>>
-      dictionary_operator_index_const;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionMethodBindPtr,
-              GDExtensionObjectPtr,
-              ffi.Pointer<GDExtensionConstVariantPtr>,
-              GDExtensionInt,
-              GDExtensionVariantPtr,
-              ffi.Pointer<GDExtensionCallError>)>> object_method_bind_call;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionMethodBindPtr,
-              GDExtensionObjectPtr,
-              ffi.Pointer<GDExtensionConstTypePtr>,
-              GDExtensionTypePtr)>> object_method_bind_ptrcall;
-
-  external ffi
-          .Pointer<ffi.NativeFunction<ffi.Void Function(GDExtensionObjectPtr)>>
-      object_destroy;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>>
-      global_get_singleton;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Void> Function(
-                  GDExtensionObjectPtr,
-                  ffi.Pointer<ffi.Void>,
-                  ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>>
-      object_get_instance_binding;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionObjectPtr,
-                  ffi.Pointer<ffi.Void>,
-                  ffi.Pointer<ffi.Void>,
-                  ffi.Pointer<GDExtensionInstanceBindingCallbacks>)>>
-      object_set_instance_binding;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(GDExtensionObjectPtr, GDExtensionConstStringNamePtr,
-              GDExtensionClassInstancePtr)>> object_set_instance;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionObjectPtr Function(
-                  GDExtensionConstObjectPtr, ffi.Pointer<ffi.Void>)>>
-      object_cast_to;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<GDExtensionObjectPtr Function(GDObjectInstanceID)>>
-      object_get_instance_from_id;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDObjectInstanceID Function(GDExtensionConstObjectPtr)>>
-      object_get_instance_id;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionObjectPtr Function(GDExtensionConstRefPtr)>>
-      ref_get_object;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(GDExtensionRefPtr, GDExtensionObjectPtr)>>
-      ref_set_object;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionScriptInstancePtr Function(
-              ffi.Pointer<GDExtensionScriptInstanceInfo>,
-              GDExtensionScriptInstanceDataPtr)>> script_instance_create;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              GDExtensionObjectPtr Function(GDExtensionConstStringNamePtr)>>
-      classdb_construct_object;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          GDExtensionMethodBindPtr Function(
-              GDExtensionConstStringNamePtr,
-              GDExtensionConstStringNamePtr,
-              GDExtensionInt)>> classdb_get_method_bind;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Void> Function(GDExtensionConstStringNamePtr)>>
-      classdb_get_class_tag;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringNamePtr,
-                  ffi.Pointer<GDExtensionClassCreationInfo>)>>
-      classdb_register_extension_class;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  ffi.Pointer<GDExtensionClassMethodInfo>)>>
-      classdb_register_extension_class_method;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionInt,
-                  GDExtensionBool)>>
-      classdb_register_extension_class_integer_constant;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  ffi.Pointer<GDExtensionPropertyInfo>,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringNamePtr)>>
-      classdb_register_extension_class_property;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringPtr,
-                  GDExtensionConstStringPtr)>>
-      classdb_register_extension_class_property_group;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr,
-                  GDExtensionConstStringNamePtr,
-                  GDExtensionConstStringPtr,
-                  GDExtensionConstStringPtr)>>
-      classdb_register_extension_class_property_subgroup;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              GDExtensionClassLibraryPtr,
-              GDExtensionConstStringNamePtr,
-              GDExtensionConstStringNamePtr,
-              ffi.Pointer<GDExtensionPropertyInfo>,
-              GDExtensionInt)>> classdb_register_extension_class_signal;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr, GDExtensionConstStringNamePtr)>>
-      classdb_unregister_extension_class;
-
-  external ffi.Pointer<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  GDExtensionClassLibraryPtr, GDExtensionStringPtr)>>
-      get_library_path;
-}
-
-typedef GDExtensionVariantFromTypeConstructorFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionVariantPtr, GDExtensionTypePtr)>>;
-typedef GDExtensionTypeFromVariantConstructorFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionTypePtr, GDExtensionVariantPtr)>>;
-typedef GDExtensionPtrOperatorEvaluator = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionConstTypePtr, GDExtensionConstTypePtr,
-            GDExtensionTypePtr)>>;
-typedef GDExtensionPtrBuiltInMethod = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(
-            GDExtensionTypePtr,
-            ffi.Pointer<GDExtensionConstTypePtr>,
-            GDExtensionTypePtr,
-            ffi.Int)>>;
-typedef GDExtensionPtrConstructor = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(
-            GDExtensionTypePtr, ffi.Pointer<GDExtensionConstTypePtr>)>>;
-typedef GDExtensionPtrDestructor
-    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(GDExtensionTypePtr)>>;
-typedef GDExtensionPtrSetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionTypePtr, GDExtensionConstTypePtr)>>;
-typedef GDExtensionPtrGetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>>;
-typedef GDExtensionPtrIndexedSetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(
-            GDExtensionTypePtr, GDExtensionInt, GDExtensionConstTypePtr)>>;
-typedef GDExtensionPtrIndexedGetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(
-            GDExtensionConstTypePtr, GDExtensionInt, GDExtensionTypePtr)>>;
-typedef GDExtensionPtrKeyedSetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionTypePtr, GDExtensionConstTypePtr,
-            GDExtensionConstTypePtr)>>;
-typedef GDExtensionPtrKeyedGetter = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionConstTypePtr, GDExtensionConstTypePtr,
-            GDExtensionTypePtr)>>;
-typedef GDExtensionPtrKeyedChecker = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Uint32 Function(
-            GDExtensionConstVariantPtr, GDExtensionConstVariantPtr)>>;
-typedef GDExtensionPtrUtilityFunction = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(GDExtensionTypePtr,
-            ffi.Pointer<GDExtensionConstTypePtr>, ffi.Int)>>;
-typedef char16_t = ffi.Uint16;
-typedef char32_t = ffi.Uint32;
-typedef GDExtensionConstStringPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionConstObjectPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionMethodBindPtr = ffi.Pointer<ffi.Void>;
-typedef GDObjectInstanceID = ffi.Uint64;
-typedef GDExtensionConstRefPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionRefPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionScriptInstancePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionClassLibraryPtr = ffi.Pointer<ffi.Void>;
-
 abstract class GDExtensionInitializationLevel {
   static const int GDEXTENSION_INITIALIZATION_CORE = 0;
   static const int GDEXTENSION_INITIALIZATION_SERVERS = 1;
@@ -1595,6 +1592,83 @@ class GDExtensionInitialization extends ffi.Struct {
       ffi.NativeFunction<
           ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Int32)>> deinitialize;
 }
+
+class GDExtensionGodotVersion extends ffi.Struct {
+  @ffi.Uint32()
+  external int major;
+
+  @ffi.Uint32()
+  external int minor;
+
+  @ffi.Uint32()
+  external int patch;
+
+  external ffi.Pointer<ffi.Char> string;
+}
+
+typedef GDExtensionInterfaceGetProcAddress = ffi.Pointer<
+    ffi.NativeFunction<
+        GDExtensionInterfaceFunctionPtr Function(ffi.Pointer<ffi.Char>)>>;
+typedef GDExtensionInterfaceFunctionPtr
+    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function()>>;
+typedef GDExtensionClassLibraryPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionUninitializedStringPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionPtrConstructor = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(GDExtensionUninitializedTypePtr,
+            ffi.Pointer<GDExtensionConstTypePtr>)>>;
+typedef GDExtensionUninitializedTypePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionPtrDestructor
+    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(GDExtensionTypePtr)>>;
+typedef GDExtensionUninitializedVariantPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionPtrBuiltInMethod = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(
+            GDExtensionTypePtr,
+            ffi.Pointer<GDExtensionConstTypePtr>,
+            GDExtensionTypePtr,
+            ffi.Int)>>;
+typedef GDExtensionVariantFromTypeConstructorFunc = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(
+            GDExtensionUninitializedVariantPtr, GDExtensionTypePtr)>>;
+typedef GDExtensionTypeFromVariantConstructorFunc = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(
+            GDExtensionUninitializedTypePtr, GDExtensionVariantPtr)>>;
+typedef GDExtensionPtrGetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>>;
+typedef GDExtensionPtrSetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(GDExtensionTypePtr, GDExtensionConstTypePtr)>>;
+typedef GDExtensionPtrIndexedGetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(
+            GDExtensionConstTypePtr, GDExtensionInt, GDExtensionTypePtr)>>;
+typedef GDExtensionPtrIndexedSetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(
+            GDExtensionTypePtr, GDExtensionInt, GDExtensionConstTypePtr)>>;
+typedef GDExtensionPtrKeyedSetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(GDExtensionTypePtr, GDExtensionConstTypePtr,
+            GDExtensionConstTypePtr)>>;
+typedef GDExtensionPtrKeyedGetter = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Void Function(GDExtensionConstTypePtr, GDExtensionConstTypePtr,
+            GDExtensionTypePtr)>>;
+typedef GDExtensionPtrKeyedChecker = ffi.Pointer<
+    ffi.NativeFunction<
+        ffi.Uint32 Function(
+            GDExtensionConstVariantPtr, GDExtensionConstVariantPtr)>>;
+typedef GDExtensionConstStringPtr = ffi.Pointer<ffi.Void>;
+typedef char16_t = ffi.Uint16;
+typedef GDExtensionMethodBindPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionConstObjectPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionConstRefPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionRefPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionScriptInstancePtr = ffi.Pointer<ffi.Void>;
 
 const int _VCRT_COMPILER_PREPROCESSOR = 1;
 

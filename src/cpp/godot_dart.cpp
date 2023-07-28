@@ -25,7 +25,7 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
   }
 
   GDStringName gd_method_name("get_base_dir");
-  GDExtensionPtrBuiltInMethod get_base_dir = gde->gde()->variant_get_ptr_builtin_method(
+  GDExtensionPtrBuiltInMethod get_base_dir = gde_variant_get_ptr_builtin_method(
       GDEXTENSION_VARIANT_TYPE_STRING, gd_method_name._native_ptr(), kGetBaseDirHash);
   if (get_base_dir == nullptr) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrieve "
@@ -35,21 +35,21 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
 
   // Get the library path
   GDString library_path;
-  gde->gde()->get_library_path(gde->lib(), library_path._native_ptr());
+  gde_get_library_path(gde->get_library_ptr(), library_path._native_ptr());
 
   // Get the base dir from the library path
   GDString gd_basedir_path;
   get_base_dir(library_path._native_ptr(), NULL, gd_basedir_path._native_ptr(), 0);
 
   // basedir_path to c string
-  GDExtensionInt basedir_path_size = gde->gde()->string_to_utf8_chars(gd_basedir_path._native_ptr(), NULL, 0);
-  char *basedir_path = reinterpret_cast<char *>(gde->gde()->mem_alloc(basedir_path_size + 1));
+  GDExtensionInt basedir_path_size = gde_string_to_utf8_chars(gd_basedir_path._native_ptr(), NULL, 0);
+  char *basedir_path = reinterpret_cast<char *>(gde_mem_alloc(basedir_path_size + 1));
   if (basedir_path == NULL) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (Memory allocation failure)");
     return;
   }
 
-  gde->gde()->string_to_utf8_chars(gd_basedir_path._native_ptr(), basedir_path, basedir_path_size);
+  gde_string_to_utf8_chars(gd_basedir_path._native_ptr(), basedir_path, basedir_path_size);
   basedir_path[basedir_path_size] = '\0';
 
   char dart_script_path[256], package_path[256];
@@ -87,15 +87,27 @@ void GDE_EXPORT deinitialize_level(void *userdata, GDExtensionInitializationLeve
   godot_dart::deinitialize_level(userdata, p_level);
 }
 
-GDExtensionBool GDE_EXPORT godot_dart_init(const GDExtensionInterface *p_interface,
-                                           GDExtensionClassLibraryPtr p_library,
-                                           GDExtensionInitialization *r_initialization) {
-  GDEWrapper::create_instance(p_interface, p_library);
+void GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
+                                GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
+  
+  gde_init_c_interface(p_get_proc_address);
+  
+  GDEWrapper::create_instance(p_get_proc_address, p_library);
 
   r_initialization->initialize = initialize_level;
   r_initialization->deinitialize = deinitialize_level;
   r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
-
-  return true;
 }
+
+//GDExtensionBool GDE_EXPORT godot_dart_init(const GDExtensionInterface *p_interface,
+//                                           GDExtensionClassLibraryPtr p_library,
+//                                           GDExtensionInitialization *r_initialization) {
+//  GDEWrapper::create_instance(p_interface, p_library);
+//
+//  r_initialization->initialize = initialize_level;
+//  r_initialization->deinitialize = deinitialize_level;
+//  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
+//
+//  return true;
+//}
 }

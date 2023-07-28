@@ -2,6 +2,8 @@
 #include "gde_wrapper.h"
 #include <malloc.h>
 
+#include "gde_c_interface.h"
+
 // *****
 // GDString
 // *****
@@ -11,11 +13,11 @@ GDExtensionPtrConstructor GDString::_copy_constructor = nullptr;
 GDExtensionPtrConstructor GDString::_from_gdstringname_constructor = nullptr;
 GDExtensionPtrDestructor GDString::_destructor = nullptr;
 
-void GDString::init_from_gde(const GDExtensionInterface *gde) {
-  _constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
-  _copy_constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 1);
-  _from_gdstringname_constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
-  _destructor = gde->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
+void GDString::init() {
+  _constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
+  _copy_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 1);
+  _from_gdstringname_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
+  _destructor = gde_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
 }
 
 GDString::GDString() {
@@ -46,15 +48,12 @@ GDString::GDString(const Dart_Handle &from_dart) {
       _constructor(&_opaque, nullptr);
       return;
     }
-  
-    GDEWrapper *gde = GDEWrapper::instance();
-    gde->gde()->string_new_with_utf8_chars(&_opaque, dart_cstring);
+      
+    gde_string_new_with_utf8_chars(&_opaque, dart_cstring);
 }
 
 GDString::GDString(const char *from) {
-  GDEWrapper* wrapper = GDEWrapper::instance();
-  wrapper->gde()->string_new_with_utf8_chars(&_opaque, from);
- 
+  gde_string_new_with_utf8_chars(&_opaque, from);
 }
 
 GDString::~GDString() {
@@ -62,10 +61,9 @@ GDString::~GDString() {
 }
 
 Dart_Handle GDString::to_dart() const {
-  GDEWrapper *gde = GDEWrapper::instance();
-  GDExtensionInt length = gde->gde()->string_to_utf16_chars(_opaque, nullptr, 0);
+  GDExtensionInt length = gde_string_to_utf16_chars(_opaque, nullptr, 0);
   char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * (length + 1));
-  gde->gde()->string_to_utf16_chars(_opaque, temp, length);
+  gde_string_to_utf16_chars(_opaque, temp, length);
   temp[length] = 0;
   
   Dart_Handle dart_string = Dart_NewStringFromUTF16((uint16_t *)temp, length);
@@ -87,11 +85,11 @@ GDExtensionPtrConstructor GDStringName::_copy_constructor = nullptr;
 GDExtensionPtrConstructor GDStringName::_from_gdstring_constructor = nullptr;
 GDExtensionPtrDestructor GDStringName::_destructor = nullptr;
 
-void GDStringName::init_from_gde(const GDExtensionInterface *gde) {
-  _constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 0);
-  _copy_constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 1);
-  _from_gdstring_constructor = gde->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
-  _destructor = gde->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+void GDStringName::init() {
+  _constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 0);
+  _copy_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 1);
+  _from_gdstring_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
+  _destructor = gde_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
 }
 
 GDStringName::GDStringName() {

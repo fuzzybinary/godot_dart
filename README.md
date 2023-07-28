@@ -44,7 +44,7 @@ I have only tested this on Windows. I know for certain it will only work on 'flo
 
 * A clone of this repo.
 * Dart (2.19 Current Stable, not tested with 3.0)
-* Godot 4.0.x or a custom build compatible with 4.0.x
+* Godot 4.1.x or a custom build compatible with 4.1.x
 * A build of the [Dart Shared
   Library](https://github.com/fuzzybinary/dart_shared_libray). Windows x64 .dlls
   for Dart 2.19 are provided in `src/dart_dll/bin/win64`.
@@ -57,9 +57,9 @@ To use the extension, you need to:
 
 * Copy both your `dart_dll` dynamic library and the `godot_dart` dynamic library
   to your project directory.
-* Copy `simple/example.gdextension` to your project directory (note this is only
-  configured for `windows.64` builds and will need to be modified for any other
-  OS).
+* Copy `example/2d_tutorial/example.gdextension` to your project directory (note
+  this is only configured for `windows.64` builds and will need to be modified
+  for any other OS).
 * Create a `src` directory in your project directory to hold your Dart code.
   This should be a proper Dart package, complete with a `pubspec.yaml` file. Add
   a `main.dart` to this directory.
@@ -80,8 +80,8 @@ a Script language. Both are only partially implemented
 
 ### Dart classes as Extensions
 
-There are requirements for almost any Godot accessible Dart class. Here's the Simple
-example class in `simple/src/simple.dart`
+There are requirements for almost any Godot accessible Dart class. Here's a Simple
+example class
 
 ```dart
 class Simple extends Sprite2D {

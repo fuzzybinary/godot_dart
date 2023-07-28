@@ -62,12 +62,6 @@
       "languageVersion": "2.19"
     },
     {
-      "name": "cli_util",
-      "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/cli_util-0.4.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.19"
-    },
-    {
       "name": "code_builder",
       "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/code_builder-4.5.0",
       "packageUri": "lib/",
@@ -100,12 +94,6 @@
     {
       "name": "ffi",
       "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/ffi-2.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.17"
-    },
-    {
-      "name": "ffigen",
-      "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/ffigen-7.2.11",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
@@ -188,12 +176,6 @@
       "languageVersion": "2.18"
     },
     {
-      "name": "quiver",
-      "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/quiver-3.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.17"
-    },
-    {
       "name": "source_gen",
       "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/source_gen-1.3.2",
       "packageUri": "lib/",
@@ -254,19 +236,13 @@
       "languageVersion": "2.19"
     },
     {
-      "name": "yaml_edit",
-      "rootUri": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache/hosted/pub.dev/yaml_edit-2.1.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.19"
-    },
-    {
       "name": "godot_dart_build",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     }
   ],
-  "generated": "2023-06-25T21:40:18.567993Z",
+  "generated": "2023-07-22T01:31:46.664742Z",
   "generator": "pub",
   "generatorVersion": "3.0.3"
 }
