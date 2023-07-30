@@ -166,19 +166,19 @@ part 'simple_script.g.dart';
 @GodotScript()
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
-  static TypeInfo get sTypeInfo => _$GameLogicTypeInfo();
+  static TypeInfo get sTypeInfo => _$SimpleScriptTypeInfo();
   // And provide an instance method to get the type info
   @override
   TypeInfo get typeInfo => SimpleScript.sTypeInfo;
   
   // Required constructor
-  Simple() : super() {
+  SimpleScript() : super() {
     postInitialize();
   }
 
   // Second required contructor. Classes that are Scripts must have a named constructor 
   // called `withNonNullOwner`. Do not call `postInitialize` from here.
-  Simple.withNonNullOwner(Pointer<Void> owner)
+  SimpleScript.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 
   // You can export fields as properties
@@ -193,12 +193,16 @@ class SimpleScript extends Sprite2D  {
 }
 ```
 
-You also have to register the class to the implementing file in your `main`
-function like so:
+`build_runner` will also generate a registration file that must be imported into your
+`main.dart`, and its script resolver will need to be attached:
+
 ```dart
+import 'godot_dart_scripts.g.dart';
+
 void main() {
   // ... other bindings
-  DartScriptLanguage.singleton.addScript('res://src/lib/player.dart', SimpleScript);
+
+  attachScriptResolver(DartScriptLanguage.singleton);
 }
 ```
 
