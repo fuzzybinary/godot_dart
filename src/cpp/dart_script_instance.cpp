@@ -425,8 +425,7 @@ bool DartScriptInstance::get_fallback(const GDStringName &p_name, GDExtensionVar
 }
 
 GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
-
-  return nullptr;
+  return GodotDartBindings::instance()->get_language();
 }
 
 // * Static Callback Functions for Godot */

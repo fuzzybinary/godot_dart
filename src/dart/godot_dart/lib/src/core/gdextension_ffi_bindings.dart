@@ -1071,6 +1071,25 @@ class GDExtensionFFI {
           GDExtensionScriptInstancePtr Function(
               ffi.Pointer<GDExtensionScriptInstanceInfo>,
               GDExtensionScriptInstanceDataPtr)>();
+
+  GDExtensionScriptInstanceDataPtr gde_object_get_script_instance(
+    GDExtensionConstObjectPtr p_object,
+    GDExtensionObjectPtr p_language,
+  ) {
+    return _gde_object_get_script_instance(
+      p_object,
+      p_language,
+    );
+  }
+
+  late final _gde_object_get_script_instancePtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionScriptInstanceDataPtr Function(GDExtensionConstObjectPtr,
+              GDExtensionObjectPtr)>>('gde_object_get_script_instance');
+  late final _gde_object_get_script_instance =
+      _gde_object_get_script_instancePtr.asFunction<
+          GDExtensionScriptInstanceDataPtr Function(
+              GDExtensionConstObjectPtr, GDExtensionObjectPtr)>();
 }
 
 typedef va_list = ffi.Pointer<ffi.Char>;

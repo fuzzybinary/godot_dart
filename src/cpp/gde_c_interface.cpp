@@ -350,6 +350,15 @@ GDExtensionScriptInstancePtr gde_script_instance_create(const GDExtensionScriptI
   return nullptr;
 }
 
+static GDExtensionInterfaceObjectGetScriptInstance _object_get_script_instance_func = nullptr;
+GDExtensionScriptInstanceDataPtr gde_object_get_script_instance(GDExtensionConstObjectPtr p_object,
+                                                                GDExtensionObjectPtr p_language) {
+  if (_object_get_script_instance_func) {
+    return _object_get_script_instance_func(p_object, p_language);
+  }
+  return nullptr;
+}
+
 #define LOAD_METHOD(method, type) _##method##_func = (type)get_proc_address(#method)
 
 void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
@@ -395,6 +404,7 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(ref_get_object, GDExtensionInterfaceRefGetObject);
   LOAD_METHOD(ref_set_object, GDExtensionInterfaceRefSetObject);
   LOAD_METHOD(script_instance_create, GDExtensionInterfaceScriptInstanceCreate);
+  LOAD_METHOD(object_get_script_instance, GDExtensionInterfaceObjectGetScriptInstance);
 }
 
 }

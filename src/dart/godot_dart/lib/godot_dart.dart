@@ -26,7 +26,7 @@ late GodotDart _globalExtension;
 DartScriptLanguage? _dartScriptLanguage;
 
 @pragma('vm:entry-point')
-void _registerGodot(int libraryAddress, int bindingCallbacks) {
+DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
   final godotDart = GodotDartNativeBindings.openLibrary('godot_dart');
   final ffiInterface = GDExtensionFFI(godotDart);
 
@@ -57,6 +57,8 @@ void _registerGodot(int libraryAddress, int bindingCallbacks) {
       .addResourceFormatSaver(Ref(DartResourceFormatSaver()), false);
 
   print('Everything loaded a-ok!');
+
+  return _dartScriptLanguage!;
 }
 
 @pragma('vm:entry-point')

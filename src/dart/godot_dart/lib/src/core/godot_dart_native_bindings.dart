@@ -41,6 +41,11 @@ class GodotDartNativeBindings {
                   Bool)>>('create_script_instance')
       .asFunction<
           Pointer<Void> Function(Type, DartScript, Pointer<Void>, bool)>();
+  late final objectFromScriptInstance = godotDartDylib
+      .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
+          'object_from_script_instance')
+      .asFunction<Object? Function(Pointer<Void>)>();
+
   late final _safeNewPersistentHandle = godotDartDylib
       .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
           'safe_new_persistent_handle')

@@ -253,6 +253,9 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
       };
       DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args),
                      false, "Error calling '_registerGodot'");
+
+      // Get the language pointer from the result:
+      _dart_language = get_object_address(result);
     }
 
     // And call the main function from the user supplied library
@@ -985,6 +988,18 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
 
   return godot_script_instance;
+}
+
+GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_instance) {
+  if (!script_instance) {
+    return Dart_Null();
+  }
+
+  Dart_PersistentHandle persistent = script_instance->get_dart_object();
+  DART_CHECK_RET(dart_object, Dart_HandleFromPersistent(persistent), Dart_Null(),
+                 "Failed to get object from persistent handle");
+
+  return dart_object;
 }
 
 GDE_EXPORT void perform_frame_maintenance() {

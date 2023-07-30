@@ -8,6 +8,11 @@ And I want to use it in Godot.
 
 # Current State
 
+```
+⚠ NOTE -- Current master of this extension currently requires [this PR](https://github.com/godotengine/godot/pull/80040). Once that
+PR is merged, this extension will only be Godot 4.2 compatible
+```
+
 Here's a list of planned features and work still to be done ( ✅ - Seems to be
 working, 🟨 - Partially working, ❌ - Not working)
 
@@ -44,7 +49,7 @@ I have only tested this on Windows. I know for certain it will only work on 'flo
 
 * A clone of this repo.
 * Dart (2.19 Current Stable, not tested with 3.0)
-* Godot 4.1.x or a custom build compatible with 4.1.x
+* Godot 4.2.x - Note above the pending pull request.
 * A build of the [Dart Shared
   Library](https://github.com/fuzzybinary/dart_shared_libray). Windows x64 .dlls
   for Dart 2.19 are provided in `src/dart_dll/bin/win64`.

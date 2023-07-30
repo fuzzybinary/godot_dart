@@ -108,6 +108,8 @@ GDE_EXPORT void gde_ref_set_object(GDExtensionRefPtr p_ref, GDExtensionObjectPtr
 
 GDE_EXPORT GDExtensionScriptInstancePtr gde_script_instance_create(const GDExtensionScriptInstanceInfo *p_info,
                                                                    GDExtensionScriptInstanceDataPtr p_instance_data);
+GDE_EXPORT GDExtensionScriptInstanceDataPtr gde_object_get_script_instance(GDExtensionConstObjectPtr p_object,
+                                                                           GDExtensionObjectPtr p_language);
 
 #ifdef __cplusplus
 }

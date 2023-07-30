@@ -44,6 +44,10 @@ public:
 
   GDExtensionScriptLanguagePtr get_language();
 
+  Dart_PersistentHandle get_dart_object() {
+    return _dart_object;
+  }
+
   static const GDExtensionScriptInstanceInfo* get_script_instance_info();
 
 private:

@@ -257,19 +257,28 @@ class GodotDart {
       if (casted == nullptr) {
         return null;
       }
+
+      if (typeInfo.bindingToken != null) {
+        final persistent = gde.ffiBindings.gde_object_get_instance_binding(
+          casted,
+          typeInfo.bindingToken!,
+          gde.engineBindingCallbacks,
+        );
+        final dartObject = dartBindings.fromPersistentHandle(persistent);
+
+        return dartObject as T;
+      }
+      // TODO: What case is there where there is a class tag but no binding token?
     } else {
-      casted = from.nativePtr;
-    }
-
-    if (typeInfo.bindingToken != null) {
-      final persistent = gde.ffiBindings.gde_object_get_instance_binding(
-        casted,
-        typeInfo.bindingToken!,
-        gde.engineBindingCallbacks,
-      );
-      final dartObject = dartBindings.fromPersistentHandle(persistent);
-
-      return dartObject as T;
+      // Try getting the script instance, and casting from that
+      final scriptInstance = gde.ffiBindings.gde_object_get_script_instance(
+          from.nativePtr, DartScriptLanguage.singleton.nativePtr);
+      if (scriptInstance != nullptr) {
+        final o = gde.dartBindings.objectFromScriptInstance(scriptInstance);
+        if (o is T) {
+          return o;
+        }
+      }
     }
 
     return null;

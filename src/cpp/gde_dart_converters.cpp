@@ -6,6 +6,23 @@
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 
+void *get_object_address(Dart_Handle engine_handle) {
+  Dart_Handle native_ptr = Dart_GetField(engine_handle, Dart_NewStringFromCString("nativePtr"));
+  if (Dart_IsError(native_ptr)) {
+    GD_PRINT_ERROR(Dart_GetError(native_ptr));
+    return nullptr;
+  }
+  Dart_Handle address = Dart_GetField(native_ptr, Dart_NewStringFromCString("address"));
+  if (Dart_IsError(address)) {
+    GD_PRINT_ERROR(Dart_GetError(address));
+    return nullptr;
+  }
+  uint64_t object_ptr = 0;
+  Dart_IntegerToUint64(address, &object_ptr);
+
+  return reinterpret_cast<void *>(object_ptr);
+}
+
 void *get_opaque_address(Dart_Handle variant_handle) {
   // TODO: Look for a better way convert the variant.
   Dart_Handle opaque = Dart_GetField(variant_handle, Dart_NewStringFromCString("_opaque"));
