@@ -1,6 +1,7 @@
 name: godot_dart_build
 description: build_runner interface for simplifying binding to Godot
 version: 1.0.0
+publish_to: none
 
 environment:
   sdk: '>=2.18.2 <3.0.0'

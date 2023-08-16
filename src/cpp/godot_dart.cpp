@@ -99,15 +99,4 @@ void GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_ad
   r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
 }
 
-//GDExtensionBool GDE_EXPORT godot_dart_init(const GDExtensionInterface *p_interface,
-//                                           GDExtensionClassLibraryPtr p_library,
-//                                           GDExtensionInitialization *r_initialization) {
-//  GDEWrapper::create_instance(p_interface, p_library);
-//
-//  r_initialization->initialize = initialize_level;
-//  r_initialization->deinitialize = deinitialize_level;
-//  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
-//
-//  return true;
-//}
 }

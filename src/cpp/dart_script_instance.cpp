@@ -284,12 +284,15 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   if (gde == nullptr) {
     return;
   }
+
   // TODO: Figure out wth placeholders do
   if (_is_placeholder) {
     // Placeholders always return CALL_ERROR_INVALID_METHOD
     r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD; 
     return;
   }
+
+  Dart_Handle *dart_args = nullptr;
 
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
@@ -317,7 +320,6 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
     intptr_t arg_count = 0;
     Dart_ListLength(args_list, &arg_count);
 
-    Dart_Handle *dart_args = nullptr;
     if (arg_count != 0) {
       dart_args = new Dart_Handle[arg_count];
       Dart_Handle args_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_args));
@@ -367,13 +369,13 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
         gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       }
     }
-
-    // TODO - these leak on error
-    if (dart_args != nullptr) {
-      delete[] dart_args;
-    }
   });
-  // TODO
+
+  if (dart_args != nullptr) {
+    delete[] dart_args;
+  }
+  
+  // TODO: How do we throw exceptions in Godot?
   r_error->error = GDEXTENSION_CALL_OK;
 }
 

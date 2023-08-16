@@ -11,7 +11,6 @@
 #include <godot/gdextension_interface.h>
 
 #include "dart_script_instance.h"
-#include "dart_vtable_wrapper.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
@@ -144,8 +143,6 @@ GodotDartBindings::~GodotDartBindings() {
 }
 
 bool GodotDartBindings::initialize(const char *script_path, const char *package_config) {
-  dart_vtable_wrapper::init_virtual_thunks();
-
   DartDllConfig config;
   if (GDEWrapper::instance()->is_editor_hint()) {
     config.service_port = 6222;
@@ -653,22 +650,23 @@ void GodotDartBindings::class_free_instance(void *p_userdata, GDExtensionClassIn
   });
 }
 
-GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata,
-                                                                GDExtensionConstStringNamePtr p_name) {
+void *GodotDartBindings::get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings) {
     // oooff
     return nullptr;
   }
 
-  GDExtensionClassCallVirtual func = nullptr;
+  void *user_data = nullptr;
   bindings->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
     Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
-    DART_CHECK(typeInfo, Dart_GetField(type, Dart_NewStringFromCString("sTypeInfo")), "Error finding sTypeInfo on Type");
-    DART_CHECK(vtable, Dart_GetField(typeInfo, Dart_NewStringFromCString("vTable")), "Error finding vTable from TypeInfo");
+    DART_CHECK(typeInfo, Dart_GetField(type, Dart_NewStringFromCString("sTypeInfo")),
+               "Error finding sTypeInfo on Type");
+    DART_CHECK(vtable, Dart_GetField(typeInfo, Dart_NewStringFromCString("vTable")),
+               "Error finding vTable from TypeInfo");
     if (Dart_IsNull(vtable)) {
       return;
     }
@@ -687,10 +685,27 @@ GDExtensionClassCallVirtual GodotDartBindings::get_virtual_func(void *p_userdata
     uint64_t address = 0;
     Dart_IntegerToUint64(dart_address, &address);
 
-    func = dart_vtable_wrapper::get_wrapped_virtual(reinterpret_cast<GDExtensionClassCallVirtual>(address));
+    user_data = (void *)address;
   });
 
-  return func;
+  return user_data;
+}
+
+void GodotDartBindings::call_virtual_func(void* p_instance, GDExtensionConstStringNamePtr p_name,
+                                           void *p_userdata, const GDExtensionConstTypePtr *p_args,
+                                           GDExtensionTypePtr r_ret) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    // oooff
+    return;
+  }
+  
+  bindings->execute_on_dart_thread([&]() {
+    DartBlockScope scope;
+  
+    GDExtensionClassCallVirtual dart_call = (GDExtensionClassCallVirtual)p_userdata;
+    dart_call(p_instance, p_args, r_ret);
+  });
 }
 
 /* Static Functions From Dart */
@@ -737,7 +752,9 @@ void bind_class(Dart_NativeArguments args) {
   info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
-  info.get_virtual_func = GodotDartBindings::get_virtual_func;
+  //info.get_virtual_func = GodotDartBindings::get_virtual_func;
+  info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
+  info.call_virtual_func = GodotDartBindings::call_virtual_func;
 
   gde_classdb_register_extension_class(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
 }

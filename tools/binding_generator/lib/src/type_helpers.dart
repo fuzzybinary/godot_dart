@@ -147,6 +147,7 @@ String escapeName(String name) {
     'var': 'variant',
     'final': 'finalVal',
     'args': 'argsParam',
+    'instance': 'instanceParam',
   };
 
   return map[name] ?? name;
