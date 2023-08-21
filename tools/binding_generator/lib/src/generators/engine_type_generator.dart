@@ -159,6 +159,8 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       }, '}');
       o.nl();
 
+      assignMethodDefaults(method.arguments ?? [], o);
+
       o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(methodBind!, ${method.isStatic ? 'null' : 'this'}, [',
           () {
         for (final argument in arguments) {
@@ -192,54 +194,6 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.nl();
   }
 }
-
-// For now, we're not going to write out a full method table. Instead, scripts will add
-// the functions that they use to the method table, which will allow the ScriptInstance to correctly
-// respond to `has_method`
-// void _writeMethodTable(CodeSink o, GodotExtensionApiJsonClass classInfo) {
-//   // The methodTable is similar to the vTable, except that it's used by the Script side of the
-//   // extension rather the extension side. It's just a different way of calling methods that
-//   // needs a slightly different lookup table and parameter conversion from the other two types
-//   // of calls made by the Extension side.
-
-//   o.p('// Method Table');
-//   o.b('static final Map<String, MethodInfo> _methodTable = {', () {
-//     final methods = classInfo.methods ?? [];
-//     for (final method in methods) {
-//       if (method.name == 'to_string') continue;
-//       if (method.isStatic || method.isVararg) continue;
-
-//       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
-//       final dartMethodName = getDartMethodName(method.name, method.isVirtual);
-//       o.b("'${method.name}': MethodInfo(methodName: '${method.name}', dartMethodName: '$dartMethodName', arguments: [",
-//           () {
-//         for (final argument in arguments) {
-//           final typeCategory = argument.typeCategory;
-//           if (typeCategory == TypeCategory.nativeStructure ||
-//               argument.isPointer) {
-//             // TODO: How do scripts handle native structures and pointers?
-//             o.p('TypeInfo.forType(int)!,');
-//           } else if (typeCategory == TypeCategory.primitive) {
-//             o.p('TypeInfo.forType(${argument.rawDartType})!,');
-//           } else if (typeCategory == TypeCategory.enumType) {
-//             o.p("TypeInfo(${argument.rawDartType}, StringName.fromString('${argument.rawDartType}'), variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT),");
-//           } else if (argument.dartType.startsWith('TypedArray')) {
-//             // TODO: Really need to figure out typed array support
-//             o.p('TypedArray.sTypeInfo,');
-//           } else if (argument.isRefCounted) {
-//             o.p('${argument.rawDartType}.sTypeInfo.asRef(),');
-//           } else {
-//             o.p('${argument.rawDartType}.sTypeInfo,');
-//           }
-//         }
-//       }, ']),');
-//     }
-//   }, '};');
-//   o.p('@override');
-//   o.b('MethodInfo? getMethodInfo(String methodName) {', () {
-//     o.p('return _methodTable[methodName] ?? super.getMethodInfo(methodName);');
-//   }, '}');
-// }
 
 void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   final virtualMethods = classInfo.methods?.where((e) => e.isVirtual) ?? [];

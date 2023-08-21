@@ -34,16 +34,16 @@ class Player extends Area2D {
   void vProcess(double delta) {
     var velocity = Vector2.fromXY(0, 0);
     var input = Input.singleton;
-    if (input.isActionPressed('move_right', false)) {
+    if (input.isActionPressed('move_right')) {
       velocity.x += 1;
     }
-    if (input.isActionPressed('move_left', false)) {
+    if (input.isActionPressed('move_left')) {
       velocity.x -= 1;
     }
-    if (input.isActionPressed('move_down', false)) {
+    if (input.isActionPressed('move_down')) {
       velocity.y += 1;
     }
-    if (input.isActionPressed('move_up', false)) {
+    if (input.isActionPressed('move_up')) {
       velocity.y -= 1;
     }
 
@@ -53,7 +53,7 @@ class Player extends Area2D {
       velocity = velocity.normalized();
       velocity.x *= speed;
       velocity.y *= speed;
-      animatedSprite?.play('', 1.0, false);
+      animatedSprite?.play();
 
       if (velocity.x != 0) {
         animatedSprite?.setAnimation('walk');

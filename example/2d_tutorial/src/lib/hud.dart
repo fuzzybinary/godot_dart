@@ -30,7 +30,7 @@ class Hud extends CanvasLayer {
     message?.setText(text);
     message?.show();
 
-    getNodeT<Timer>('MessageTimer')?.start(-1);
+    getNodeT<Timer>('MessageTimer')?.start();
   }
 
   Future<void> showGameOver() async {
@@ -44,7 +44,7 @@ class Hud extends CanvasLayer {
     message?.setText('Dodge the \nCreeps!');
     message?.show();
 
-    final timer = getTree()!.createTimer(1.0, true, false, false);
+    final timer = getTree()!.createTimer(1.0);
     await toSignal(timer.obj!, 'timeout');
 
     getNodeT<Button>('StartButton')?.show();

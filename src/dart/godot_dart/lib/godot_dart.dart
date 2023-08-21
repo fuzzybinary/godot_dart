@@ -52,9 +52,9 @@ DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
   engine.registerScriptLanguage(_dartScriptLanguage);
 
   ResourceLoader.singleton
-      .addResourceFormatLoader(Ref(DartResourceFormatLoader()), false);
+      .addResourceFormatLoader(Ref(DartResourceFormatLoader()));
   ResourceSaver.singleton
-      .addResourceFormatSaver(Ref(DartResourceFormatSaver()), false);
+      .addResourceFormatSaver(Ref(DartResourceFormatSaver()));
 
   print('Everything loaded a-ok!');
 

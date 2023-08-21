@@ -69,7 +69,7 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
     script.setPath(originalPath);
     final file = FileAccess.open(originalPath, FileAccessModeFlags.read);
     if (file.obj != null) {
-      final text = file.obj?.getAsText(false);
+      final text = file.obj?.getAsText();
       if (text != null) {
         script.setSourceCode(text);
       }

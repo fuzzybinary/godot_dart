@@ -159,6 +159,124 @@ String getDartMethodName(String name, bool isVirtual) {
   return name;
 }
 
+void assignMethodDefaults(List<Argument> arguments, CodeSink o) {
+  String defaultToDart(Argument arg, String defaultValue) {
+    if (arg.proxy.typeCategory == TypeCategory.enumType) {
+      return GodotApiInfo.instance()
+          .findEnumValue(arg.proxy.dartType, arg.defaultValue!);
+    }
+
+    if (arg.proxy.isRefCounted && defaultValue == 'null') {
+      return '${arg.proxy.dartType}(null)';
+    }
+
+    final argumentCapture = RegExp(r'.+\((?<args>.+)\)');
+    switch (arg.type) {
+      case 'Variant':
+        if (defaultValue == 'null') return 'Variant()';
+        if (defaultValue == '0') return 'convertToVariant(0)';
+        break;
+      case 'Vector2':
+      case 'Vector2i':
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          return '${arg.type}.fromXY($args)';
+        }
+        break;
+      case 'Vector3':
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          final parts = args.split(',');
+          return 'Vector3(x: ${parts[0]}, y: ${parts[1]}, z: ${parts[2]})';
+        }
+        break;
+      case 'Transform2D':
+        // Transform2d says its default value is 6 values then doesn't have a constructor
+        // that takes 6 values, go figure
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          final parts = args.split(',');
+          return 'Transform2D.fromXAxisYAxisOrigin('
+              'Vector2.fromXY(${parts[0]}, ${parts[1]}), '
+              'Vector2.fromXY(${parts[2]}, ${parts[3]}), '
+              'Vector2.fromXY(${parts[4]}, ${parts[5]}),)';
+        }
+        break;
+      case 'Transform3D':
+        // Transform2d says its default value is 12 values then doesn't have a constructor
+        // that takes 12 values, go figure
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          final parts = args.split(',');
+          return 'Transform3D.fromXAxisYAxisZAxisOrigin('
+              'Vector3(x: ${parts[0]}, y: ${parts[1]}, z: ${parts[2]}), '
+              'Vector3(x: ${parts[3]}, y: ${parts[4]}, z: ${parts[5]}), '
+              'Vector3(x: ${parts[6]}, y: ${parts[7]}, z: ${parts[8]}), '
+              'Vector3(x: ${parts[9]}, y: ${parts[10]}, z: ${parts[11]}),)';
+        }
+        break;
+      case 'NodePath':
+        // Transform2d says its default value is 6 values then doesn't have a constructor
+        // that takes 6 values, go figure
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          // TOOD: Replace with NodePath.fromString when possible
+          return 'NodePath.fromGDString(GDString.fromString(${args.replaceAll('"', "'")}))';
+        }
+        break;
+      case 'Color':
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          return 'Color.fromRGBA($args)';
+        }
+        break;
+      case 'Rect2':
+      case 'Rect2i':
+        final args =
+            argumentCapture.firstMatch(defaultValue)?.namedGroup('args');
+        if (args != null) {
+          return '${arg.type}.fromXYWidthHeight($args)';
+        }
+        break;
+      case 'String':
+      case 'StringName':
+        if (defaultValue == '&""') return "''";
+        return defaultValue.replaceAll('"', "'");
+      case 'Array':
+        if (defaultValue == '[]') return 'Array()';
+        break;
+      case 'Dictionary':
+        if (defaultValue == '{}') return 'Dictionary()';
+        break;
+    }
+
+    if (arg.type.startsWith('typedarray::')) {
+      final typedArrayArgumentCapture =
+          RegExp(r'Array\[(?<type>.+)\]\((?<arg>.+)\)');
+      final arrayArguments =
+          typedArrayArgumentCapture.firstMatch(arg.defaultValue!);
+      if (arrayArguments?.namedGroup('arg') == '[]' ||
+          arg.defaultValue == '[]') {
+        return '${arg.proxy.dartType}()';
+      }
+    }
+
+    return defaultValue;
+  }
+
+  for (final arg in arguments.where((e) => e.defaultValue != null)) {
+    final argName = escapeName(arg.name).toLowerCamelCase();
+    final defaultValue = defaultToDart(arg, arg.defaultValue!);
+    o.p('${arg.proxy.dartType} $argName = ${argName}Opt ?? $defaultValue;');
+  }
+}
+
 String makeSignature(BuiltinClassMethod functionData,
     {bool useGodotStringTypes = false}) {
   var modifiers = '';
@@ -175,20 +293,30 @@ String makeSignature(BuiltinClassMethod functionData,
     signature += '{List<Variant> args = const []}';
   } else {
     if (parameters != null) {
-      List<String> paramSignature = [];
+      List<String> positionalParamSignature = [];
+      List<String> namedParamSignature = [];
 
       for (int i = 0; i < parameters.length; ++i) {
         final parameter = parameters[i];
 
-        // TODO: Default values
         var type = parameter.proxy.dartType;
         if (useGodotStringTypes && type == 'String') {
           type = parameter.proxy.type;
         }
-        paramSignature
-            .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
+
+        if (parameter.defaultValue == null) {
+          positionalParamSignature
+              .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
+        } else {
+          namedParamSignature.add(
+              '$type? ${escapeName(parameter.name).toLowerCamelCase()}Opt');
+        }
       }
-      signature += paramSignature.join(', ');
+      signature += positionalParamSignature.join(', ');
+      if (namedParamSignature.isNotEmpty) {
+        if (positionalParamSignature.isNotEmpty) signature += ', ';
+        signature += '{${namedParamSignature.join(', ')}}';
+      }
     }
   }
 
@@ -213,16 +341,34 @@ String makeEngineMethodSignature(ClassMethod methodData) {
 
   final parameters = methodData.arguments;
   if (parameters != null) {
-    List<String> paramSignature = [];
+    List<String> positionalParamSignature = [];
+    List<String> namedParamSignature = [];
 
     for (int i = 0; i < parameters.length; ++i) {
       final parameter = parameters[i];
 
-      // TODO: Default values
-      paramSignature.add(
-          '${parameter.proxy.dartType} ${escapeName(parameter.name).toLowerCamelCase()}');
+      var type = parameter.proxy.dartType;
+
+      if (parameter.defaultValue == null) {
+        positionalParamSignature
+            .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
+      } else {
+        if (parameter.proxy.isOptional && !parameter.proxy.isRefCounted) {
+          // Don't double opt.
+          namedParamSignature
+              .add('$type ${escapeName(parameter.name).toLowerCamelCase()}Opt');
+        } else {
+          namedParamSignature.add(
+              '$type? ${escapeName(parameter.name).toLowerCamelCase()}Opt');
+        }
+      }
     }
-    signature += paramSignature.join(', ');
+
+    signature += positionalParamSignature.join(', ');
+    if (namedParamSignature.isNotEmpty) {
+      if (positionalParamSignature.isNotEmpty) signature += ', ';
+      signature += '{${namedParamSignature.join(', ')}}';
+    }
   }
 
   signature += ')';
@@ -377,7 +523,10 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
       }
       break;
     case TypeCategory.enumType:
-      o.p('$decl = ${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Int32>>().value.value);');
+      o.p('$decl = ${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Uint32>>().value.value);');
+      break;
+    case TypeCategory.bitfieldType:
+      o.p('$decl = args.elementAt($index).cast<Pointer<Uint32>>().value.value;');
       break;
     case TypeCategory.typedArray:
       o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
@@ -428,8 +577,12 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
       }
       break;
     case TypeCategory.enumType:
-      // TODO: Determine if enums are variable width?
-      ret += 'retPtr.cast<Int32>().value = ret.value';
+      // TODO: Determine if enums and bitfields are variable width?
+      ret += 'retPtr.cast<Uint32>().value = ret.value';
+      break;
+    case TypeCategory.bitfieldType:
+      // TODO: Determine if enums and bitfields are variable width?
+      ret += 'retPtr.cast<Uint32>().value = ret';
       break;
     case TypeCategory.typedArray:
       ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
@@ -444,19 +597,24 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
 void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
   String name;
   List<Value> valueList;
+  bool isBitfield = false;
   if (godotEnum is BuiltinClassEnum) {
     name = godotEnum.name;
     valueList = godotEnum.values;
   } else if (godotEnum is GlobalEnumElement) {
     name = godotEnum.name;
     valueList = godotEnum.values;
+    isBitfield = godotEnum.isBitfield;
   } else {
     throw ArgumentError(
-        'Tring to write an enum that is of type ${godotEnum.runtimeType}');
+        'Trying to write an enum that is of type ${godotEnum.runtimeType}');
   }
 
   var enumName = getEnumName(name, inClass);
   o.b('enum $enumName {', () {
+    if (isBitfield) {
+      o.p('none(0),');
+    }
     for (int i = 0; i < valueList.length; ++i) {
       final value = valueList[i];
       final end = i == valueList.length - 1 ? ';' : ',';

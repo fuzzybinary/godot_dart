@@ -45,8 +45,7 @@ class SignalAwaiter extends GodotObject {
     if (source == null || signalName == null) return;
 
     final callable = Callable.fromObjectMethod(this, 'signalCalled');
-    source!.connect(
-        signalName!, callable, ObjectConnectFlags.connectOneShot.value);
+    source!.connect(signalName!, callable);
   }
 
   void signalCalled() {

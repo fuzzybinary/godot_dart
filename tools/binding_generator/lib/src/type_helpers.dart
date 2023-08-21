@@ -110,8 +110,12 @@ String getCorrectedType(String type, {String? meta}) {
   if (type.startsWith('typedarray::')) {
     return '${type.replaceFirst('typedarray::', 'TypedArray<')}>';
   }
-  if (type.startsWith('enum::') || type.startsWith('bitfield::')) {
+  if (type.startsWith('enum::')) {
     return getEnumName(type, null);
+  }
+  // TODO: Maybe change to support actual bifields in the future?
+  if (type.startsWith('bitfield::')) {
+    return 'int';
   }
 
   return type;

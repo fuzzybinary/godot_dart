@@ -294,6 +294,7 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   for (final method in methods) {
     var methodName = escapeMethodName(method.name);
     o.b('${makeSignature(method)} {', () {
+      assignMethodDefaults(method.arguments ?? [], o);
       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
 
       if (method.isVararg) {

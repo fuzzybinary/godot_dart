@@ -42,7 +42,7 @@ class GameLogic extends Node {
 
     getTree()?.callGroup('mobs', 'queue_free');
     getNodeT<AudioStreamPlayer>('Music')?.stop();
-    getNodeT<AudioStreamPlayer>('DeathSound')?.play(0.0);
+    getNodeT<AudioStreamPlayer>('DeathSound')?.play();
   }
 
   @GodotExport()
@@ -53,13 +53,13 @@ class GameLogic extends Node {
 
     player?.start(startPosition.getPosition());
 
-    getNodeT<Timer>('StartTimer')?.start(-1);
+    getNodeT<Timer>('StartTimer')?.start();
 
     final hud = getNodeT<Hud>('HUD');
     hud?.updateScore(_score);
     hud?.showMessage('Get Ready!');
 
-    getNodeT<AudioStreamPlayer>('Music')?.play(0.0);
+    getNodeT<AudioStreamPlayer>('Music')?.play();
   }
 
   @GodotExport()
@@ -70,14 +70,14 @@ class GameLogic extends Node {
 
   @GodotExport()
   void onStartTimerTimeout() {
-    getNodeT<Timer>('MobTimer')?.start(-1);
-    getNodeT<Timer>('ScoreTimer')?.start(-1);
+    getNodeT<Timer>('MobTimer')?.start();
+    getNodeT<Timer>('ScoreTimer')?.start();
   }
 
   @GodotExport()
   void onMobTimerTimeout() {
     final mob = gde.cast<Mob>(
-      mobScene?.instantiate(PackedSceneGenEditState.genEditStateDisabled),
+      mobScene?.instantiate(),
     );
     if (mob != null) {
       var mobSpawnLocation =
@@ -95,7 +95,7 @@ class GameLogic extends Node {
       velocity = velocity.rotated(direction);
       mob.setLinearVelocity(velocity);
 
-      addChild(mob, false, NodeInternalMode.internalModeDisabled);
+      addChild(mob);
     }
   }
 }

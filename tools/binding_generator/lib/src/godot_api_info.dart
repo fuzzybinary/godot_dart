@@ -1,6 +1,8 @@
+import 'package:collection/collection.dart';
 import 'package:tuple/tuple.dart';
 
 import 'godot_extension_api_json.dart';
+import 'string_extensions.dart';
 import 'type_helpers.dart';
 
 enum TypeCategory {
@@ -10,6 +12,7 @@ enum TypeCategory {
   builtinClass,
   nativeStructure,
   enumType,
+  bitfieldType,
   typedArray,
 }
 
@@ -25,6 +28,7 @@ class GodotApiInfo {
   Map<String, GodotExtensionApiJsonClass> engineClasses = {};
   Map<String, NativeStructure> nativeStructures = {};
   Set<String> singletons = {};
+  Map<String, Object> enumMap = {};
 
   late final BuiltinClassSize classSize;
 
@@ -35,6 +39,24 @@ class GodotApiInfo {
     engineClasses = {for (final e in api.classes) e.name: e};
     nativeStructures = {for (final e in api.nativeStructures) e.name: e};
     singletons = {for (final e in api.singletons) e.name};
+
+    for (final builtin in builtinClasses.values) {
+      builtin.enums?.forEach((element) {
+        var enumName = getEnumName(element.name, builtin.name);
+        enumMap[enumName] = element;
+      });
+    }
+
+    for (final engineClass in engineClasses.values) {
+      engineClass.enums?.forEach((element) {
+        var enumName = getEnumName(element.name, engineClass.name);
+        enumMap[enumName] = element;
+      });
+    }
+
+    for (final globalEnum in api.globalEnums) {
+      enumMap[getEnumName(globalEnum.name, null)] = globalEnum;
+    }
 
     classSize = api.builtinClassSizes
         .firstWhere((e) => e.buildConfiguration == 'float_64');
@@ -64,14 +86,50 @@ class GodotApiInfo {
       return TypeCategory.voidType;
     } else if (godotType.startsWith('typedarray::')) {
       return TypeCategory.typedArray;
-    } else if (godotType.startsWith('enum') ||
-        godotType.startsWith('bitfield')) {
+    } else if (godotType.startsWith('enum')) {
       return TypeCategory.enumType;
+    } else if (godotType.startsWith('bitfield')) {
+      return TypeCategory.bitfieldType;
     } else if (godotType == 'Variant') {
       return TypeCategory.builtinClass;
     }
 
     throw ArgumentError('Unknown type: `$godotType`');
+  }
+
+  String findEnumValue(String type, String value) {
+    // Special case -- Vector3Axis was reimplemented
+    if (type == 'Vector3Axis') {
+      switch (value) {
+        case '0':
+          return 'Vector3Axis.x';
+        case '1':
+          return 'Vector3Axis.y';
+        case '2':
+          return 'Vector3Axis.z';
+      }
+    }
+
+    final godotEnum = enumMap[type];
+    if (godotEnum == null) return value;
+
+    List<Value> valueList;
+    if (godotEnum is BuiltinClassEnum) {
+      valueList = godotEnum.values;
+    } else if (godotEnum is GlobalEnumElement) {
+      valueList = godotEnum.values;
+    } else {
+      throw ArgumentError(
+          'Trying to write an enum that is of type ${godotEnum.runtimeType}');
+    }
+
+    final foundValue = valueList
+        .firstWhereOrNull((element) => element.value.toString() == value);
+    if (foundValue != null) {
+      return '$type.${foundValue.name.toLowerCamelCase()}';
+    }
+
+    return value;
   }
 }
 
