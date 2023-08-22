@@ -8,19 +8,18 @@ import '../script/dart_script.dart';
 import 'gdextension_ffi_bindings.dart';
 
 class GodotDartNativeBindings {
-  late final DynamicLibrary dartDylib;
-  late final DynamicLibrary godotDartDylib;
+  late final DynamicLibrary processLib;
 
-  late final _handleFromPersistent = dartDylib
+  late final _handleFromPersistent = processLib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'Dart_HandleFromPersistent')
       .asFunction<Object? Function(Pointer<Void>)>();
-  late final _deletePersistentHandle = dartDylib
+  late final _deletePersistentHandle = processLib
       .lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'Dart_DeletePersistentHandle')
       .asFunction<void Function(Pointer<Void>)>();
 
-  late final _variantCopy = godotDartDylib
+  late final _variantCopy = processLib
       .lookup<
           NativeFunction<
               Void Function(
@@ -29,24 +28,24 @@ class GodotDartNativeBindings {
           isLeaf: true);
 
   late final finalizeExtensionObject =
-      godotDartDylib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
+      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'finalize_extension_object');
-  late final performFrameMaintenance = godotDartDylib
+  late final performFrameMaintenance = processLib
       .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
       .asFunction<void Function()>();
-  late final createScriptInstance = godotDartDylib
+  late final createScriptInstance = processLib
       .lookup<
           NativeFunction<
               Pointer<Void> Function(Handle, Handle, Pointer<Void>,
                   Bool)>>('create_script_instance')
       .asFunction<
           Pointer<Void> Function(Type, DartScript, Pointer<Void>, bool)>();
-  late final objectFromScriptInstance = godotDartDylib
+  late final objectFromScriptInstance = processLib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'object_from_script_instance')
       .asFunction<Object? Function(Pointer<Void>)>();
 
-  late final _safeNewPersistentHandle = godotDartDylib
+  late final _safeNewPersistentHandle = processLib
       .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
           'safe_new_persistent_handle')
       .asFunction<Pointer<Void> Function(Object)>();
@@ -69,8 +68,7 @@ class GodotDartNativeBindings {
   }
 
   GodotDartNativeBindings() {
-    dartDylib = DynamicLibrary.open('dart_dll');
-    godotDartDylib = DynamicLibrary.open('godot_dart');
+    processLib = DynamicLibrary.process();
   }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::print')
