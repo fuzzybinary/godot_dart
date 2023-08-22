@@ -56,7 +56,13 @@ class GodotDartNativeBindings {
     if (Platform.isMacOS) {
       libraryPath = path.join(Directory.current.path, '$libName.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(Directory.current.path, '$libName.dll');
+      // Godot editor copies the .dll so it can be overwritten while Godot is running
+      // Check to see if that .dll exists and load it instead.
+      libraryPath = path.join(Directory.current.path, '~$libName.dll');
+      if (!File(libraryPath).existsSync()) {
+        // Doesn't exist, use the regular name
+        libraryPath = path.join(Directory.current.path, '$libName.dll');
+      }
     }
 
     return DynamicLibrary.open(libraryPath);
@@ -68,7 +74,7 @@ class GodotDartNativeBindings {
   }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::print')
-  external void print(String s);
+  external void printNative(String s);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
   external void bindClass(Type type);

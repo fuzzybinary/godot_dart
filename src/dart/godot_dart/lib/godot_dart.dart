@@ -69,5 +69,5 @@ void _unregisterGodot() {
 typedef PrintClosure = void Function(String line);
 @pragma('vm:entry-point')
 PrintClosure _getPrintClosure() {
-  return (s) => _globalExtension.dartBindings.print(s);
+  return (s) => _globalExtension.dartBindings.printNative(s);
 }
