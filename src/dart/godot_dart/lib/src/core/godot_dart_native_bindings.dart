@@ -1,7 +1,4 @@
 import 'dart:ffi';
-import 'dart:io';
-
-import 'package:path/path.dart' as path;
 
 import '../../godot_dart.dart';
 import '../script/dart_script.dart';
@@ -50,22 +47,22 @@ class GodotDartNativeBindings {
           'safe_new_persistent_handle')
       .asFunction<Pointer<Void> Function(Object)>();
 
-  static DynamicLibrary openLibrary(String libName) {
-    var libraryPath = path.join(Directory.current.path, '$libName.so');
-    if (Platform.isMacOS) {
-      libraryPath = path.join(Directory.current.path, '$libName.dylib');
-    } else if (Platform.isWindows) {
-      // Godot editor copies the .dll so it can be overwritten while Godot is running
-      // Check to see if that .dll exists and load it instead.
-      libraryPath = path.join(Directory.current.path, '~$libName.dll');
-      if (!File(libraryPath).existsSync()) {
-        // Doesn't exist, use the regular name
-        libraryPath = path.join(Directory.current.path, '$libName.dll');
-      }
-    }
+  // static DynamicLibrary openLibrary(String libName) {
+  //   var libraryPath = path.join(Directory.current.path, '$libName.so');
+  //   if (Platform.isMacOS) {
+  //     libraryPath = path.join(Directory.current.path, '$libName.dylib');
+  //   } else if (Platform.isWindows) {
+  //     // Godot editor copies the .dll so it can be overwritten while Godot is running
+  //     // Check to see if that .dll exists and load it instead.
+  //     libraryPath = path.join(Directory.current.path, '~$libName.dll');
+  //     if (!File(libraryPath).existsSync()) {
+  //       // Doesn't exist, use the regular name
+  //       libraryPath = path.join(Directory.current.path, '$libName.dll');
+  //     }
+  //   }
 
-    return DynamicLibrary.open(libraryPath);
-  }
+  //   return DynamicLibrary.open(libraryPath);
+  // }
 
   GodotDartNativeBindings() {
     processLib = DynamicLibrary.process();

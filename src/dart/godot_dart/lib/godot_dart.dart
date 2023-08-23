@@ -5,7 +5,6 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
-import 'src/core/godot_dart_native_bindings.dart';
 import 'src/script/dart_resource_format.dart';
 import 'src/script/dart_script.dart';
 
@@ -27,7 +26,7 @@ DartScriptLanguage? _dartScriptLanguage;
 
 @pragma('vm:entry-point')
 DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
-  final godotDart = GodotDartNativeBindings.openLibrary('godot_dart');
+  final godotDart = DynamicLibrary.process();
   final ffiInterface = GDExtensionFFI(godotDart);
 
   final libraryPtr = GDExtensionClassLibraryPtr.fromAddress(libraryAddress);
