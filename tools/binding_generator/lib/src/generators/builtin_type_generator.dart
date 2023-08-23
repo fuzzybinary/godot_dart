@@ -195,6 +195,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     }, ')', newLine: false);
     o.b(' {', () {
       withAllocationBlock(arguments, null, o, () {
+        writeArgumentAllocations(arguments, o);
+
         var stringArguments = arguments
             .where((e) => e.type == 'String' || e.type == 'StringName');
         for (final strArg in stringArguments) {
@@ -242,7 +244,7 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
       if (member.type == 'String') {
         o.p('GDString retVal = GDString();');
       } else {
-        o.p('${memberProxy.dartType} retVal = ${memberProxy.defaultValue};');
+        o.p('${memberProxy.dartType} retVal = ${memberProxy.defaultReturnValue};');
       }
       withAllocationBlock([], memberProxy, o, () {
         bool extractReturnValue = writeReturnAllocation(memberProxy, o);
@@ -271,6 +273,7 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
     o.b('set ${member.name}(${memberProxy.dartType} value) {', () {
       var valueMemberProxy = memberProxy.renamed('value');
       withAllocationBlock([valueMemberProxy], null, o, () {
+        writeArgumentAllocations([valueMemberProxy], o);
         String valueCast;
         if (memberProxy.needsAllocation) {
           valueCast = '${valueMemberProxy.name}Ptr.cast()';
@@ -294,14 +297,23 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   for (final method in methods) {
     var methodName = escapeMethodName(method.name);
     o.b('${makeSignature(method)} {', () {
-      assignMethodDefaults(method.arguments ?? [], o);
       final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
 
       if (method.isVararg) {
         // Special case.. use `variantCall` instead
         final retValStr = method.returnType != null ? 'Variant retVal = ' : '';
         o.p('Variant self = convertToVariant(this);');
-        o.p("${retValStr}gde.variantCall(self, '${method.name}', args);");
+        if (method.arguments != null && method.arguments!.isNotEmpty) {
+          o.b('final allArgs = <Variant>[', () {
+            for (final arg in arguments) {
+              o.p('convertToVariant(${escapeName(arg.name).toLowerCamelCase()}),');
+            }
+            o.p('...vargs,');
+          }, '];');
+          o.p("${retValStr}gde.variantCall(self, '${method.name}', allArgs);");
+        } else {
+          o.p("${retValStr}gde.variantCall(self, '${method.name}', vargs);");
+        }
         if (method.returnType != null) {
           if (method.returnType == 'Variant') {
             o.p('return retVal;');
@@ -322,7 +334,7 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
         } else if (retArg.isOptional) {
           o.p('${retArg.dartType} retVal;');
         } else {
-          o.p('${retArg.dartType} retVal = ${retArg.defaultValue};');
+          o.p('${retArg.dartType} retVal = ${retArg.defaultReturnValue};');
         }
       }
 
@@ -330,6 +342,8 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
               ?.where((e) => e.type == 'String' || e.type == 'StringName') ??
           [];
       withAllocationBlock(arguments, retArg, o, () {
+        assignMethodDefaults(method.arguments ?? [], o);
+        writeArgumentAllocations(arguments, o);
         bool extractReturnValue = false;
         if (retArg.typeCategory != TypeCategory.voidType) {
           extractReturnValue = writeReturnAllocation(retArg, o);
@@ -357,6 +371,9 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
             } else if (argument.type == 'String' ||
                 argument.type == 'StringName') {
               o.p('gd$escapedName.nativePtr.cast(),');
+            } else if (argument.defaultArgumentValue != null) {
+              // Should be able to assume non-null at this point
+              o.p('$escapedName!.nativePtr.cast(),');
             } else {
               o.p('$escapedName.nativePtr.cast(),');
             }

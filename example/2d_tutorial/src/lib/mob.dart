@@ -25,7 +25,7 @@ class Mob extends RigidBody2D {
     final mobTypes = anim?.getSpriteFrames().obj?.getAnimationNames();
     if (mobTypes != null) {
       var animName = mobTypes[_random.nextInt(mobTypes.size())];
-      anim?.play(nameOpt: animName);
+      anim?.play(name: animName);
     }
   }
 

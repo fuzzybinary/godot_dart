@@ -168,7 +168,9 @@ class ArgumentProxy {
   final TypeCategory typeCategory;
   final ArgumentMeta? meta;
 
-  final String defaultValue;
+  final String? defaultArgumentValue;
+
+  final String defaultReturnValue;
 
   ArgumentProxy._({
     required this.name,
@@ -181,7 +183,8 @@ class ArgumentProxy {
     required this.isRefCounted,
     required this.typeCategory,
     required this.meta,
-    required this.defaultValue,
+    required this.defaultArgumentValue,
+    required this.defaultReturnValue,
   });
 
   ArgumentProxy renamed(String newName) {
@@ -196,7 +199,8 @@ class ArgumentProxy {
         isRefCounted: isRefCounted,
         typeCategory: typeCategory,
         meta: meta,
-        defaultValue: defaultValue);
+        defaultArgumentValue: defaultArgumentValue,
+        defaultReturnValue: defaultReturnValue);
   }
 
   factory ArgumentProxy.fromSingleton(Singleton singleton) {
@@ -219,8 +223,9 @@ class ArgumentProxy {
       isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: null,
-      defaultValue:
-          _getDefaultValue(singleton.type, dartType, isOptional, isRefCounted),
+      defaultArgumentValue: null,
+      defaultReturnValue: _getDefaultReturnValue(
+          singleton.type, dartType, isOptional, isRefCounted),
     );
   }
 
@@ -243,8 +248,9 @@ class ArgumentProxy {
       isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: argument.meta,
-      defaultValue:
-          _getDefaultValue(argument.type, dartType, isOptional, isRefCounted),
+      defaultArgumentValue: argument.defaultValue,
+      defaultReturnValue: _getDefaultReturnValue(
+          argument.type, dartType, isOptional, isRefCounted),
     );
   }
 
@@ -268,12 +274,13 @@ class ArgumentProxy {
       isRefCounted: isRefCounted,
       typeCategory: typeCategory,
       meta: returnValue.meta,
-      defaultValue: _getDefaultValue(
+      defaultArgumentValue: null,
+      defaultReturnValue: _getDefaultReturnValue(
           returnValue.type, dartType, isOptional, isRefCounted),
     );
   }
 
-  static String _getDefaultValue(
+  static String _getDefaultReturnValue(
       String godotType, String dartType, bool isOptional, bool isRefCounted) {
     final myDartType = dartType;
     if (isRefCounted) {

@@ -46,7 +46,6 @@ class GodotDartBuilder extends Builder {
   }
 
   @override
-  // TODO: implement buildExtensions
   Map<String, List<String>> get buildExtensions => {
         r'$package$': ['godot_dart_scripts.g.dart'],
       };

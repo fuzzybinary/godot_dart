@@ -139,10 +139,10 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     final hasReturn =
         returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
 
-    o.b('${makeEngineMethodSignature(method)} {', () {
+    o.b('${makeSignature(method)} {', () {
       if (method.isVirtual) {
         if (hasReturn) {
-          final defaultValue = returnInfo.defaultValue;
+          final defaultValue = returnInfo.defaultReturnValue;
           o.p('return $defaultValue;');
         }
         return;

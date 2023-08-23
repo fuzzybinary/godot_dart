@@ -164,3 +164,16 @@ String escapeMethodName(String name) {
 
   return name;
 }
+
+// Is a pimitive that we can assign a const value to
+// for default argumnets easily
+bool isPrimitiveType(String name) {
+  const primitiveTypes = [
+    'bool',
+    'int',
+    'double',
+    'String',
+  ];
+
+  return primitiveTypes.contains(name);
+}
