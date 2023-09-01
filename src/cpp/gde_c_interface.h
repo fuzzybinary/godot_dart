@@ -72,10 +72,10 @@ GDE_EXPORT GDExtensionInt gde_string_to_utf16_chars(GDExtensionConstStringPtr p_
 GDE_EXPORT GDExtensionObjectPtr gde_global_get_singleton(GDExtensionConstStringNamePtr p_name);
 
 GDE_EXPORT void *gde_classdb_get_class_tag(GDExtensionConstStringNamePtr p_classname);
-GDE_EXPORT void gde_classdb_register_extension_class(GDExtensionClassLibraryPtr p_library,
+GDE_EXPORT void gde_classdb_register_extension_class2(GDExtensionClassLibraryPtr p_library,
                                                      GDExtensionConstStringNamePtr p_class_name,
                                                      GDExtensionConstStringNamePtr p_parent_class_name,
-                                                     const GDExtensionClassCreationInfo *p_extension_funcs);
+                                                     const GDExtensionClassCreationInfo2 *p_extension_funcs);
 GDE_EXPORT void gde_classdb_register_extension_class_method(GDExtensionClassLibraryPtr p_library,
                                                             GDExtensionConstStringNamePtr p_class_name,
                                                             const GDExtensionClassMethodInfo *p_method_info);
@@ -106,7 +106,7 @@ GDE_EXPORT void gde_object_destroy(GDExtensionObjectPtr p_o);
 GDE_EXPORT GDExtensionObjectPtr gde_ref_get_object(GDExtensionConstRefPtr p_ref);
 GDE_EXPORT void gde_ref_set_object(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object);
 
-GDE_EXPORT GDExtensionScriptInstancePtr gde_script_instance_create(const GDExtensionScriptInstanceInfo *p_info,
+GDE_EXPORT GDExtensionScriptInstancePtr gde_script_instance_create2(const GDExtensionScriptInstanceInfo2 *p_info,
                                                                    GDExtensionScriptInstanceDataPtr p_instance_data);
 GDE_EXPORT GDExtensionScriptInstanceDataPtr gde_object_get_script_instance(GDExtensionConstObjectPtr p_object,
                                                                            GDExtensionObjectPtr p_language);

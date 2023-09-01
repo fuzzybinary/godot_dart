@@ -379,7 +379,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   r_error->error = GDEXTENSION_CALL_OK;
 }
 
-void DartScriptInstance::notification(int32_t p_what) {
+void DartScriptInstance::notification(int32_t p_what, bool p_reversed) {
 }
 
 void DartScriptInstance::to_string(GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out) {
@@ -518,9 +518,9 @@ void script_instance_call(GDExtensionScriptInstanceDataPtr p_self, GDExtensionCo
   instance->call(gd_method, p_args, p_argument_count, r_return, r_error);
 }
 
-void script_instance_notification(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what) {
+void script_instance_notification(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what, bool p_reversed) {
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
-  instance->notification(p_what);
+  instance->notification(p_what, p_reversed);
 }
 
 void script_instance_to_string(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionBool *r_is_valid,
@@ -573,11 +573,11 @@ void script_instance_free(GDExtensionScriptInstanceDataPtr p_instance) {
   delete instance;
 }
 
-const GDExtensionScriptInstanceInfo *DartScriptInstance::get_script_instance_info() {
+const GDExtensionScriptInstanceInfo2 *DartScriptInstance::get_script_instance_info() {
   return &script_instance_info;
 }
 
-GDExtensionScriptInstanceInfo DartScriptInstance::script_instance_info = {
+GDExtensionScriptInstanceInfo2 DartScriptInstance::script_instance_info = {
     script_instance_set,
     script_instance_get,
     script_instance_get_property_list,

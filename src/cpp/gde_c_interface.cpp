@@ -220,13 +220,13 @@ void *gde_classdb_get_class_tag(GDExtensionConstStringNamePtr p_classname) {
   return nullptr;
 }
 
-static GDExtensionInterfaceClassdbRegisterExtensionClass _classdb_register_extension_class_func = nullptr;
-void gde_classdb_register_extension_class(GDExtensionClassLibraryPtr p_library,
-                                          GDExtensionConstStringNamePtr p_class_name,
-                                          GDExtensionConstStringNamePtr p_parent_class_name,
-                                          const GDExtensionClassCreationInfo *p_extension_funcs) {
-  if (_classdb_register_extension_class_func) {
-    _classdb_register_extension_class_func(p_library, p_class_name, p_parent_class_name, p_extension_funcs);
+static GDExtensionInterfaceClassdbRegisterExtensionClass2 _classdb_register_extension_class2_func = nullptr;
+void gde_classdb_register_extension_class2(GDExtensionClassLibraryPtr p_library,
+                                           GDExtensionConstStringNamePtr p_class_name,
+                                           GDExtensionConstStringNamePtr p_parent_class_name,
+                                           const GDExtensionClassCreationInfo2 *p_extension_funcs) {
+  if (_classdb_register_extension_class2_func) {
+    _classdb_register_extension_class2_func(p_library, p_class_name, p_parent_class_name, p_extension_funcs);
   }
 }
 
@@ -341,11 +341,11 @@ void gde_ref_set_object(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object) 
   }
 }
 
-static GDExtensionInterfaceScriptInstanceCreate _script_instance_create_func = nullptr;
-GDExtensionScriptInstancePtr gde_script_instance_create(const GDExtensionScriptInstanceInfo *p_info,
+static GDExtensionInterfaceScriptInstanceCreate2 _script_instance_create2_func = nullptr;
+GDExtensionScriptInstancePtr gde_script_instance_create2(const GDExtensionScriptInstanceInfo2 *p_info,
                                                         GDExtensionScriptInstanceDataPtr p_instance_data) {
-  if (_script_instance_create_func) {
-    return _script_instance_create_func(p_info, p_instance_data);
+  if (_script_instance_create2_func) {
+    return _script_instance_create2_func(p_info, p_instance_data);
   }
   return nullptr;
 }
@@ -389,7 +389,7 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(string_to_utf16_chars, GDExtensionInterfaceStringToUtf16Chars);
   LOAD_METHOD(global_get_singleton, GDExtensionInterfaceGlobalGetSingleton);
   LOAD_METHOD(classdb_get_class_tag, GDExtensionInterfaceClassdbGetClassTag);
-  LOAD_METHOD(classdb_register_extension_class, GDExtensionInterfaceClassdbRegisterExtensionClass);
+  LOAD_METHOD(classdb_register_extension_class2, GDExtensionInterfaceClassdbRegisterExtensionClass2);
   LOAD_METHOD(classdb_register_extension_class_method, GDExtensionInterfaceClassdbRegisterExtensionClassMethod);
   LOAD_METHOD(classdb_register_extension_class_property, GDExtensionInterfaceClassdbRegisterExtensionClassProperty);
   LOAD_METHOD(classdb_get_method_bind, GDExtensionInterfaceClassdbGetMethodBind);
@@ -403,8 +403,7 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(object_destroy, GDExtensionInterfaceObjectDestroy);
   LOAD_METHOD(ref_get_object, GDExtensionInterfaceRefGetObject);
   LOAD_METHOD(ref_set_object, GDExtensionInterfaceRefSetObject);
-  LOAD_METHOD(script_instance_create, GDExtensionInterfaceScriptInstanceCreate);
+  LOAD_METHOD(script_instance_create2, GDExtensionInterfaceScriptInstanceCreate2);
   LOAD_METHOD(object_get_script_instance, GDExtensionInterfaceObjectGetScriptInstance);
 }
-
 }

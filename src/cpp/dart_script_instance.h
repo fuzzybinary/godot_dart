@@ -30,7 +30,7 @@ public:
   void call(const GDStringName* p_method, const GDExtensionConstVariantPtr *p_args,
             GDExtensionInt p_argument_count, 
     GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
-  void notification(int32_t p_what);
+  void notification(int32_t p_what, bool p_reversed);
   void to_string(GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
 
   void ref_count_incremented();
@@ -48,7 +48,7 @@ public:
     return _dart_object;
   }
 
-  static const GDExtensionScriptInstanceInfo* get_script_instance_info();
+  static const GDExtensionScriptInstanceInfo2* get_script_instance_info();
 
 private:
   bool _is_placeholder;
@@ -57,5 +57,5 @@ private:
   GDExtensionObjectPtr _godot_script_obj;
   GDExtensionObjectPtr _owner;
 
-  static GDExtensionScriptInstanceInfo script_instance_info;
+  static GDExtensionScriptInstanceInfo2 script_instance_info;
 };

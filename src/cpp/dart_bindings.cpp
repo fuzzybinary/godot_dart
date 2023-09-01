@@ -748,7 +748,7 @@ void bind_class(Dart_NativeArguments args) {
     return;
   }
 
-  GDExtensionClassCreationInfo info = {0};
+  GDExtensionClassCreationInfo2 info = {0};
   info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
@@ -756,7 +756,7 @@ void bind_class(Dart_NativeArguments args) {
   info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
   info.call_virtual_func = GodotDartBindings::call_virtual_func;
 
-  gde_classdb_register_extension_class(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
+  gde_classdb_register_extension_class2(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
 }
 
 void bind_method(Dart_NativeArguments args) {
@@ -1001,7 +1001,7 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
 
   DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder);
   GDExtensionScriptInstancePtr godot_script_instance =
-      gde_script_instance_create(DartScriptInstance::get_script_instance_info(),
+      gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
 
   return godot_script_instance;
