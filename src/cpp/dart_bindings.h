@@ -68,6 +68,8 @@ public:
   static void *get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name);
   static void call_virtual_func(void* p_instance, GDExtensionConstStringNamePtr p_name,
                                 void *p_userdata, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
+  static void reference(GDExtensionClassInstancePtr p_instance);
+  static void unreference(GDExtensionClassInstancePtr p_instance);
 
 private:
   static void bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,

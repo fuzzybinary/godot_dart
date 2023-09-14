@@ -61,6 +61,8 @@ Future<void> generateEngineBindings(
 
       o.p('@override');
       o.p('TypeInfo get typeInfo => sTypeInfo;');
+      o.p('@override');
+      o.p('StringName get nativeTypeName => sTypeInfo.className;');
       o.nl();
 
       //o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');
@@ -115,10 +117,8 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
 
 void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   // Constructors
-  o.p('${classInfo.dartName}() : super.forType(sTypeInfo.className);');
+  o.p('${classInfo.dartName}() : super();');
   o.nl();
-
-  o.p('${classInfo.dartName}.forType(StringName type) : super.forType(type);');
   o.p('${classInfo.dartName}.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);');
   o.b('static ${classInfo.dartName}? fromOwner(Pointer<Void> owner) {', () {
     o.p('if (owner == nullptr) return null;');
@@ -182,8 +182,6 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
 
         if (returnInfo.typeCategory == TypeCategory.enumType) {
           o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, null) as int);');
-        } else if (returnInfo.isRefCounted) {
-          o.p('return Ref<${returnInfo.rawDartType}>(convertFromVariant(ret, $typeInfo) as ${returnInfo.rawDartType});');
         } else if (returnInfo.dartType == 'Variant') {
           o.p('return ret;');
         } else {
@@ -225,7 +223,7 @@ void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
 
     o.b('static void __$methodName(GDExtensionClassInstancePtr instance, Pointer<GDExtensionConstTypePtr> args, GDExtensionTypePtr retPtr) {',
         () {
-      o.p('final self = gde.dartBindings.fromPersistentHandle(instance) as ${classInfo.dartName};');
+      o.p('final self = gde.dartBindings.objectFromInstanceBinding(instance) as ${classInfo.dartName};');
       arguments.forEachIndexed((i, e) {
         convertPtrArgument(i, e, o);
       });

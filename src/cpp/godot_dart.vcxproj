@@ -26,6 +26,7 @@
     <ClCompile Include="godot_dart.cpp" />
     <ClCompile Include="gde_wrapper..cpp" />
     <ClCompile Include="godot_string_wrappers.cpp" />
+    <ClCompile Include="ref_counted_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
@@ -34,6 +35,7 @@
     <ClInclude Include="gde_dart_converters.h" />
     <ClInclude Include="gde_wrapper.h" />
     <ClInclude Include="godot_string_wrappers.h" />
+    <ClInclude Include="ref_counted_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

@@ -27,6 +27,9 @@ class GodotDartNativeBindings {
   late final finalizeExtensionObject =
       processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'finalize_extension_object');
+  late final finalizeRefCountedExtensionObject =
+      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
+          'finalize_refcounted_extension_object');
   late final performFrameMaintenance = processLib
       .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
       .asFunction<void Function()>();
@@ -47,22 +50,16 @@ class GodotDartNativeBindings {
           'safe_new_persistent_handle')
       .asFunction<Pointer<Void> Function(Object)>();
 
-  // static DynamicLibrary openLibrary(String libName) {
-  //   var libraryPath = path.join(Directory.current.path, '$libName.so');
-  //   if (Platform.isMacOS) {
-  //     libraryPath = path.join(Directory.current.path, '$libName.dylib');
-  //   } else if (Platform.isWindows) {
-  //     // Godot editor copies the .dll so it can be overwritten while Godot is running
-  //     // Check to see if that .dll exists and load it instead.
-  //     libraryPath = path.join(Directory.current.path, '~$libName.dll');
-  //     if (!File(libraryPath).existsSync()) {
-  //       // Doesn't exist, use the regular name
-  //       libraryPath = path.join(Directory.current.path, '$libName.dll');
-  //     }
-  //   }
-
-  //   return DynamicLibrary.open(libraryPath);
-  // }
+  late final tieDartToNative = processLib
+      .lookup<
+          NativeFunction<
+              Void Function(Handle, GDExtensionObjectPtr, Bool,
+                  Bool)>>('tie_dart_to_native')
+      .asFunction<void Function(Object, GDExtensionObjectPtr, bool, bool)>();
+  late final objectFromInstanceBinding = processLib
+      .lookup<NativeFunction<Handle Function(GDExtensionClassInstancePtr)>>(
+          'dart_object_from_instance_binding')
+      .asFunction<Object Function(GDExtensionClassInstancePtr)>();
 
   GodotDartNativeBindings() {
     processLib = DynamicLibrary.process();
@@ -96,10 +93,6 @@ class GodotDartNativeBindings {
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);
-  }
-
-  Object? fromPersistentHandle(Pointer<Void> handle) {
-    return _handleFromPersistent(handle);
   }
 
   void clearPersistentHandle(Pointer<Void> handle) {

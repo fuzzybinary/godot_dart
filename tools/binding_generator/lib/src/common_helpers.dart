@@ -168,10 +168,6 @@ String getArgumentDefaultValue(Argument arg, String defaultValue) {
         .findEnumValue(arg.proxy.dartType, arg.defaultValue!);
   }
 
-  if (arg.proxy.isRefCounted && defaultValue == 'null') {
-    return '${arg.proxy.dartType}(null)';
-  }
-
   final argumentCapture = RegExp(r'.+\((?<args>.+)\)');
   switch (arg.type) {
     case 'Variant':
@@ -268,7 +264,7 @@ void assignMethodDefaults(List<Argument> arguments, CodeSink o) {
   bool needsDefaultAssignment(Argument a) {
     return a.defaultValue != null &&
         !isPrimitiveType(a.proxy.dartType) &&
-        !(a.proxy.isOptional && !a.proxy.isRefCounted);
+        !a.proxy.isOptional;
   }
 
   for (final arg in arguments.where((a) => needsDefaultAssignment(a))) {
@@ -333,7 +329,7 @@ String makeSignature(dynamic functionData, {bool useGodotStringTypes = false}) {
         positionalParamSignature
             .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
       } else {
-        if (parameter.proxy.isOptional && !parameter.proxy.isRefCounted) {
+        if (parameter.proxy.isOptional) {
           // Don't double opt.
           namedParamSignature
               .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
@@ -366,57 +362,6 @@ String makeSignature(dynamic functionData, {bool useGodotStringTypes = false}) {
 
   return signature;
 }
-
-// String makeEngineMethodSignature(ClassMethod methodData) {
-//   var modifiers = '';
-//   if (methodData.isStatic) {
-//     modifiers += 'static ';
-//   }
-//   final methodName = getDartMethodName(methodData.name, methodData.isVirtual);
-
-//   var returnType = 'void';
-//   if (methodData.returnValue != null) {
-//     returnType = methodData.returnValue!.proxy.dartType;
-//   }
-
-//   var signature = '$modifiers$returnType $methodName(';
-
-//   final parameters = methodData.arguments;
-//   if (parameters != null) {
-//     List<String> positionalParamSignature = [];
-//     List<String> namedParamSignature = [];
-
-//     for (int i = 0; i < parameters.length; ++i) {
-//       final parameter = parameters[i];
-
-//       var type = parameter.proxy.dartType;
-
-//       if (parameter.defaultValue == null) {
-//         positionalParamSignature
-//             .add('$type ${escapeName(parameter.name).toLowerCamelCase()}');
-//       } else {
-//         if (parameter.proxy.isOptional && !parameter.proxy.isRefCounted) {
-//           // Don't double opt.
-//           namedParamSignature
-//               .add('$type ${escapeName(parameter.name).toLowerCamelCase()}Opt');
-//         } else {
-//           namedParamSignature.add(
-//               '$type? ${escapeName(parameter.name).toLowerCamelCase()}Opt');
-//         }
-//       }
-//     }
-
-//     signature += positionalParamSignature.join(', ');
-//     if (namedParamSignature.isNotEmpty) {
-//       if (positionalParamSignature.isNotEmpty) signature += ', ';
-//       signature += '{${namedParamSignature.join(', ')}}';
-//     }
-//   }
-
-//   signature += ')';
-
-//   return signature;
-// }
 
 String nakedType(String type) {
   if (type.startsWith('const')) {
@@ -541,7 +486,7 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       if (argument.isRefCounted) {
-        o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
+        o.p('$decl = ${argument.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object(args.elementAt($index).value));');
       } else {
         o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).cast<Pointer<Pointer<Void>>>().value.value);');
       }
@@ -595,13 +540,9 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   var ret = '';
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
-      if (argument.isRefCounted) {
-        ret += 'gde.refSetObject(retPtr, ret.obj)';
-      } else {
-        ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
-        ret +=
-            argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
-      }
+      ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
+      ret +=
+          argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
       break;
     case TypeCategory.builtinClass:
       ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';

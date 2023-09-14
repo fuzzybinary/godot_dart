@@ -20,9 +20,7 @@ class GameLogic extends Node {
   var _score = 0;
   final _random = math.Random();
 
-  GameLogic() : super() {
-    postInitialize();
-  }
+  GameLogic() : super();
 
   GameLogic.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);

@@ -28,7 +28,7 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
       }
       return ffIinterface
           .gde_get_variant_from_type_constructor(variantType)
-          .asFunction(isLeaf: true);
+          .asFunction();
     },
   );
   _toTypeConstructor = List.generate(
@@ -39,7 +39,7 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
       }
       return ffIinterface
           .gde_get_variant_to_type_constructor(variantType)
-          .asFunction(isLeaf: true);
+          .asFunction();
     },
   );
 
@@ -167,19 +167,19 @@ Variant convertToVariant(Object? obj) {
   // First easy checks, are we null?
   if (obj == null) {
     gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
-  } else if (obj is Ref) {
-    final referencedObj = obj.obj;
-    if (referencedObj == null) {
-      gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
-    } else {
-      // Already an Object, but constructor expects a pointer to the object
-      Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
-      ptrToObj.value = referencedObj.nativePtr;
-      c = _fromTypeConstructor[
-          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-      c?.call(ret.nativePtr.cast(), ptrToObj.cast());
-      malloc.free(ptrToObj);
-    }
+    // } else if (obj is Ref) {
+    //   final referencedObj = obj.obj;
+    //   if (referencedObj == null) {
+    //     gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
+    //   } else {
+    //     // Already an Object, but constructor expects a pointer to the object
+    //     Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
+    //     ptrToObj.value = referencedObj.nativePtr;
+    //     c = _fromTypeConstructor[
+    //         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+    //     c?.call(ret.nativePtr.cast(), ptrToObj.cast());
+    //     malloc.free(ptrToObj);
+    //   }
   } else if (obj is ExtensionType) {
     // Already an Object, but constructor expects a pointer to the object
     Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();

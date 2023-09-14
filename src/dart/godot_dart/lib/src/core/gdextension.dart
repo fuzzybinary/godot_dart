@@ -29,39 +29,6 @@ class GodotDart {
     dartBindings = GodotDartNativeBindings();
   }
 
-  // Variant Type
-
-  GDExtensionPtrConstructor variantGetConstructor(
-    int variantType,
-    int index,
-  ) {
-    return ffiBindings.gde_variant_get_ptr_constructor(variantType, index);
-  }
-
-  GDExtensionPtrDestructor variantGetDestructor(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_destructor(variantType);
-  }
-
-  GDExtensionPtrGetter variantGetPtrGetter(int variantType, StringName name) {
-    return ffiBindings.gde_variant_get_ptr_getter(
-        variantType, name.nativePtr.cast());
-  }
-
-  GDExtensionPtrGetter variantGetPtrSetter(int variantType, StringName name) {
-    return ffiBindings.gde_variant_get_ptr_setter(
-        variantType, name.nativePtr.cast());
-  }
-
-  GDExtensionObjectPtr globalGetSingleton(StringName name) {
-    return ffiBindings.gde_global_get_singleton(name.nativePtr.cast());
-  }
-
-  GDExtensionMethodBindPtr classDbGetMethodBind(
-      StringName className, StringName methodName, int hash) {
-    return ffiBindings.gde_classdb_get_method_bind(
-        className.nativePtr.cast(), methodName.nativePtr.cast(), hash);
-  }
-
   void callBuiltinConstructor(
     GDExtensionPtrConstructor constructor,
     GDExtensionTypePtr base,
@@ -210,40 +177,6 @@ class GodotDart {
         variantType, name.nativePtr.cast(), hash);
   }
 
-  GDExtensionPtrIndexedSetter variantGetIndexedSetter(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_indexed_setter(variantType);
-  }
-
-  GDExtensionPtrIndexedGetter variantGetIndexedGetter(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_indexed_getter(variantType);
-  }
-
-  GDExtensionPtrKeyedSetter variantGetKeyedSetter(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_keyed_setter(variantType);
-  }
-
-  GDExtensionPtrKeyedGetter variantGetKeyedGetter(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_keyed_getter(variantType);
-  }
-
-  GDExtensionPtrKeyedChecker variantGetKeyedChecker(int variantType) {
-    return ffiBindings.gde_variant_get_ptr_keyed_checker(variantType);
-  }
-
-  GDExtensionObjectPtr constructObject(StringName className) {
-    return ffiBindings.gde_classdb_construct_object(className.nativePtr.cast());
-  }
-
-  Pointer<Void> getClassTag(StringName className) {
-    return ffiBindings.gde_classdb_get_class_tag(className.nativePtr.cast());
-  }
-
-  void refSetObject(Pointer<Void> ref, RefCounted? obj) {
-    if (obj == null) return;
-
-    gde.ffiBindings.gde_ref_set_object(ref, obj.nativePtr.cast());
-  }
-
   T? cast<T>(GodotObject? from) {
     if (from == null) {
       return null;
@@ -264,7 +197,7 @@ class GodotDart {
           typeInfo.bindingToken!,
           gde.engineBindingCallbacks,
         );
-        final dartObject = dartBindings.fromPersistentHandle(persistent);
+        final dartObject = dartBindings.objectFromInstanceBinding(persistent);
 
         return dartObject as T;
       }
@@ -283,4 +216,36 @@ class GodotDart {
 
     return null;
   }
+
+  // One line simple remappings
+  GDExtensionPtrConstructor variantGetConstructor(int variantType, int index) =>
+      ffiBindings.gde_variant_get_ptr_constructor(variantType, index);
+  GDExtensionPtrDestructor variantGetDestructor(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_destructor(variantType);
+  GDExtensionPtrGetter variantGetPtrGetter(int variantType, StringName name) =>
+      ffiBindings.gde_variant_get_ptr_getter(
+          variantType, name.nativePtr.cast());
+  GDExtensionPtrGetter variantGetPtrSetter(int variantType, StringName name) =>
+      ffiBindings.gde_variant_get_ptr_setter(
+          variantType, name.nativePtr.cast());
+  GDExtensionObjectPtr globalGetSingleton(StringName name) =>
+      ffiBindings.gde_global_get_singleton(name.nativePtr.cast());
+  GDExtensionMethodBindPtr classDbGetMethodBind(
+          StringName className, StringName methodName, int hash) =>
+      ffiBindings.gde_classdb_get_method_bind(
+          className.nativePtr.cast(), methodName.nativePtr.cast(), hash);
+  GDExtensionPtrIndexedSetter variantGetIndexedSetter(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_indexed_setter(variantType);
+  GDExtensionPtrIndexedGetter variantGetIndexedGetter(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_indexed_getter(variantType);
+  GDExtensionPtrKeyedSetter variantGetKeyedSetter(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_keyed_setter(variantType);
+  GDExtensionPtrKeyedGetter variantGetKeyedGetter(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_keyed_getter(variantType);
+  GDExtensionPtrKeyedChecker variantGetKeyedChecker(int variantType) =>
+      ffiBindings.gde_variant_get_ptr_keyed_checker(variantType);
+  GDExtensionObjectPtr constructObject(StringName className) =>
+      ffiBindings.gde_classdb_construct_object(className.nativePtr.cast());
+  Pointer<Void> getClassTag(StringName className) =>
+      ffiBindings.gde_classdb_get_class_tag(className.nativePtr.cast());
 }

@@ -10,9 +10,7 @@ class Hud extends CanvasLayer {
   @override
   TypeInfo get typeInfo => Hud.sTypeInfo;
 
-  Hud() : super() {
-    postInitialize();
-  }
+  Hud() : super();
 
   Hud.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
@@ -45,7 +43,7 @@ class Hud extends CanvasLayer {
     message?.show();
 
     final timer = getTree()!.createTimer(1.0);
-    await toSignal(timer.obj!, 'timeout');
+    await toSignal(timer!, 'timeout');
 
     getNodeT<Button>('StartButton')?.show();
   }

@@ -224,8 +224,8 @@ class ArgumentProxy {
       typeCategory: typeCategory,
       meta: null,
       defaultArgumentValue: null,
-      defaultReturnValue: _getDefaultReturnValue(
-          singleton.type, dartType, isOptional, isRefCounted),
+      defaultReturnValue:
+          _getDefaultReturnValue(singleton.type, dartType, isOptional),
     );
   }
 
@@ -249,8 +249,8 @@ class ArgumentProxy {
       typeCategory: typeCategory,
       meta: argument.meta,
       defaultArgumentValue: argument.defaultValue,
-      defaultReturnValue: _getDefaultReturnValue(
-          argument.type, dartType, isOptional, isRefCounted),
+      defaultReturnValue:
+          _getDefaultReturnValue(argument.type, dartType, isOptional),
     );
   }
 
@@ -275,17 +275,15 @@ class ArgumentProxy {
       typeCategory: typeCategory,
       meta: returnValue.meta,
       defaultArgumentValue: null,
-      defaultReturnValue: _getDefaultReturnValue(
-          returnValue.type, dartType, isOptional, isRefCounted),
+      defaultReturnValue:
+          _getDefaultReturnValue(returnValue.type, dartType, isOptional),
     );
   }
 
   static String _getDefaultReturnValue(
-      String godotType, String dartType, bool isOptional, bool isRefCounted) {
+      String godotType, String dartType, bool isOptional) {
     final myDartType = dartType;
-    if (isRefCounted) {
-      return '$dartType(null)';
-    } else if (isOptional) {
+    if (isOptional) {
       return 'null';
     } else if (defaultValueForType.containsKey(myDartType)) {
       return defaultValueForType[myDartType]!;
@@ -330,9 +328,6 @@ String godotTypeToDartType(String? godotType) {
   final typeCategory =
       GodotApiInfo.instance().getTypeCategory(strippedType.item1);
   final isPointer = strippedType.item2 > 0;
-  final isRefCounted = !isPointer &&
-      typeCategory == TypeCategory.engineClass &&
-      GodotApiInfo.instance().isRefCounted(strippedType.item1);
   final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
 
   if (isPointer) {
@@ -349,8 +344,6 @@ String godotTypeToDartType(String? godotType) {
     } else {
       throw Error();
     }
-  } else if (isRefCounted) {
-    return 'Ref<$rawDartType>';
   }
 
   return '$rawDartType${isOptional ? '?' : ''}';

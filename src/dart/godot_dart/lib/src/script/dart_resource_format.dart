@@ -11,9 +11,7 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
     vTable: ResourceFormatLoader.sTypeInfo.vTable,
   );
 
-  DartResourceFormatLoader() : super() {
-    postInitialize();
-  }
+  DartResourceFormatLoader() : super();
 
   static void initBindings() {
     gde.dartBindings.bindClass(DartResourceFormatLoader);
@@ -68,12 +66,10 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
 
     script.setPath(originalPath);
     final file = FileAccess.open(originalPath, FileAccessModeFlags.read);
-    if (file.obj != null) {
-      final text = file.obj?.getAsText();
-      if (text != null) {
-        script.setSourceCode(text);
-      }
-      file.obj?.close();
+    if (file != null) {
+      final text = file.getAsText();
+      script.setSourceCode(text);
+      file.close();
     }
 
     return convertToVariant(script);
@@ -93,9 +89,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
     vTable: ResourceFormatSaver.sTypeInfo.vTable,
   );
 
-  DartResourceFormatSaver() : super() {
-    postInitialize();
-  }
+  DartResourceFormatSaver() : super();
 
   static void initBindings() {
     gde.dartBindings.bindClass(DartResourceFormatSaver);
@@ -105,43 +99,43 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   TypeInfo get typeInfo => sTypeInfo;
 
   @override
-  GDError vSave(Ref<Resource> resource, String path, int flags) {
-    if (resource.obj == null) return GDError.errInvalidParameter;
+  GDError vSave(Resource? resource, String path, int flags) {
+    if (resource == null) return GDError.errInvalidParameter;
 
-    final script = gde.cast<DartScript>(resource.obj);
+    final script = gde.cast<DartScript>(resource);
     if (script == null) return GDError.errBug;
 
     final file = FileAccess.open(path, FileAccessModeFlags.write);
-    if (file.obj != null) {
+    if (file != null) {
       final srcCode = script.getSourceCode();
-      file.obj?.storeString(srcCode);
-      if (file.obj?.getError() != GDError.ok &&
-          file.obj?.getError() != GDError.errFileEof) {
+      file.storeString(srcCode);
+      if (file.getError() != GDError.ok &&
+          file.getError() != GDError.errFileEof) {
         return GDError.errCantCreate;
       }
-    }
 
-    file.obj?.flush();
-    file.obj?.close();
+      file.flush();
+      file.close();
+    }
 
     return GDError.ok;
   }
 
   @override
-  bool vRecognizePath(Ref<Resource> resource, String path) {
+  bool vRecognizePath(Resource? resource, String path) {
     return path.endsWith('.dart');
   }
 
   @override
-  bool vRecognize(Ref<Resource> resource) {
-    if (gde.cast<DartScript>(resource.obj) != null) {
+  bool vRecognize(Resource? resource) {
+    if (gde.cast<DartScript>(resource) != null) {
       return true;
     }
     return false;
   }
 
   @override
-  PackedStringArray vGetRecognizedExtensions(Ref<Resource> resource) {
+  PackedStringArray vGetRecognizedExtensions(Resource? resource) {
     return PackedStringArray()..pushBack('dart');
   }
 }

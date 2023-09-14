@@ -6,7 +6,6 @@ class PropertyInfo {
   final PropertyHint hint;
   final String hintString;
   final int flags;
-  final bool isReference;
 
   PropertyInfo({
     required this.typeInfo,
@@ -14,7 +13,6 @@ class PropertyInfo {
     this.hint = PropertyHint.propertyHintNone,
     this.hintString = '',
     this.flags = 6, // PropertyUsage.propertyUsageDefault
-    this.isReference = false,
   });
 
   Dictionary asDict() {

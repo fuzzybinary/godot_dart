@@ -20,7 +20,6 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   ScriptTypeResolver typeResolver = (_) => null;
 
   DartScriptLanguage() : super() {
-    postInitialize();
     singleton = this;
   }
 
@@ -75,7 +74,7 @@ class DartScriptLanguage extends ScriptLanguageExtension {
   }
 
   @override
-  Ref<Script> vMakeTemplate(
+  Script vMakeTemplate(
       String template, String className, String baseClassName) {
     final source = '''import 'dart:ffi';
 
@@ -111,7 +110,7 @@ class $className extends $baseClassName  {
     final script = DartScript();
     script.setSourceCode(source);
     script.setName(className);
-    return Ref<Script>(script);
+    return script;
   }
 
   @override

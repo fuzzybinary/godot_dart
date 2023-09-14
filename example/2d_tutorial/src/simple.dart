@@ -17,9 +17,7 @@ class Simple extends Sprite2D {
   double amplitude = 10.0;
   double speed = 1.0;
 
-  Simple() : super() {
-    postInitialize();
-  }
+  Simple() : super();
 
   @override
   void vProcess(double delta) {

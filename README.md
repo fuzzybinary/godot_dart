@@ -19,7 +19,6 @@ working, 🟨 - Partially working, ❌ - Not working)
 | Feature | Support | Note |
 | ------- | :-----: | ---- |
 | Dart as a Godot Extension Language | 🟨 |  |
-| Ref counted object support | 🟨 | Through `Ref<T>`, need to have DartScriptInstance actually support being a Ref |
 | Dart Debugging Extension | ✅ | Attach to `http://127.0.0.1:5858` |
 | Dart Available as a Scripting Language | 🟨 | Very early implementation |
 | Hot Reload | ❌ | |

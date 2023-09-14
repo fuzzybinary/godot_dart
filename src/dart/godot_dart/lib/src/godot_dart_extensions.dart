@@ -40,8 +40,6 @@ class SignalAwaiter extends GodotObject {
   // TODO: Godot instantiates ClassDB classes to get their properties, which
   // means they need default properties. Look for a better way to handle this.
   SignalAwaiter({this.source, this.signalName}) : super() {
-    postInitialize();
-
     if (source == null || signalName == null) return;
 
     final callable = Callable.fromObjectMethod(this, 'signalCalled');

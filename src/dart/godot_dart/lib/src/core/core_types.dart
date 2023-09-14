@@ -22,28 +22,60 @@ abstract class BuiltinType {
 
   /// This const constructor allows classes that we implement to lazily
   /// initialize their nativePtr members and add them to the finalizer
-  /// at that point. It also allows those classes to have const constructors
+  /// at that point.
   const BuiltinType.nonFinalized();
 }
 
 /// Core interface for engine classes
 abstract class ExtensionType implements Finalizable {
-  // This finalizer is used for objects we own in Dart world,
-  // it has Godot delete the object
+  // This finalizer is used for objects we own in Dart world, and for
+  // RefCounted objects that we own the last reference to. It has Godot
+  // delete the object
   static final _finalizer =
       NativeFinalizer(gde.dartBindings.finalizeExtensionObject);
+  static final _refCountedFinalizer =
+      NativeFinalizer(gde.dartBindings.finalizeRefCountedExtensionObject);
 
-  TypeInfo get typeInfo;
-
-  late GDExtensionObjectPtr _owner = Pointer.fromAddress(0);
+  GDExtensionObjectPtr _owner = nullptr;
   GDExtensionObjectPtr get nativePtr => _owner;
 
-  ExtensionType.forType(StringName typeName) {
-    _owner = gde.constructObject(typeName);
-    _finalizer.attach(this, _owner, detach: this);
+  TypeInfo get typeInfo;
+  @protected
+  StringName get nativeTypeName;
+
+  // Created from Dart
+  ExtensionType() {
+    _owner = gde.constructObject(nativeTypeName);
+    _attachFinalizer();
+    _tieDartToNative();
   }
 
-  ExtensionType.withNonNullOwner(this._owner);
+  // Created from Godot
+  ExtensionType.withNonNullOwner(this._owner) {
+    _attachFinalizer();
+    _tieDartToNative();
+  }
+
+  void _attachFinalizer() {
+    if (this is RefCounted) {
+      _refCountedFinalizer.attach(this, _owner, detach: this);
+    } else {
+      _finalizer.attach(this, _owner, detach: this);
+    }
+  }
+
+  /// Tie the Dart object to the native object.
+  @protected
+  void _tieDartToNative() {
+    // Script instance should take care of this. Should we assert that the
+    // object has a script instance?
+    if (typeInfo.scriptInfo == null) {
+      bool isGodotType =
+          nativeTypeName.toDartString() == typeInfo.className.toDartString();
+      gde.dartBindings
+          .tieDartToNative(this, _owner, this is RefCounted, isGodotType);
+    }
+  }
 
   @internal
   void detachOwner() {
@@ -52,38 +84,5 @@ abstract class ExtensionType implements Finalizable {
     // to the finalizer and this call won't do anything.
     _finalizer.detach(this);
     _owner = Pointer.fromAddress(0);
-  }
-
-  @protected
-  @pragma('vm:external-name', 'ExtensionType::postInitialize')
-  external void postInitialize();
-}
-
-/// Reference counted objects
-class Ref<T extends RefCounted> implements Finalizable {
-  // If a ref is no longer reachable, tell Godot to unreference it.
-  static final _finalizer = Finalizer<RefCounted>((obj) => obj.unreference());
-
-  T? obj;
-
-  Ref(this.obj) {
-    obj?.reference();
-    if (obj != null) {
-      _finalizer.attach(this, obj!);
-    }
-  }
-
-  Ref.fromPointer(Pointer<Void> refPointer) {
-    final typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final objPtr = gde.ffiBindings.gde_ref_get_object(refPointer);
-    final maybeObj =
-        gde.dartBindings.gdObjectToDartObject(objPtr, typeInfo.bindingToken);
-    if (maybeObj is T) {
-      obj = maybeObj;
-      obj?.reference();
-      if (obj != null) {
-        _finalizer.attach(this, obj!);
-      }
-    }
   }
 }

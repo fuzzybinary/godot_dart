@@ -13,16 +13,14 @@ class Mob extends RigidBody2D {
 
   final _random = Random();
 
-  Mob() : super() {
-    postInitialize();
-  }
+  Mob() : super();
 
   Mob.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @override
   void vReady() {
     final anim = getNodeT<AnimatedSprite2D>();
-    final mobTypes = anim?.getSpriteFrames().obj?.getAnimationNames();
+    final mobTypes = anim?.getSpriteFrames()?.getAnimationNames();
     if (mobTypes != null) {
       var animName = mobTypes[_random.nextInt(mobTypes.size())];
       anim?.play(name: animName);

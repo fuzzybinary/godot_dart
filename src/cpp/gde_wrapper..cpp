@@ -1,5 +1,6 @@
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
+#include "ref_counted_wrapper.h"
 
 GDEWrapper *GDEWrapper::_instance = nullptr;
 
@@ -14,6 +15,7 @@ void GDEWrapper::create_instance(GDExtensionInterfaceGetProcAddress gde_get_proc
 bool GDEWrapper::initialize() {
   GDString::init();
   GDStringName::init();
+  RefCountedWrapper::init();
 
   /// Get the is_editor_hint method from Engine
   const unsigned int is_editor_hint_hash = 36873697;

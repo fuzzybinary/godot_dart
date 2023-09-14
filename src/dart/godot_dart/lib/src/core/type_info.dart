@@ -153,20 +153,6 @@ class TypeInfo {
     };
   }
 
-  /// Return a copy of this class's typeInfo with [isReference] set to `true`
-  /// TODO:
-  // TypeInfo asRef() {
-  //   return TypeInfo(
-  //     type,
-  //     className,
-  //     parentClass: parentClass,
-  //     variantType: variantType,
-  //     size: size,
-  //     bindingToken: bindingToken,
-  //     isReference: true,
-  //   );
-  // }
-
   static TypeInfo? forType(Type? type) {
     return _typeMapping[type];
   }

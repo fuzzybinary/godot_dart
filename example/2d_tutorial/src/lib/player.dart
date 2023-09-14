@@ -10,9 +10,7 @@ class Player extends Area2D {
   @override
   TypeInfo get typeInfo => Player.sTypeInfo;
 
-  Player() : super() {
-    postInitialize();
-  }
+  Player() : super();
 
   Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 

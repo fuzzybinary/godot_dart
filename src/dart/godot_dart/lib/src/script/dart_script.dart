@@ -25,9 +25,7 @@ class DartScript extends ScriptExtension {
 
   String _sourceCode = '';
 
-  DartScript() : super() {
-    postInitialize();
-  }
+  DartScript() : super();
 
   DartScript.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);

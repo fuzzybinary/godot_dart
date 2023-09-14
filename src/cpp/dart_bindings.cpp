@@ -14,30 +14,120 @@
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
+#include "ref_counted_wrapper.h"
 
-/* Binding callbacks -- Used for Dart defined types and Variants */
-
-static void *__binding_create_callback(void *p_token, void *p_instance) {
-  return nullptr;
+extern "C" {
+void gde_weak_finalizer(void *isolate_callback_data, void *peer);
 }
 
-static void __binding_free_callback(void *p_token, void *p_instance, void *p_binding) {
-}
+/* Binding callbacks used for Engine types implemented in Godot and wrapped in Dart */
 
-static GDExtensionBool __binding_reference_callback(void *p_token, void *p_instance, GDExtensionBool p_reference) {
-  return true;
-}
+// This is the binding between native and Dart
+class DartEngineBinding {
+public:
+  DartEngineBinding() : is_initialized(false), is_weak(false), persistent_handle(nullptr), godot_object(nullptr) {
+  }
 
-static constexpr GDExtensionInstanceBindingCallbacks __binding_callbacks = {
-    __binding_create_callback,
-    __binding_free_callback,
-    __binding_reference_callback,
+  ~DartEngineBinding() {
+    if (persistent_handle) {
+      if (is_weak) {
+        Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)persistent_handle);
+      } else {
+        Dart_DeletePersistentHandle((Dart_PersistentHandle)persistent_handle);
+      }
+    }
+  }
+
+  void create_dart_object() {
+    GodotDartBindings *bindings = GodotDartBindings::instance();
+    if (!bindings && godot_object != nullptr) {
+      return;
+    }
+
+    bindings->execute_on_dart_thread([&] {
+      Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(token);
+      Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
+
+      Dart_Handle dart_pointer = bindings->new_dart_void_pointer(godot_object);
+      Dart_Handle args[1] = {dart_pointer};
+      DART_CHECK(new_obj, Dart_New(dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
+                 "Error creating bindings");
+    });
+
+    // tie_dart_to_native should have called back in during creation
+    assert(is_initialized);
+  }
+
+  void initalize(Dart_Handle dart_object, bool is_refcounted) {
+    is_weak = is_refcounted;
+    persistent_handle =
+        is_refcounted
+            ? (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer)
+            : (void *)Dart_NewPersistentHandle(dart_object);
+    is_initialized = true;
+  }
+
+  Dart_Handle get_object() {
+    if (!is_initialized) {
+      create_dart_object();
+    }
+
+    if (is_weak) {
+      return Dart_HandleFromWeakPersistent((Dart_WeakPersistentHandle)persistent_handle);
+    }
+
+    return Dart_HandleFromPersistent((Dart_PersistentHandle)persistent_handle);
+  }
+
+  bool convert_to_strong() {
+    if (!is_weak) return true;
+
+    DartBlockScope scope;
+
+    Dart_Handle object = Dart_HandleFromWeakPersistent((Dart_WeakPersistentHandle)persistent_handle);
+    if (Dart_IsNull(object)) {
+      return false;
+    }
+    Dart_PersistentHandle strong_handle = Dart_NewPersistentHandle(object);
+    Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)persistent_handle);
+
+    persistent_handle = strong_handle;
+    is_weak = false;
+
+    return true;
+  }
+
+  bool convert_to_weak() {
+    if (is_weak) return true;
+
+    Dart_Handle object = Dart_HandleFromPersistent((Dart_PersistentHandle)persistent_handle);
+    if (Dart_IsNull(object)) {
+      return false;
+    }
+    Dart_WeakPersistentHandle weak_handle = Dart_NewWeakPersistentHandle(object, this, 0, gde_weak_finalizer);
+    Dart_DeletePersistentHandle((Dart_PersistentHandle)persistent_handle);
+
+    persistent_handle = weak_handle;
+    is_weak = true;
+
+    return true;
+  }
+
+  // TODO: Encapsulate these
+  bool is_initialized;
+  bool is_weak;
+  void *persistent_handle;
+  void *token;
+  GDExtensionObjectPtr godot_object;
 };
 
-/* Binding callbacks used for Engine types */
-
 static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
+  DartEngineBinding *binding = new DartEngineBinding();
+  binding->token = p_token;
+  binding->godot_object = p_instance;
+  return binding;
+
+  /*GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings || p_instance == nullptr) {
     return nullptr;
   }
@@ -56,7 +146,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
     ret_obj = reinterpret_cast<void *>(persist_new_obj);
   });
 
-  return ret_obj;
+  return ret_obj;*/
 }
 
 static void __engine_binding_free_callback(void *p_token, void *p_instance, void *p_binding) {
@@ -65,28 +155,74 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
     return;
   }
 
+  DartEngineBinding *binding = reinterpret_cast<DartEngineBinding *>(p_binding);
+  if (binding->is_weak) {
+    // If the binding is weak, there's a possibility Dart is asking us to kill this in
+    // a way that does not allow us to call back into any other Dart code other than deleting
+    // the weak reference. So just do that and be done with it.
+    delete binding;
+    return;
+  }
+
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
     Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(p_token);
-    Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_binding);
-    Dart_Handle obj = Dart_HandleFromPersistent(persistent);
-    if (!Dart_IsNull(obj)) {
-      Dart_Handle result = Dart_Invoke(obj, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
+    DartEngineBinding *engine_binding = reinterpret_cast<DartEngineBinding *>(p_binding);
+    Dart_Handle dart_object = Dart_Null();
+    if (engine_binding != nullptr) {
+      dart_object = engine_binding->get_object();
+    }
+
+    if (!Dart_IsNull(dart_object)) {
+      Dart_Handle result = Dart_Invoke(dart_object, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
       if (Dart_IsError(result)) {
         GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
         GD_PRINT_ERROR(Dart_GetError(result));
       }
-      Dart_DeletePersistentHandle(persistent);
+
+      delete engine_binding;
     }
   });
 }
 
 static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *p_instance,
                                                            GDExtensionBool p_reference) {
-  // This returns true if the object is allowed to die (meaning Dart is no longer holding onto a reference)
-  // The logic here still needs to be written so, for now, just return false and leak the memory.
-  return false;
+
+  DartEngineBinding *engine_binding = reinterpret_cast<DartEngineBinding *>(p_instance);
+  if (!engine_binding->is_initialized) {
+    engine_binding->create_dart_object();
+  }
+
+  RefCountedWrapper refcounted(engine_binding->godot_object);
+  int refcount = refcounted.get_reference_count();
+
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    return false;
+  }
+
+  bool retValue = refcount == 0;
+  bindings->execute_on_dart_thread([&] {
+    if (p_reference) {
+      // Refcount incremented, change our reference to strong to prevent Dart from finalizing
+      if (refcount > 1 && engine_binding->is_weak) {
+        engine_binding->convert_to_strong();
+      }
+
+      retValue = false;
+    } else {
+      if (refcount == 1 && !engine_binding->is_weak) {
+        // We're the only ones holding on, switch us to weak so Dart will delete when it
+        // has no more references
+        engine_binding->convert_to_weak();
+
+        retValue = false;
+      }
+    }
+  });
+
+  return retValue;
 }
 
 static constexpr GDExtensionInstanceBindingCallbacks __engine_binding_callbacks = {
@@ -121,7 +257,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
     uint64_t address = 0;
     Dart_IntegerToUint64(dart_address, &address);
 
-    type_info->binding_token = (void*)address;
+    type_info->binding_token = (void *)address;
     type_info->binding_callbacks = &__engine_binding_callbacks;
   }
 
@@ -294,7 +430,7 @@ void GodotDartBindings::shutdown() {
   //DartDll_Shutdown();
 }
 
-void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {  
+void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
   std::thread::id current_thread_id = std::this_thread::get_id();
   if (_isolate_current_thread == current_thread_id) {
     work();
@@ -471,8 +607,8 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   GDStringName gd_setter(property_setter_name.c_str());
 
   GDEWrapper *gde = GDEWrapper::instance();
-  gde_classdb_register_extension_class_property(gde->get_library_ptr(), bind_type.type_name, &prop_info, gd_setter._native_ptr(),
-                                                 gd_getter._native_ptr());
+  gde_classdb_register_extension_class_property(gde->get_library_ptr(), bind_type.type_name, &prop_info,
+                                                gd_setter._native_ptr(), gd_getter._native_ptr());
 }
 
 /* Static Callbacks from Godot */
@@ -488,8 +624,8 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
   gde->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
-    Dart_PersistentHandle persist_handle = reinterpret_cast<Dart_PersistentHandle>(instance);
-    Dart_Handle dart_instance = Dart_HandleFromPersistent(persist_handle);
+    DartEngineBinding *binding = reinterpret_cast<DartEngineBinding *>(instance);
+    Dart_Handle dart_instance = binding->get_object();
 
     MethodInfo *method_info = reinterpret_cast<MethodInfo *>(method_userdata);
     Dart_Handle dart_method_name = Dart_NewStringFromCString(method_info->method_name.c_str());
@@ -515,24 +651,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
                  "Error converting parameters from Variants");
 
       for (intptr_t i = 0; i < arg_count; ++i) {
-        // TODO: Need a better way to do this. Replace references with proper references
-        Dart_Handle type_info = Dart_ListGetAt(args_list, i);
-        Dart_Handle d_is_reference = Dart_GetField(type_info, Dart_NewStringFromCString("isReference"));
-        bool is_reference = false;
-        Dart_BooleanValue(d_is_reference, &is_reference);
-        if (is_reference) {
-          DART_CHECK(inner_type, Dart_GetField(type_info, Dart_NewStringFromCString("type")),
-                     "Failed getting className");
-          DART_CHECK(type_args, Dart_NewList(1), "ASDGARGAEg");
-          Dart_ListSetAt(type_args, 0, inner_type);
-          DART_CHECK(ref_type,
-                     Dart_GetNonNullableType(gde->_godot_dart_library, Dart_NewStringFromCString("Ref"), 1, &type_args),
-                     "Failed finding Ref type");
-          Dart_Handle constructor_args[]{Dart_ListGetAt(dart_converted_arg_list, i)};
-          dart_args[i] = Dart_New(ref_type, Dart_Null(), 1, constructor_args);
-        } else {
-          dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
-        }
+        dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
       }
     }
 
@@ -591,7 +710,7 @@ void GodotDartBindings::ptr_call(void *method_userdata, GDExtensionClassInstance
   bindings->execute_on_dart_thread([&]() {
     Dart_EnterScope();
 
-    // Not implemented yet (haven't come across an instance of it yet?)
+    assert(false);
 
     Dart_ExitScope();
   });
@@ -634,17 +753,26 @@ void GodotDartBindings::class_free_instance(void *p_userdata, GDExtensionClassIn
     return;
   }
 
+  DartEngineBinding *binding = reinterpret_cast<DartEngineBinding *>(p_instance);
+  if (binding->is_weak) {
+    // If the binding is weak, there's a possibility Dart is asking us to kill this in
+    // a way that does not allow us to call back into any other Dart code other than deleting
+    // the weak reference. So just do that and be done with it.
+    delete binding;
+    return;
+  }
+
   bindings->execute_on_dart_thread([&]() {
     Dart_EnterScope();
 
-    Dart_PersistentHandle persistent = reinterpret_cast<Dart_PersistentHandle>(p_instance);
-    Dart_Handle obj = Dart_HandleFromPersistent(persistent);
+    Dart_Handle obj = binding->get_object();
     Dart_Handle ret = Dart_Invoke(obj, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
     if (Dart_IsError(ret)) {
       GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
       GD_PRINT_ERROR(Dart_GetError(ret));
     }
-    Dart_DeletePersistentHandle(persistent);
+
+    delete binding;
 
     Dart_ExitScope();
   });
@@ -691,21 +819,26 @@ void *GodotDartBindings::get_virtual_call_data(void *p_userdata, GDExtensionCons
   return user_data;
 }
 
-void GodotDartBindings::call_virtual_func(void* p_instance, GDExtensionConstStringNamePtr p_name,
-                                           void *p_userdata, const GDExtensionConstTypePtr *p_args,
-                                           GDExtensionTypePtr r_ret) {
+void GodotDartBindings::call_virtual_func(void *p_instance, GDExtensionConstStringNamePtr p_name, void *p_userdata,
+                                          const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings) {
     // oooff
     return;
   }
-  
+
   bindings->execute_on_dart_thread([&]() {
     DartBlockScope scope;
-  
+
     GDExtensionClassCallVirtual dart_call = (GDExtensionClassCallVirtual)p_userdata;
     dart_call(p_instance, p_args, r_ret);
   });
+}
+
+void GodotDartBindings::reference(GDExtensionClassInstancePtr p_instance) {
+}
+
+void GodotDartBindings::unreference(GDExtensionClassInstancePtr p_instance) {
 }
 
 /* Static Functions From Dart */
@@ -727,7 +860,7 @@ void bind_class(Dart_NativeArguments args) {
   }
 
   Dart_Handle type_arg = Dart_GetNativeArgument(args, 1);
-  
+
   DART_CHECK(type_info, Dart_GetField(type_arg, Dart_NewStringFromCString("sTypeInfo")),
              "Missing sTypeInfo when trying to bind class!");
 
@@ -752,9 +885,10 @@ void bind_class(Dart_NativeArguments args) {
   info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
-  //info.get_virtual_func = GodotDartBindings::get_virtual_func;
   info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
   info.call_virtual_func = GodotDartBindings::call_virtual_func;
+  info.reference_func = GodotDartBindings::reference;
+  info.unreference_func = GodotDartBindings::unreference;
 
   gde_classdb_register_extension_class2(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
 }
@@ -836,10 +970,11 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
-  // TODO: Check this -- I think I changed what the token should be
+  // Defaults for non-engine classes
   void *token = gde->get_library_ptr();
+  const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &__engine_binding_callbacks;
+
   Dart_Handle bindings_token = Dart_GetNativeArgument(args, 2);
-  const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &__binding_callbacks;
   if (!Dart_IsNull(bindings_token)) {
     address = Dart_GetField(bindings_token, Dart_NewStringFromCString("address"));
     if (Dart_IsError(address)) {
@@ -853,12 +988,17 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
     bindings_callbacks = &__engine_binding_callbacks;
   }
 
-  Dart_PersistentHandle dart_persistent = (Dart_PersistentHandle)gde_object_get_instance_binding(
+  DartEngineBinding *binding = (DartEngineBinding *)gde_object_get_instance_binding(
       reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, bindings_callbacks);
-  if (dart_persistent == nullptr) {
+  if (binding == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {
-    Dart_Handle obj = Dart_HandleFromPersistent(dart_persistent);
+    if (!binding->is_initialized) {
+      // TODO: Better way to do this?
+      binding->create_dart_object();
+    }
+
+    Dart_Handle obj = binding->get_object();
     if (Dart_IsError(obj)) {
       GD_PRINT_ERROR(Dart_GetError(obj));
       Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(obj)));
@@ -893,46 +1033,6 @@ void get_godot_script_info(Dart_NativeArguments args) {
   Dart_SetReturnValue(args, script_info);
 }
 
-void dart_object_post_initialize(Dart_NativeArguments args) {
-  Dart_Handle dart_self = Dart_GetNativeArgument(args, 0);
-  Dart_Handle d_class_type_info = Dart_GetField(dart_self, Dart_NewStringFromCString("typeInfo"));
-  if (Dart_IsError(d_class_type_info)) {
-    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
-    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
-    return;
-  }
-
-  TypeInfo class_type_info;
-  type_info_from_dart(&class_type_info, d_class_type_info);
-
-  Dart_Handle owner = Dart_GetField(dart_self, Dart_NewStringFromCString("nativePtr"));
-  if (Dart_IsError(owner)) {
-    GD_PRINT_ERROR("GodotDart: Error finding owner member for object: ");
-    GD_PRINT_ERROR(Dart_GetError(owner));
-    return;
-  }
-
-  Dart_Handle owner_address = Dart_GetField(owner, Dart_NewStringFromCString("address"));
-  if (Dart_IsError(owner_address)) {
-    GD_PRINT_ERROR("GodotDart: Error getting address for object: ");
-    GD_PRINT_ERROR(Dart_GetError(owner_address));
-    return;
-  }
-
-  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle(dart_self);
-  GDEWrapper *gde = GDEWrapper::instance();
-
-  uint64_t real_address = 0;
-  Dart_IntegerToUint64(owner_address, &real_address);
-
-
-
-  gde_object_set_instance(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.type_name,
-                           reinterpret_cast<GDExtensionClassInstancePtr>(persistent_handle));
-  gde_object_set_instance_binding(reinterpret_cast<GDExtensionObjectPtr>(real_address), class_type_info.binding_token, persistent_handle,
-                                   &__binding_callbacks);
-}
-
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
   Dart_EnterScope();
 
@@ -964,9 +1064,6 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotScriptInfo")) {
     *auto_setup_scope = true;
     ret = get_godot_script_info;
-  } else if (0 == strcmp(c_name, "ExtensionType::postInitialize")) {
-    *auto_setup_scope = true;
-    ret = dart_object_post_initialize;
   }
 
   Dart_ExitScope();
@@ -976,6 +1073,61 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
 // C calls from Dart
 extern "C" {
 
+void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
+  if (peer == nullptr) {
+    return;
+  }
+
+  DartEngineBinding *binding = (DartEngineBinding *)peer;
+  RefCountedWrapper ref_counted(binding->godot_object);
+  if (ref_counted.unreference()) {
+    gde_object_destroy(binding->godot_object);
+  }
+
+  // gde_object_destroy should delete the binding for us.
+}
+
+GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr godot_object, bool is_refcounted,
+                                   bool is_godot_defined) {
+  DartBlockScope scope;
+
+  Dart_Handle d_class_type_info = Dart_GetField(dart_object, Dart_NewStringFromCString("typeInfo"));
+  if (Dart_IsError(d_class_type_info)) {
+    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
+    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
+    return;
+  }
+
+  TypeInfo class_type_info;
+  type_info_from_dart(&class_type_info, d_class_type_info);
+
+  const GDExtensionInstanceBindingCallbacks *callbacks = &__engine_binding_callbacks;
+  DartEngineBinding *binding =
+      (DartEngineBinding *)gde_object_get_instance_binding(godot_object, class_type_info.binding_token, callbacks);
+  if (!binding->is_initialized) {
+    binding->initalize(dart_object, is_refcounted);
+  }
+
+  if (is_refcounted) {
+    RefCountedWrapper ref_counted(godot_object);
+    ref_counted.reference();
+  }
+
+  if (!is_godot_defined) {
+    gde_object_set_instance(godot_object, class_type_info.type_name, binding);
+  }
+}
+
+GDE_EXPORT Dart_Handle dart_object_from_instance_binding(GDExtensionClassInstancePtr godot_instance) {
+  DartEngineBinding *binding = reinterpret_cast<DartEngineBinding *>(godot_instance);
+  Dart_Handle obj = Dart_Null();
+  if (binding != nullptr) {
+    obj = binding->get_object();
+  }
+
+  return obj;
+}
+
 GDE_EXPORT void variant_copy(void *dest, void *src, int size) {
   memcpy(dest, src, size);
 }
@@ -984,8 +1136,19 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   if (extention_object == nullptr) {
     return;
   }
-
+ 
   gde_object_destroy(extention_object);
+}
+
+GDE_EXPORT void finalize_refcounted_extension_object(GDExtensionObjectPtr extention_object) {
+  if (extention_object == nullptr) {
+    return;
+  }
+
+  RefCountedWrapper wrapper(extention_object);
+  if (wrapper.unreference()) {
+    gde_object_destroy(extention_object);
+  }
 }
 
 GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder) {
@@ -1055,5 +1218,4 @@ GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
 
   return (void *)result;
 }
-
 }

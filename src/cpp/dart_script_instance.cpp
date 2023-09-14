@@ -174,6 +174,10 @@ GDExtensionVariantType DartScriptInstance::get_property_type(const GDStringName 
   return GDExtensionVariantType();
 }
 
+bool DartScriptInstance::validate_property(GDExtensionPropertyInfo *p_property) {
+  return false;
+}
+
 GDExtensionBool DartScriptInstance::property_can_revert(const GDStringName &p_name) {
   return false;
 }
@@ -334,24 +338,8 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
                  "Error converting parameters from Variants");
 
       for (intptr_t i = 0; i < arg_count; ++i) {
-        // TODO: Need a better way to do this. Replace references with proper references
         Dart_Handle type_info = Dart_ListGetAt(args_list, i);
-        Dart_Handle d_is_reference = Dart_GetField(type_info, Dart_NewStringFromCString("isReference"));
-        bool is_reference = false;
-        Dart_BooleanValue(d_is_reference, &is_reference);
-        if (is_reference) {
-          DART_CHECK(inner_type, Dart_GetField(type_info, Dart_NewStringFromCString("type")),
-                     "Failed getting className");
-          DART_CHECK(type_args, Dart_NewList(1), "ASDGARGAEg");
-          Dart_ListSetAt(type_args, 0, inner_type);
-          DART_CHECK(ref_type,
-                     Dart_GetNonNullableType(gde->_godot_dart_library, Dart_NewStringFromCString("Ref"), 1, &type_args),
-                     "Failed finding Ref type");
-          Dart_Handle constructor_args[]{Dart_ListGetAt(dart_converted_arg_list, i)};
-          dart_args[i] = Dart_New(ref_type, Dart_Null(), 1, constructor_args);
-        } else {
-          dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
-        }
+        dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
       }
     }
 
@@ -466,6 +454,13 @@ GDExtensionVariantType script_instance_get_property_type(GDExtensionScriptInstan
   return instance->get_property_type(*gd_name, r_is_valid);
 }
 
+GDExtensionBool script_instance_validate_property(GDExtensionScriptInstanceDataPtr p_instance,
+                                                  GDExtensionPropertyInfo *p_property) {
+
+  DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
+  return instance->validate_property(p_property);
+}
+
 GDExtensionBool script_instance_property_can_revert(GDExtensionScriptInstanceDataPtr p_instance,
                                                     GDExtensionConstStringNamePtr p_name) {
   const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
@@ -518,7 +513,8 @@ void script_instance_call(GDExtensionScriptInstanceDataPtr p_self, GDExtensionCo
   instance->call(gd_method, p_args, p_argument_count, r_return, r_error);
 }
 
-void script_instance_notification(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what, bool p_reversed) {
+void script_instance_notification(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what,
+                                  GDExtensionBool p_reversed) {
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   instance->notification(p_what, p_reversed);
 }
@@ -589,6 +585,7 @@ GDExtensionScriptInstanceInfo2 DartScriptInstance::script_instance_info = {
     script_instance_get_method_list,
     script_instance_free_method_list,
     script_instance_get_property_type,
+    script_instance_validate_property,
     script_instance_has_method,
     script_instance_call,
     script_instance_notification,

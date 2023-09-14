@@ -15,6 +15,7 @@ public:
   const GDExtensionPropertyInfo *get_property_list(uint32_t *r_count);
   void free_property_list(const GDExtensionPropertyInfo *p_list);
   GDExtensionVariantType get_property_type(const GDStringName &p_name, GDExtensionBool *r_is_valid);
+  bool validate_property(GDExtensionPropertyInfo *p_property);
 
   GDExtensionBool property_can_revert(const GDStringName &p_name);
   GDExtensionBool property_get_revert(const GDStringName &p_name, GDExtensionVariantPtr r_ret);

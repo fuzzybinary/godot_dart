@@ -50,10 +50,8 @@ DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
   var engine = Engine.singleton;
   engine.registerScriptLanguage(_dartScriptLanguage);
 
-  ResourceLoader.singleton
-      .addResourceFormatLoader(Ref(DartResourceFormatLoader()));
-  ResourceSaver.singleton
-      .addResourceFormatSaver(Ref(DartResourceFormatSaver()));
+  ResourceLoader.singleton.addResourceFormatLoader(DartResourceFormatLoader());
+  ResourceSaver.singleton.addResourceFormatSaver(DartResourceFormatSaver());
 
   print('Everything loaded a-ok!');
 
