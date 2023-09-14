@@ -102,7 +102,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
   GDError vSave(Resource? resource, String path, int flags) {
     if (resource == null) return GDError.errInvalidParameter;
 
-    final script = gde.cast<DartScript>(resource);
+    final script = resource.cast<DartScript>();
     if (script == null) return GDError.errBug;
 
     final file = FileAccess.open(path, FileAccessModeFlags.write);
@@ -128,7 +128,7 @@ class DartResourceFormatSaver extends ResourceFormatSaver {
 
   @override
   bool vRecognize(Resource? resource) {
-    if (gde.cast<DartScript>(resource) != null) {
+    if (resource?.cast<DartScript>() != null) {
       return true;
     }
     return false;

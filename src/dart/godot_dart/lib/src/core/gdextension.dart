@@ -177,46 +177,6 @@ class GodotDart {
         variantType, name.nativePtr.cast(), hash);
   }
 
-  T? cast<T>(GodotObject? from) {
-    if (from == null) {
-      return null;
-    }
-
-    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final classTag = getClassTag(typeInfo.className);
-    Pointer<Void> casted;
-    if (classTag != nullptr) {
-      casted = gde.ffiBindings.gde_object_cast_to(from.nativePtr, classTag);
-      if (casted == nullptr) {
-        return null;
-      }
-
-      if (typeInfo.bindingToken != null) {
-        final persistent = gde.ffiBindings.gde_object_get_instance_binding(
-          casted,
-          typeInfo.bindingToken!,
-          gde.engineBindingCallbacks,
-        );
-        final dartObject = dartBindings.objectFromInstanceBinding(persistent);
-
-        return dartObject as T;
-      }
-      // TODO: What case is there where there is a class tag but no binding token?
-    } else {
-      // Try getting the script instance, and casting from that
-      final scriptInstance = gde.ffiBindings.gde_object_get_script_instance(
-          from.nativePtr, DartScriptLanguage.singleton.nativePtr);
-      if (scriptInstance != nullptr) {
-        final o = gde.dartBindings.objectFromScriptInstance(scriptInstance);
-        if (o is T) {
-          return o;
-        }
-      }
-    }
-
-    return null;
-  }
-
   // One line simple remappings
   GDExtensionPtrConstructor variantGetConstructor(int variantType, int index) =>
       ffiBindings.gde_variant_get_ptr_constructor(variantType, index);
@@ -248,4 +208,43 @@ class GodotDart {
       ffiBindings.gde_classdb_construct_object(className.nativePtr.cast());
   Pointer<Void> getClassTag(StringName className) =>
       ffiBindings.gde_classdb_get_class_tag(className.nativePtr.cast());
+}
+
+extension GodotObjectCast on GodotObject {
+  T? cast<T>() {
+    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
+    final classTag = gde.getClassTag(typeInfo.className);
+    Pointer<Void> casted;
+    if (classTag != nullptr) {
+      casted = gde.ffiBindings.gde_object_cast_to(nativePtr, classTag);
+      if (casted == nullptr) {
+        return null;
+      }
+
+      if (typeInfo.bindingToken != null) {
+        final persistent = gde.ffiBindings.gde_object_get_instance_binding(
+          casted,
+          typeInfo.bindingToken!,
+          gde.engineBindingCallbacks,
+        );
+        final dartObject =
+            gde.dartBindings.objectFromInstanceBinding(persistent);
+
+        return dartObject as T;
+      }
+      // TODO: What case is there where there is a class tag but no binding token?
+    } else {
+      // Try getting the script instance, and casting from that
+      final scriptInstance = gde.ffiBindings.gde_object_get_script_instance(
+          nativePtr, DartScriptLanguage.singleton.nativePtr);
+      if (scriptInstance != nullptr) {
+        final o = gde.dartBindings.objectFromScriptInstance(scriptInstance);
+        if (o is T) {
+          return o;
+        }
+      }
+    }
+
+    return null;
+  }
 }

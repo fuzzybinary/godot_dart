@@ -12,7 +12,7 @@ extension TNode on Node {
       name = GDString.fromStringName(typeInfo.className);
     }
     var node = getNode(NodePath.fromGDString(name));
-    return gde.cast<T>(node);
+    return node?.cast<T>();
   }
 }
 

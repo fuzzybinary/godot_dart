@@ -747,35 +747,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
 }
 
 void GodotDartBindings::class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    // oooff
-    return;
-  }
-
-  DartEngineBinding *binding = reinterpret_cast<DartEngineBinding *>(p_instance);
-  if (binding->is_weak) {
-    // If the binding is weak, there's a possibility Dart is asking us to kill this in
-    // a way that does not allow us to call back into any other Dart code other than deleting
-    // the weak reference. So just do that and be done with it.
-    delete binding;
-    return;
-  }
-
-  bindings->execute_on_dart_thread([&]() {
-    Dart_EnterScope();
-
-    Dart_Handle obj = binding->get_object();
-    Dart_Handle ret = Dart_Invoke(obj, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
-    if (Dart_IsError(ret)) {
-      GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
-      GD_PRINT_ERROR(Dart_GetError(ret));
-    }
-
-    delete binding;
-
-    Dart_ExitScope();
-  });
+  // Instance is properly freed by engine binding callbacks
 }
 
 void *GodotDartBindings::get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name) {
@@ -882,13 +854,14 @@ void bind_class(Dart_NativeArguments args) {
   }
 
   GDExtensionClassCreationInfo2 info = {0};
+  info.is_exposed = true;
   info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
   info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
   info.call_virtual_func = GodotDartBindings::call_virtual_func;
-  info.reference_func = GodotDartBindings::reference;
-  info.unreference_func = GodotDartBindings::unreference;
+  //info.reference_func = GodotDartBindings::reference;
+  //info.unreference_func = GodotDartBindings::unreference;
 
   gde_classdb_register_extension_class2(GDEWrapper::instance()->get_library_ptr(), sn_name, sn_parent, &info);
 }

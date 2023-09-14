@@ -74,9 +74,7 @@ class GameLogic extends Node {
 
   @GodotExport()
   void onMobTimerTimeout() {
-    final mob = gde.cast<Mob>(
-      mobScene?.instantiate(),
-    );
+    final mob = mobScene?.instantiate()?.cast<Mob>();
     if (mob != null) {
       var mobSpawnLocation =
           getNodeT<PathFollow2D>('MobPath/MobSpawnLocation')!;
