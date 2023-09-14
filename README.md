@@ -9,7 +9,7 @@ And I want to use it in Godot.
 # Current State
 
 ```
-⚠ NOTE -- Current master of this extension currently requires [this PR](https://github.com/godotengine/godot/pull/80040). Once that
+⚠ NOTE -- Current master of this extension currently requires [this PR](https://github.com/godotengine/godot/pull/80671). Once that
 PR is merged, this extension will only be Godot 4.2 compatible
 ```
 
@@ -92,6 +92,7 @@ class Simple extends Sprite2D {
   // Create a static `sTypeInfo`. This is required for various Dart methods
   // implemented in C++ to gather information about your type.
   static late TypeInfo sTypeInfo = TypeInfo(
+    Simple,
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
     // a vTable getter is required for classes that will be used from extensions.
@@ -106,11 +107,8 @@ class Simple extends Sprite2D {
 
   double _timePassed = 0.0;
 
-  // Constructor is required and MUST call [postInitialize] for all classes usable
-  // from an extension.
-  Simple() : super() {
-    postInitialize();
-  }
+  // Parameterless constructor is required and must call super()
+  Simple() : super();
   
   // All virtual functions from Godot should be available, and start
   // with a v instead of an underscore.
@@ -171,12 +169,10 @@ class SimpleScript extends Sprite2D  {
   TypeInfo get typeInfo => SimpleScript.sTypeInfo;
   
   // Required constructor
-  SimpleScript() : super() {
-    postInitialize();
-  }
+  SimpleScript() : super();
 
   // Second required contructor. Classes that are Scripts must have a named constructor 
-  // called `withNonNullOwner`. Do not call `postInitialize` from here.
+  // called `withNonNullOwner`.
   SimpleScript.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 
@@ -189,6 +185,13 @@ class SimpleScript extends Sprite2D  {
   void onSignal() {
 
   }
+
+  // Overridden virtuals are added automatically via build_runner
+  @override
+  void vReady() {}
+
+  @override
+  void vProcess(double delta) {}
 }
 ```
 

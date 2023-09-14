@@ -89,11 +89,10 @@ class $className extends $baseClassName  {
   TypeInfo get typeInfo => sTypeInfo;
 
   
-  $className() : super() {
-    postInitialize();
-  }
+  $className() : super();
 
-  $className.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  $className.withNonNullOwner(Pointer<Void> owner) 
+    : super.withNonNullOwner(owner);
 
   @override
   void vReady() {
