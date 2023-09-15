@@ -10,12 +10,12 @@
 #include <dart_tools_api.h>
 #include <godot/gdextension_interface.h>
 
+#include "dart_godot_binding.h"
 #include "dart_helpers.h"
 #include "dart_script_instance.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
-#include "dart_godot_binding.h"
 #include "ref_counted_wrapper.h"
 
 void dart_message_notify_callback(Dart_Isolate isolate) {
@@ -206,6 +206,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
 
 void GodotDartBindings::shutdown() {
   Dart_EnterIsolate(_isolate);
+  _isolate_current_thread = std::this_thread::get_id();
+
   Dart_EnterScope();
 
   Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
@@ -223,11 +225,13 @@ void GodotDartBindings::shutdown() {
 
   DartDll_DrainMicrotaskQueue();
   Dart_ExitScope();
-  Dart_ExitIsolate();
+  //Dart_ExitIsolate();
 
   // Don't actually shut down. Godot still has some cleanup to do. 😡
-  //Dart_ShutdownIsolate();
-  //DartDll_Shutdown();
+  _is_stopping = true;
+  Dart_ShutdownIsolate();
+  DartDll_Shutdown();
+  _instance = nullptr;
 }
 
 void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
@@ -889,18 +893,8 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   gde_object_destroy(extention_object);
 }
 
-GDE_EXPORT void finalize_refcounted_extension_object(GDExtensionObjectPtr extention_object) {
-  if (extention_object == nullptr) {
-    return;
-  }
-
-  /*RefCountedWrapper wrapper(extention_object);
-  if (wrapper.unreference()) {
-    gde_object_destroy(extention_object);
-  }*/
-}
-
-GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder) {
+GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder,
+                                        bool is_refcounted) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings || godot_object == nullptr) {
     return nullptr;
@@ -911,7 +905,7 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
   DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
                  "Error creating bindings");
 
-  DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder);
+  DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder, is_refcounted);
   GDExtensionScriptInstancePtr godot_script_instance =
       gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
@@ -924,8 +918,7 @@ GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_in
     return Dart_Null();
   }
 
-  Dart_PersistentHandle persistent = script_instance->get_dart_object();
-  DART_CHECK_RET(dart_object, Dart_HandleFromPersistent(persistent), Dart_Null(),
+  DART_CHECK_RET(dart_object, script_instance->get_dart_object(), Dart_Null(),
                  "Failed to get object from persistent handle");
 
   return dart_object;
@@ -946,7 +939,6 @@ GDE_EXPORT void perform_frame_maintenance() {
     DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
     bindings->_pending_messages--;
   }
-  
 
   Dart_ExitScope();
 }

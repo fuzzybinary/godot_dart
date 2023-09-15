@@ -33,8 +33,6 @@ abstract class ExtensionType implements Finalizable {
   // delete the object
   static final _finalizer =
       NativeFinalizer(gde.dartBindings.finalizeExtensionObject);
-  static final _refCountedFinalizer =
-      NativeFinalizer(gde.dartBindings.finalizeRefCountedExtensionObject);
 
   GDExtensionObjectPtr _owner = nullptr;
   GDExtensionObjectPtr get nativePtr => _owner;
@@ -55,15 +53,13 @@ abstract class ExtensionType implements Finalizable {
     // Only attach the finalizer if we're refcouted, because Dart
     // didn't create this object and doesn't own it.
     if (this is RefCounted) {
-      _refCountedFinalizer.attach(this, _owner, detach: this);
+      _finalizer.attach(this, _owner, detach: this);
     }
     _tieDartToNative();
   }
 
   void _attachFinalizer() {
-    if (this is RefCounted) {
-      _refCountedFinalizer.attach(this, _owner, detach: this);
-    } else {
+    if (this is! RefCounted) {
       _finalizer.attach(this, _owner, detach: this);
     }
   }
@@ -87,7 +83,6 @@ abstract class ExtensionType implements Finalizable {
     // the object. In that case the object shouldn't have been registered
     // to the finalizer and this call won't do anything.
     _finalizer.detach(this);
-    _refCountedFinalizer.detach(this);
     _owner = Pointer.fromAddress(0);
   }
 }

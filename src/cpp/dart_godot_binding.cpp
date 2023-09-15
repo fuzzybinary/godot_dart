@@ -21,6 +21,9 @@ void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
 }
 
 DartGodotInstanceBinding::~DartGodotInstanceBinding() {
+  // Can't do anything as Dart is shutdown
+  if (GodotDartBindings::instance() == nullptr) return;
+
   if (_persistent_handle) {
     if (_is_weak) {
       Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)_persistent_handle);
@@ -128,15 +131,17 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
 
 static void __engine_binding_free_callback(void *p_token, void *p_instance, void *p_binding) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
+  DartGodotInstanceBinding *binding = reinterpret_cast<DartGodotInstanceBinding *>(p_binding);
   if (!bindings) {
+    // Dart is already shutdown, but let's not leak memory
+    delete binding;
     return;
   }
-
-  DartGodotInstanceBinding *binding = reinterpret_cast<DartGodotInstanceBinding *>(p_binding);
-  if (binding->is_weak()) {
-    // If the binding is weak, there's a possibility Dart is asking us to kill this in
-    // a way that does not allow us to call back into any other Dart code other than deleting
-    // the weak reference. So just do that and be done with it.
+  
+  if (binding->is_weak() || bindings->_is_stopping) {
+    // If the binding is weak or we're shutting down, there's a possibility Dart is asking us 
+    // to kill this in a way that does not allow us to call back into any other Dart code other 
+    // than deleting the reference. So just do that and be done with it.
     delete binding;
     return;
   }
@@ -144,7 +149,6 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(p_token);
     Dart_Handle dart_object = binding->get_dart_object();
 
     if (!Dart_IsNull(dart_object)) {
@@ -175,6 +179,10 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
   int refcount = refcounted.get_reference_count();
 
   bool retValue = refcount == 0;
+  if (bindings->_is_stopping) {
+    return retValue;
+  }
+
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 

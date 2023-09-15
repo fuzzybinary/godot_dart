@@ -153,8 +153,16 @@ class DartScript extends ScriptExtension {
 
     if (_scriptType == null) return nullptr;
 
-    Pointer<Void> scriptInstance = gde.dartBindings
-        .createScriptInstance(_scriptType!, this, forObject.nativePtr, false);
+    // TODO: There has to be a better way to check this
+    final refCounted = forObject.cast<RefCounted>();
+
+    Pointer<Void> scriptInstance = gde.dartBindings.createScriptInstance(
+      _scriptType!,
+      this,
+      forObject.nativePtr,
+      false,
+      refCounted != null,
+    );
 
     return scriptInstance;
   }
@@ -167,8 +175,16 @@ class DartScript extends ScriptExtension {
     final type = DartScriptLanguage.singleton.getTypeForScript(scriptPath);
     if (type == null) return nullptr;
 
-    Pointer<Void> scriptInstance = gde.dartBindings
-        .createScriptInstance(type, this, forObject.nativePtr, true);
+    // TODO: There has to be a better way to check this
+    final refCounted = forObject.cast<RefCounted>();
+
+    Pointer<Void> scriptInstance = gde.dartBindings.createScriptInstance(
+      type,
+      this,
+      forObject.nativePtr,
+      true,
+      refCounted != null,
+    );
 
     return scriptInstance;
   }

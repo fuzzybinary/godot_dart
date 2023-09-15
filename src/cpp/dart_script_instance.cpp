@@ -2,26 +2,21 @@
 
 #include <dart_api.h>
 
-#include "dart_helpers.h"
 #include "dart_bindings.h"
+#include "dart_helpers.h"
 #include "gde_wrapper.h"
+#include "ref_counted_wrapper.h"
 
-DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner, bool is_placeholder)
-    : _is_placeholder(is_placeholder)
-    , _godot_script_obj(nullptr) {
-  _dart_object = Dart_NewPersistentHandle(for_object);
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner,
+                                       bool is_placeholder, bool is_refcounted)
+    : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_script_obj(nullptr) {
+
+  _binding.initialize(for_object, is_refcounted);
   _dart_script = Dart_NewPersistentHandle(script);
-  _owner = owner;
 }
 
 DartScriptInstance::~DartScriptInstance() {
-  GodotDartBindings *gde = GodotDartBindings::instance();
-  if (gde != nullptr) {
-    gde->execute_on_dart_thread([&] {
-      Dart_DeletePersistentHandle(_dart_object);
-      Dart_DeletePersistentHandle(_dart_script);
-    });
-  }
+  Dart_DeletePersistentHandle(_dart_script);
 }
 
 bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value) {
@@ -35,11 +30,11 @@ bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariant
     DartBlockScope scope;
 
     Dart_Handle field_name = p_name.to_dart();
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to find scriptInfo");
-    
+
     Dart_Handle prop_info_args[] = {field_name};
     DART_CHECK(dart_property_info,
                Dart_Invoke(script_info, Dart_NewStringFromCString("getPropertyInfo"), 1, prop_info_args),
@@ -57,7 +52,8 @@ bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariant
                  1, &value_address),
         prop_type_info,
     };
-    DART_CHECK(dart_property_value, Dart_Invoke(native_library, Dart_NewStringFromCString("_variantPtrToDart"), 2, args),
+    DART_CHECK(dart_property_value,
+               Dart_Invoke(native_library, Dart_NewStringFromCString("_variantPtrToDart"), 2, args),
                "Failed to convert variant to Dart object");
     DART_CHECK(result, Dart_SetField(object, field_name, dart_property_value), "Failed to set field");
 
@@ -77,8 +73,8 @@ bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionVariantPtr r
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
     Dart_Handle field_name = p_name.to_dart();
-    
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to find scriptInfo");
@@ -120,7 +116,7 @@ const GDExtensionPropertyInfo *DartScriptInstance::get_property_list(uint32_t *r
     DartBlockScope scope;
 
     // This is a lot of work just to get the size of the list
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
@@ -152,7 +148,7 @@ void DartScriptInstance::free_property_list(const GDExtensionPropertyInfo *p_lis
     DartBlockScope scope;
 
     // This is a lot of work just to get the size of the list
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
@@ -188,7 +184,7 @@ GDExtensionBool DartScriptInstance::property_get_revert(const GDStringName &p_na
 }
 
 GDExtensionObjectPtr DartScriptInstance::get_owner() {
-  return _owner;
+  return _binding.get_godot_object();
 }
 
 void DartScriptInstance::get_property_state(GDExtensionScriptInstancePropertyStateAdd p_add_func, void *p_userdata) {
@@ -205,7 +201,7 @@ const GDExtensionMethodInfo *DartScriptInstance::get_method_list(uint32_t *r_cou
     DartBlockScope scope;
 
     // This is a lot of work just to get the size of the list
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
@@ -237,7 +233,7 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
     DartBlockScope scope;
 
     // This is a lot of work just to get the size of the list
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
@@ -266,11 +262,11 @@ GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
-    
+
     Dart_Handle method_info_args[] = {p_name.to_dart()};
     DART_CHECK(method_info,
                Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
@@ -293,7 +289,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   // TODO: Figure out wth placeholders do
   if (_is_placeholder) {
     // Placeholders always return CALL_ERROR_INVALID_METHOD
-    r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD; 
+    r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
     return;
   }
 
@@ -302,7 +298,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
+    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
@@ -363,7 +359,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
   if (dart_args != nullptr) {
     delete[] dart_args;
   }
-  
+
   // TODO: How do we throw exceptions in Godot?
   r_error->error = GDEXTENSION_CALL_OK;
 }
@@ -375,10 +371,26 @@ void DartScriptInstance::to_string(GDExtensionBool *r_is_valid, GDExtensionStrin
 }
 
 void DartScriptInstance::ref_count_incremented() {
+  RefCountedWrapper refcounted(_binding.get_godot_object());
+  int refcount = refcounted.get_reference_count();
+
+  // Refcount incremented, change our reference to strong to prevent Dart from finalizing
+  if (refcount > 1 && _binding.is_weak()) {
+    _binding.convert_to_strong();
+  }
 }
 
 GDExtensionBool DartScriptInstance::ref_count_decremented() {
-  return GDExtensionBool();
+  RefCountedWrapper refcounted(_binding.get_godot_object());
+  int refcount = refcounted.get_reference_count();
+
+  if (refcount == 1 && !_binding.is_weak()) {
+    // We're the only ones holding on, switch us to weak so Dart will delete when it
+    // has no more references
+    _binding.convert_to_weak();
+  }
+
+  return refcount == 0;
 }
 
 GDExtensionObjectPtr DartScriptInstance::get_script() {
@@ -566,8 +578,16 @@ GDExtensionScriptLanguagePtr script_instance_get_language(GDExtensionScriptInsta
 }
 
 void script_instance_free(GDExtensionScriptInstanceDataPtr p_instance) {
-  DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
-  delete instance;
+  // Needs to be done from the dart thread
+  GodotDartBindings *gde = GodotDartBindings::instance();
+  if (gde == nullptr) {
+    return;
+  }
+
+  gde->execute_on_dart_thread([&] {
+    DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
+    delete instance;
+  });
 }
 
 const GDExtensionScriptInstanceInfo2 *DartScriptInstance::get_script_instance_info() {

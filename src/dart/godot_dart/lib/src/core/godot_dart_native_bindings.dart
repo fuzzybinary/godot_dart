@@ -27,19 +27,17 @@ class GodotDartNativeBindings {
   late final finalizeExtensionObject =
       processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'finalize_extension_object');
-  late final finalizeRefCountedExtensionObject =
-      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-          'finalize_refcounted_extension_object');
   late final performFrameMaintenance = processLib
       .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
       .asFunction<void Function()>();
   late final createScriptInstance = processLib
       .lookup<
           NativeFunction<
-              Pointer<Void> Function(Handle, Handle, Pointer<Void>,
+              Pointer<Void> Function(Handle, Handle, Pointer<Void>, Bool,
                   Bool)>>('create_script_instance')
       .asFunction<
-          Pointer<Void> Function(Type, DartScript, Pointer<Void>, bool)>();
+          Pointer<Void> Function(
+              Type, DartScript, Pointer<Void>, bool, bool)>();
   late final objectFromScriptInstance = processLib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'object_from_script_instance')

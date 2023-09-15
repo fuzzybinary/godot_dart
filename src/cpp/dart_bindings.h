@@ -24,7 +24,7 @@ public:
   }
 
   explicit GodotDartBindings()
-      : _pending_messages(0), _isolate(nullptr) {
+      : _is_stopping(false), _pending_messages(0), _isolate(nullptr) {
   }
   ~GodotDartBindings();
 
@@ -59,6 +59,7 @@ private:
   static GodotDartBindings *_instance;
 
 public:
+  bool _is_stopping;
   int32_t _pending_messages;
   std::mutex _work_lock;
   Dart_Isolate _isolate;

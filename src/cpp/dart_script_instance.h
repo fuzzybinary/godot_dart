@@ -2,11 +2,13 @@
 
 #include <godot/gdextension_interface.h>
 
+#include "dart_godot_binding.h"
 #include "godot_string_wrappers.h"
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner, bool is_placeholder);
+  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner, bool is_placeholder,
+                     bool is_refcounted);
   ~DartScriptInstance();
 
   bool set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value);
@@ -20,7 +22,7 @@ public:
   GDExtensionBool property_can_revert(const GDStringName &p_name);
   GDExtensionBool property_get_revert(const GDStringName &p_name, GDExtensionVariantPtr r_ret);
 
-  GDExtensionObjectPtr get_owner();  
+  GDExtensionObjectPtr get_owner();
   void get_property_state(GDExtensionScriptInstancePropertyStateAdd p_add_func, void *p_userdata);
 
   const GDExtensionMethodInfo *get_method_list(uint32_t *r_count);
@@ -28,9 +30,8 @@ public:
 
   GDExtensionBool has_method(const GDStringName &p_name);
 
-  void call(const GDStringName* p_method, const GDExtensionConstVariantPtr *p_args,
-            GDExtensionInt p_argument_count, 
-    GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
+  void call(const GDStringName *p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count,
+            GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
   void notification(int32_t p_what, bool p_reversed);
   void to_string(GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
 
@@ -45,18 +46,19 @@ public:
 
   GDExtensionScriptLanguagePtr get_language();
 
-  Dart_PersistentHandle get_dart_object() {
-    return _dart_object;
+  Dart_Handle get_dart_object() {
+    return _binding.get_dart_object();
   }
 
-  static const GDExtensionScriptInstanceInfo2* get_script_instance_info();
+  static const GDExtensionScriptInstanceInfo2 *get_script_instance_info();
 
 private:
   bool _is_placeholder;
-  Dart_PersistentHandle _dart_object;
+
+  DartGodotInstanceBinding _binding;
+
   Dart_PersistentHandle _dart_script;
   GDExtensionObjectPtr _godot_script_obj;
-  GDExtensionObjectPtr _owner;
 
   static GDExtensionScriptInstanceInfo2 script_instance_info;
 };
