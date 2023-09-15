@@ -9,6 +9,7 @@
     <ClCompile Include="gde_dart_converters.cpp" />
     <ClCompile Include="gde_c_interface.cpp" />
     <ClCompile Include="ref_counted_wrapper.cpp" />
+    <ClCompile Include="dart_godot_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
@@ -18,6 +19,8 @@
     <ClInclude Include="gde_dart_converters.h" />
     <ClInclude Include="gde_c_interface.h" />
     <ClInclude Include="ref_counted_wrapper.h" />
+    <ClInclude Include="dart_godot_binding.h" />
+    <ClInclude Include="dart_helpers.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

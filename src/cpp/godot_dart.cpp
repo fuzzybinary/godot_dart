@@ -1,5 +1,6 @@
 #include <godot/gdextension_interface.h>
 
+#include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"

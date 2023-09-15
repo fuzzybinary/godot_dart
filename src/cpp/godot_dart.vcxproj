@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="dart_godot_binding.cpp" />
     <ClCompile Include="dart_bindings.cpp" />
     <ClCompile Include="dart_script_instance.cpp" />
     <ClCompile Include="gde_c_interface.cpp" />
@@ -29,7 +30,9 @@
     <ClCompile Include="ref_counted_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dart_godot_binding.h" />
     <ClInclude Include="dart_bindings.h" />
+    <ClInclude Include="dart_helpers.h" />
     <ClInclude Include="dart_script_instance.h" />
     <ClInclude Include="gde_c_interface.h" />
     <ClInclude Include="gde_dart_converters.h" />

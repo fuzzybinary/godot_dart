@@ -2,6 +2,7 @@
 #include "gde_wrapper.h"
 #include <malloc.h>
 
+#include "dart_helpers.h"
 #include "gde_c_interface.h"
 
 // *****

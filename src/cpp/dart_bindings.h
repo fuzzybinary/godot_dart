@@ -11,32 +11,10 @@
 
 #include "gde_dart_converters.h"
 
-#define DART_CHECK_RET(var, expr, ret, message)                                                                        \
-  Dart_Handle var = (expr);                                                                                            \
-  if (Dart_IsError(var)) {                                                                                             \
-    GD_PRINT_ERROR("GodotDart: "##message##": ");                                                                      \
-    GD_PRINT_ERROR(Dart_GetError(var));                                                                                \
-    return ret;                                                                                                        \
-  }
-
-#define DART_CHECK(var, expr, message) DART_CHECK_RET(var, expr, , message)
-
 enum class MethodFlags : int32_t {
   None,
   PropertyGetter,
   PropertySetter,
-};
-
-class DartBlockScope {
-
-public:
-  DartBlockScope() {
-    Dart_EnterScope();
-  }
-
-  ~DartBlockScope() {
-    Dart_ExitScope();
-  }
 };
 
 class GodotDartBindings {
@@ -46,14 +24,14 @@ public:
   }
 
   explicit GodotDartBindings()
-      : _stopRequested(false), _isolate(nullptr) {
+      : _pending_messages(0), _isolate(nullptr) {
   }
   ~GodotDartBindings();
 
   bool initialize(const char *script_path, const char *package_config);
   void shutdown();
 
-  GDExtensionScriptLanguagePtr get_language() {
+  GDExtensionScriptLanguagePtr get_language() const {
     return _dart_language;
   }
 
@@ -81,8 +59,6 @@ private:
   static GodotDartBindings *_instance;
 
 public:
-  bool _stopRequested;
-
   int32_t _pending_messages;
   std::mutex _work_lock;
   Dart_Isolate _isolate;

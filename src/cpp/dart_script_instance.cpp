@@ -2,6 +2,7 @@
 
 #include <dart_api.h>
 
+#include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
 
