@@ -83,6 +83,7 @@ private:
 public:
   bool _stopRequested;
 
+  int32_t _pending_messages;
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;

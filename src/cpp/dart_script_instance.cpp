@@ -263,7 +263,7 @@ GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
 
   bool hasMethod = false;
   gde->execute_on_dart_thread([&] {
-    Dart_EnterScope();
+    DartBlockScope scope;
 
     DART_CHECK(object, Dart_HandleFromPersistent(_dart_object), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");

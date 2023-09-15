@@ -20,6 +20,16 @@ extern "C" {
 void gde_weak_finalizer(void *isolate_callback_data, void *peer);
 }
 
+void dart_message_notify_callback(Dart_Isolate isolate) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    return;
+  }
+
+  // TODO: Does this need to be thread safe?
+  bindings->_pending_messages++;
+}
+
 /* Binding callbacks used for Engine types implemented in Godot and wrapped in Dart */
 
 // This is the binding between native and Dart
@@ -60,10 +70,8 @@ public:
 
   void initalize(Dart_Handle dart_object, bool is_refcounted) {
     is_weak = is_refcounted;
-    persistent_handle =
-        is_refcounted
-            ? (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer)
-            : (void *)Dart_NewPersistentHandle(dart_object);
+    persistent_handle = is_refcounted ? (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer)
+                                      : (void *)Dart_NewPersistentHandle(dart_object);
     is_initialized = true;
   }
 
@@ -204,6 +212,8 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
 
   bool retValue = refcount == 0;
   bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
     if (p_reference) {
       // Refcount incremented, change our reference to strong to prevent Dart from finalizing
       if (refcount > 1 && engine_binding->is_weak) {
@@ -295,6 +305,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   Dart_EnterIsolate(_isolate);
   {
     DartBlockScope scope;
+
+    Dart_SetMessageNotifyCallback(dart_message_notify_callback);
 
     Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
     Dart_Handle godot_dart_library = Dart_LookupLibrary(godot_dart_package_name);
@@ -424,6 +436,7 @@ void GodotDartBindings::shutdown() {
 
   DartDll_DrainMicrotaskQueue();
   Dart_ExitScope();
+  Dart_ExitIsolate();
 
   // Don't actually shut down. Godot still has some cleanup to do. 😡
   //Dart_ShutdownIsolate();
@@ -1109,7 +1122,7 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   if (extention_object == nullptr) {
     return;
   }
- 
+
   gde_object_destroy(extention_object);
 }
 
@@ -1156,16 +1169,21 @@ GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_in
 }
 
 GDE_EXPORT void perform_frame_maintenance() {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    return;
+  }
   Dart_EnterScope();
 
   uint64_t currentTime = Dart_TimelineGetMicros();
-  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... increase when we get to use once a frame.
+  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more
 
-  Dart_Handle result = Dart_WaitForEvent(1);
-  if (Dart_IsError(result)) {
-    GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
-    GD_PRINT_ERROR(Dart_GetError(result));
+  DartDll_DrainMicrotaskQueue();
+  while (bindings->_pending_messages > 0) {
+    DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
+    bindings->_pending_messages--;
   }
+  
 
   Dart_ExitScope();
 }

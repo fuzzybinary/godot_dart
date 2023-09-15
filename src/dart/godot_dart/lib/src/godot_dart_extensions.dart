@@ -35,6 +35,7 @@ class SignalAwaiter extends GodotObject {
 
   final GodotObject? source;
   final String? signalName;
+  Callable? callable;
   Completer<void> completer = Completer<void>();
 
   // TODO: Godot instantiates ClassDB classes to get their properties, which
@@ -42,12 +43,13 @@ class SignalAwaiter extends GodotObject {
   SignalAwaiter({this.source, this.signalName}) : super() {
     if (source == null || signalName == null) return;
 
-    final callable = Callable.fromObjectMethod(this, 'signalCalled');
-    source!.connect(signalName!, callable);
+    callable = Callable.fromObjectMethod(this, 'signalCalled');
+    source!.connect(signalName!, callable!);
   }
 
   void signalCalled() {
     completer.complete();
+    source?.disconnect(signalName!, callable!);
   }
 }
 

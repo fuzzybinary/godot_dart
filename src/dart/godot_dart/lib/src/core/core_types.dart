@@ -52,7 +52,11 @@ abstract class ExtensionType implements Finalizable {
 
   // Created from Godot
   ExtensionType.withNonNullOwner(this._owner) {
-    _attachFinalizer();
+    // Only attach the finalizer if we're refcouted, because Dart
+    // didn't create this object and doesn't own it.
+    if (this is RefCounted) {
+      _refCountedFinalizer.attach(this, _owner, detach: this);
+    }
     _tieDartToNative();
   }
 
@@ -83,6 +87,7 @@ abstract class ExtensionType implements Finalizable {
     // the object. In that case the object shouldn't have been registered
     // to the finalizer and this call won't do anything.
     _finalizer.detach(this);
+    _refCountedFinalizer.detach(this);
     _owner = Pointer.fromAddress(0);
   }
 }
