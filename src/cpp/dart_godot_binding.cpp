@@ -178,9 +178,14 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
   RefCountedWrapper refcounted(engine_binding->get_godot_object());
   int refcount = refcounted.get_reference_count();
 
-  bool retValue = refcount == 0;
+  bool is_dieing = refcount == 0;
   if (bindings->_is_stopping) {
-    return retValue;
+    return is_dieing;
+  }
+
+  if (engine_binding->is_weak() && is_dieing) {
+    // We can't jump to the dart thread if a weak reference is dieing.
+    return is_dieing;
   }
 
   bindings->execute_on_dart_thread([&] {
@@ -192,19 +197,19 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
         engine_binding->convert_to_strong();
       }
 
-      retValue = false;
+      is_dieing = false;
     } else {
       if (refcount == 1 && !engine_binding->is_weak()) {
         // We're the only ones holding on, switch us to weak so Dart will delete when it
         // has no more references
         engine_binding->convert_to_weak();
 
-        retValue = false;
+        is_dieing = false;
       }
     }
   });
 
-  return retValue;
+  return is_dieing;
 }
 
 GDExtensionInstanceBindingCallbacks DartGodotInstanceBinding::engine_binding_callbacks = {

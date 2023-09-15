@@ -18,48 +18,10 @@
 #include "godot_string_wrappers.h"
 #include "ref_counted_wrapper.h"
 
-void dart_message_notify_callback(Dart_Isolate isolate) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    return;
-  }
-
-  // TODO: Does this need to be thread safe?
-  bindings->_pending_messages++;
-}
-
-void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
-  Dart_EnterScope();
-
-  Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
-  Dart_Handle parent_class = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentClass"));
-  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
-  Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
-
-  type_info->type_name = get_opaque_address(class_name);
-  if (Dart_IsNull(parent_class)) {
-    type_info->parent_name = nullptr;
-  } else {
-    type_info->parent_name = get_opaque_address(parent_class);
-  }
-  int64_t temp;
-  Dart_IntegerToInt64(variant_type, &temp);
-  type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
-  if (Dart_IsNull(binding_token)) {
-    type_info->binding_token = nullptr;
-    type_info->binding_callbacks = nullptr;
-  } else {
-    Dart_Handle dart_address = Dart_GetField(binding_token, Dart_NewStringFromCString("address"));
-
-    uint64_t address = 0;
-    Dart_IntegerToUint64(dart_address, &address);
-
-    type_info->binding_token = (void *)address;
-    type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
-  }
-
-  Dart_ExitScope();
-}
+// Forward declarations for Dart callbacks and helpers
+Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
+void dart_message_notify_callback(Dart_Isolate isolate);
+void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info);
 
 struct MethodInfo {
   std::string method_name;
@@ -69,7 +31,6 @@ struct MethodInfo {
 };
 
 GodotDartBindings *GodotDartBindings::_instance = nullptr;
-Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
 
 GodotDartBindings::~GodotDartBindings() {
   _instance = nullptr;
@@ -611,12 +572,6 @@ void GodotDartBindings::call_virtual_func(void *p_instance, GDExtensionConstStri
   });
 }
 
-void GodotDartBindings::reference(GDExtensionClassInstancePtr p_instance) {
-}
-
-void GodotDartBindings::unreference(GDExtensionClassInstancePtr p_instance) {
-}
-
 /* Static Functions From Dart */
 
 void dart_print(Dart_NativeArguments args) {
@@ -842,7 +797,51 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   return ret;
 }
 
+void dart_message_notify_callback(Dart_Isolate isolate) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    return;
+  }
+
+  // TODO: Does this need to be thread safe?
+  bindings->_pending_messages++;
+}
+
+void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
+  Dart_EnterScope();
+
+  Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
+  Dart_Handle parent_class = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentClass"));
+  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
+  Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
+
+  type_info->type_name = get_opaque_address(class_name);
+  if (Dart_IsNull(parent_class)) {
+    type_info->parent_name = nullptr;
+  } else {
+    type_info->parent_name = get_opaque_address(parent_class);
+  }
+  int64_t temp;
+  Dart_IntegerToInt64(variant_type, &temp);
+  type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
+  if (Dart_IsNull(binding_token)) {
+    type_info->binding_token = nullptr;
+    type_info->binding_callbacks = nullptr;
+  } else {
+    Dart_Handle dart_address = Dart_GetField(binding_token, Dart_NewStringFromCString("address"));
+
+    uint64_t address = 0;
+    Dart_IntegerToUint64(dart_address, &address);
+
+    type_info->binding_token = (void *)address;
+    type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
+  }
+
+  Dart_ExitScope();
+}
+
 // C calls from Dart
+
 extern "C" {
 
 GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr godot_object, bool is_refcounted,
@@ -893,8 +892,7 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   gde_object_destroy(extention_object);
 }
 
-GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder,
-                                        bool is_refcounted) {
+GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder, bool is_refcounted) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings || godot_object == nullptr) {
     return nullptr;
@@ -905,7 +903,8 @@ GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, vo
   DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
                  "Error creating bindings");
 
-  DartScriptInstance *script_instance = new DartScriptInstance(dart_object, script, godot_object, is_placeholder, is_refcounted);
+  DartScriptInstance *script_instance =
+      new DartScriptInstance(dart_object, script, godot_object, is_placeholder, is_refcounted);
   GDExtensionScriptInstancePtr godot_script_instance =
       gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                   reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
