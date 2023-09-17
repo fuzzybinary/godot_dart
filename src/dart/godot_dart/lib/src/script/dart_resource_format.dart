@@ -3,6 +3,8 @@ import 'package:path/path.dart' as p;
 import '../../godot_dart.dart';
 import 'dart_script.dart';
 
+Map<String, DartScript> _scriptCache = {};
+
 class DartResourceFormatLoader extends ResourceFormatLoader {
   static TypeInfo sTypeInfo = TypeInfo(
     DartResourceFormatLoader,
@@ -57,20 +59,22 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
   @override
   Variant vLoad(
       String path, String originalPath, bool useSubThreads, int cacheMode) {
-    // Can cast directly since this is a direct Dart -> Dart call
-    final script = DartScriptLanguage.singleton.vCreateScript() as DartScript?;
-
+    var script = _scriptCache[path];
     if (script == null) {
-      return Variant();
+      // Can cast directly since this is a direct Dart -> Dart call
+      script = DartScriptLanguage.singleton.vCreateScript() as DartScript?;
+
+      if (script == null) {
+        return Variant();
+      }
+
+      _scriptCache[path] = script;
     }
 
-    script.setPath(originalPath);
-    final file = FileAccess.open(originalPath, FileAccessModeFlags.read);
-    if (file != null) {
-      final text = file.getAsText();
-      script.setSourceCode(text);
-      file.close();
+    if (cacheMode == ResourceLoaderCacheMode.cacheModeIgnore.value) {
+      script.loadFromDisk(originalPath);
     }
+    script.setPath(path);
 
     return convertToVariant(script);
   }

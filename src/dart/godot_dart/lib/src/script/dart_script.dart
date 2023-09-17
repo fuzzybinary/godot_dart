@@ -30,6 +30,15 @@ class DartScript extends ScriptExtension {
   DartScript.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 
+  void loadFromDisk(String path) {
+    final file = FileAccess.open(path, FileAccessModeFlags.read);
+    if (file != null) {
+      final text = file.getAsText();
+      setSourceCode(text);
+      file.close();
+    }
+  }
+
   @override
   DartScriptLanguage? vGetLanguage() {
     return DartScriptLanguage.singleton;
@@ -137,7 +146,6 @@ class DartScript extends ScriptExtension {
 
   @override
   GDError vReload(bool keepState) {
-    print('vReload');
     _refreshType();
 
     return GDError.ok;
