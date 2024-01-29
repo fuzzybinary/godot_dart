@@ -1,0 +1,98 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(godot_dart VERSION 0.1)
+
+set(DART_DIR "${PROJECT_SOURCE_DIR}/../dart_dll")
+set(GODOT_CPP_DIR "${PROJECT_SOURCE_DIR}/../../godot-cpp")
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
+
+add_library(godot_dart SHARED
+    dart_bindings.cpp
+    dart_bindings.h
+    dart_godot_binding.cpp
+    dart_godot_binding.h
+    dart_helpers.h
+    dart_script_instance.cpp
+    dart_script_instance.h
+    gde_c_interface.cpp
+    gde_c_interface.h
+    gde_dart_converters.cpp
+    gde_dart_converters.h
+    gde_wrapper.cpp
+    gde_wrapper.h
+    godot_dart.cpp
+    godot_string_wrappers.cpp
+    godot_string_wrappers.h
+    ref_counted_wrapper.cpp
+    ref_counted_wrapper.h
+)
+
+target_include_directories(godot_dart PUBLIC
+    "${GODOT_CPP_DIR}/include"
+    "${GODOT_CPP_DIR}/gen/include"
+    "${PROJECT_SOURCE_DIR}/../../godot-headers"
+    "${DART_DIR}/include"
+)
+
+find_library(DART_DLL_DEBUG
+    NAMES "dart_dll"
+    HINTS "${DART_DIR}/bin/win64_debug"
+)
+
+find_library(DART_DLL_RELEASE
+    NAMES "dart_dll"
+    HINTS "${DART_DIR}/bin/win64"
+)
+
+if(WIN32)
+    set_property(TARGET godot_dart PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded"
+    )
+
+    target_compile_definitions(godot_dart PRIVATE
+        _HAS_EXCEPTIONS=0
+        _SCL_SECURE=0
+        _SECURE_SCL=0
+        _SCL_SECURE_NO_WARNINGS
+        _CRT_SECURE_NO_WARNINGS
+        _CRT_SECURE_NO_DEPRECATE        
+        _WIN
+    )
+
+    target_link_libraries(godot_dart
+        dbghelp
+        bcrypt
+        rpcrt4
+        ws2_32
+        Iphlpapi
+        Psapi
+        shlwapi
+    )
+    set_property(TARGET godot_dart PROPERTY
+             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# elseif(LINUX)
+#     set(THREADS_PREFER_PTHREAD_FLAG ON)
+#     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/linux-x64/clang/bin/clang")
+#     set(CMAKE_CXX_COMPILER "${DART_DIR}/buildtools/linux-x64/clang/bin/clang++")
+#     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -nostdlib++ ${DART_DIR}/buildtools/linux-x64/clang/lib/x86_64-unknown-linux-gnu/libc++.a")
+#     #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+
+#     find_package(Threads REQUIRED)
+#     target_link_libraries(godot_dart 
+#         Threads::Threads
+#         ${CMAKE_DL_LIBS}
+#     )
+# elseif(APPLE)
+#     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang")
+#     set(CMAKE_CXX_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang++")
+#     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -nostdlib++ ${DART_DIR}/buildtools/mac-x64/clang/lib/libc++.a -framework Cocoa -framework QuartzCore -framework Security")
+endif()
+
+target_link_libraries(godot_dart godot-cpp)
+
+# TODO: Debug / release dart_dll libraries
+target_link_libraries(godot_dart ${DART_DLL_RELEASE})
