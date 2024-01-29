@@ -440,7 +440,7 @@ class Vector3 extends BuiltinType {
   void negate() {
     x = -x;
     y = -y;
-    x = -z;
+    z = -z;
   }
 
   // --- Operators ---
