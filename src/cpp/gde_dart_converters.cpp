@@ -5,7 +5,7 @@
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
-#include "godot_string_wrappers.h"
+#include "godot_string_helpers.h"
 
 void *get_object_address(Dart_Handle engine_handle) {
   Dart_Handle native_ptr = Dart_GetField(engine_handle, Dart_NewStringFromCString("nativePtr"));
@@ -43,9 +43,8 @@ void *get_opaque_address(Dart_Handle variant_handle) {
 }
 
 void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodInfo *method_info) {
-  DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");
-  GDStringName *name = new GDStringName(dart_name);
-  method_info->name = name;
+  DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");  
+  method_info->name = create_godot_string_name_ptr(dart_name);
   // TODO: id?
   method_info->id = 0;
 
@@ -53,7 +52,7 @@ void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodIn
              "Failed to get return info");
   if (Dart_IsNull(dart_ret_prop_info)) {
     method_info->return_value = {
-        GDEXTENSION_VARIANT_TYPE_NIL, new GDStringName(), new GDStringName(), 0, new GDString(), 0,
+        GDEXTENSION_VARIANT_TYPE_NIL, new godot::StringName(), new godot::StringName(), 0, new godot::String(), 0,
     };
   } else {
     gde_property_info_from_dart(dart_ret_prop_info, &method_info->return_value);
@@ -103,7 +102,7 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
   prop_info->class_name = type_info.type_name;
 
   DART_CHECK(dart_name, Dart_GetField(dart_property_info, Dart_NewStringFromCString("name")), "Failed to get name");
-  GDStringName *name = new GDStringName(dart_name);
+  godot::StringName *name = create_godot_string_name_ptr(dart_name);
   prop_info->name = name;
 
   DART_CHECK(dart_property_hint, Dart_GetField(dart_property_info, Dart_NewStringFromCString("hint")),
@@ -114,7 +113,7 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
 
   DART_CHECK(dart_hint_string, Dart_GetField(dart_property_info, Dart_NewStringFromCString("hintString")),
              "Failed to get hint string");
-  GDString *hint_string = new GDString(dart_hint_string);
+  godot::String *hint_string = create_godot_string_ptr(dart_hint_string);
   prop_info->hint_string = hint_string;
 
   DART_CHECK(dart_flags, Dart_GetField(dart_property_info, Dart_NewStringFromCString("flags")), "Failed to get hint");
@@ -126,9 +125,9 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
 // Only use for freeing propery info fiels made with gde_property_info_from_dart
 void gde_free_property_info_fields(GDExtensionPropertyInfo *prop_info) {
   if (prop_info->name) {
-    delete reinterpret_cast<GDStringName *>(prop_info->name);
+    delete reinterpret_cast<godot::StringName *>(prop_info->name);
   }
   if (prop_info->hint_string) {
-    delete reinterpret_cast<GDString *>(prop_info->hint_string);
+    delete reinterpret_cast<godot::String *>(prop_info->hint_string);
   }
 }

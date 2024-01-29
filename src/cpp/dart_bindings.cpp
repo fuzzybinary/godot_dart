@@ -8,15 +8,16 @@
 #include <dart_api.h>
 #include <dart_dll.h>
 #include <dart_tools_api.h>
-#include <godot/gdextension_interface.h>
+
+#include <gdextension_interface.h>
+#include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/string_name.hpp>
 
 #include "dart_godot_binding.h"
 #include "dart_helpers.h"
 #include "dart_script_instance.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
-#include "godot_string_wrappers.h"
-#include "ref_counted_wrapper.h"
 
 // Forward declarations for Dart callbacks and helpers
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
@@ -247,7 +248,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
 
   GDExtensionPropertyInfo *arg_info = new GDExtensionPropertyInfo[args_length];
   GDExtensionClassMethodArgumentMetadata *arg_meta_info = new GDExtensionClassMethodArgumentMetadata[args_length];
-  for (size_t i = 0; i < args_length; ++i) {
+  for (intptr_t i = 0; i < args_length; ++i) {
     Dart_Handle arg_type_info = Dart_ListGetAt(args_list, i);
     TypeInfo c_type_info;
     type_info_from_dart(&c_type_info, arg_type_info);
@@ -261,7 +262,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
     arg_meta_info[i] = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
   }
 
-  int flags = GDEXTENSION_METHOD_FLAG_NORMAL;
+  uint32_t flags = GDEXTENSION_METHOD_FLAG_NORMAL;
   // TODO: Pass in virtual flag
   if (method_name[0] == '_') {
     flags |= GDEXTENSION_METHOD_FLAG_VIRTUAL;
@@ -282,7 +283,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
     break;
   }
 
-  GDStringName gd_method_name(full_method_name.c_str());
+  godot::StringName gd_method_name(full_method_name.c_str());
   GDExtensionClassMethodInfo method_info = {
       gd_method_name._native_ptr(),
       info,
@@ -319,7 +320,7 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   prop_info.type = GDExtensionVariantType(type_value);
 
   Dart_Handle name_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("name"));
-  GDStringName gd_name(name_prop);
+  godot::StringName gd_name = create_godot_string_name(name_prop);
   prop_info.name = gd_name._native_ptr();
 
   Dart_Handle class_name_prop = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
@@ -335,7 +336,7 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   }
 
   Dart_Handle hint_string_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("hintString"));
-  GDString gd_hint_string(hint_string_prop);
+  godot::String gd_hint_string = create_godot_string(hint_string_prop);
   prop_info.hint_string = gd_hint_string._native_ptr();
 
   {
@@ -368,8 +369,8 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   std::string property_setter_name("set__");
   property_setter_name.append(property_name);
 
-  GDStringName gd_getter(property_getter_name.c_str());
-  GDStringName gd_setter(property_setter_name.c_str());
+  godot::StringName gd_getter(property_getter_name.c_str());
+  godot::StringName gd_setter(property_setter_name.c_str());
 
   GDEWrapper *gde = GDEWrapper::instance();
   gde_classdb_register_extension_class_property(gde->get_library_ptr(), bind_type.type_name, &prop_info,
@@ -537,8 +538,8 @@ void *GodotDartBindings::get_virtual_call_data(void *p_userdata, GDExtensionCons
     }
 
     // TODO: Maybe we can use StringNames directly instead of converting to Dart strings?
-    const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
-    Dart_Handle dart_string = gd_name->to_dart();
+    const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
+    Dart_Handle dart_string = to_dart_string(*gd_name);
 
     DART_CHECK(vtable_item, Dart_MapGetAt(vtable, dart_string), "Error looking up vtable item");
     if (Dart_IsNull(vtable_item)) {
@@ -618,7 +619,7 @@ void bind_class(Dart_NativeArguments args) {
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
   info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
-  info.call_virtual_func = GodotDartBindings::call_virtual_func;
+  info.call_virtual_with_data_func = GodotDartBindings::call_virtual_func;
   //info.reference_func = GodotDartBindings::reference;
   //info.unreference_func = GodotDartBindings::unreference;
 
@@ -673,9 +674,9 @@ void gd_string_to_dart_string(Dart_NativeArguments args) {
   }
 
   Dart_Handle dart_gd_string = Dart_GetNativeArgument(args, 1);
-  const GDString *gd_string = reinterpret_cast<GDString *>(get_opaque_address(dart_gd_string));
+  const godot::String *gd_string = reinterpret_cast<godot::String *>(get_opaque_address(dart_gd_string));
 
-  Dart_Handle dart_string = gd_string->to_dart();
+  Dart_Handle dart_string = to_dart_string(*gd_string);
 
   Dart_SetReturnValue(args, dart_string);
 }

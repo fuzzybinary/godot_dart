@@ -1,5 +1,5 @@
 #include "gde_wrapper.h"
-#include "godot_string_wrappers.h"
+#include "godot_string_helpers.h"
 #include "ref_counted_wrapper.h"
 
 GDEWrapper *GDEWrapper::_instance = nullptr;
@@ -13,15 +13,13 @@ void GDEWrapper::create_instance(GDExtensionInterfaceGetProcAddress gde_get_proc
 }
 
 bool GDEWrapper::initialize() {
-  GDString::init();
-  GDStringName::init();
   RefCountedWrapper::init();
 
   /// Get the is_editor_hint method from Engine
   const unsigned int is_editor_hint_hash = 36873697;
   
-  GDStringName str_engine("Engine");
-  GDStringName str_is_editor_hint("is_editor_hint");
+  godot::StringName str_engine("Engine");
+  godot::StringName str_is_editor_hint("is_editor_hint");
 
   _is_editor_hint_method = gde_classdb_get_method_bind(&str_engine, &str_is_editor_hint, is_editor_hint_hash);
 
@@ -29,7 +27,7 @@ bool GDEWrapper::initialize() {
 }
 
 bool GDEWrapper::is_editor_hint() {
-  GDStringName str_engine("Engine");
+  godot::StringName str_engine("Engine");
 
   GDExtensionObjectPtr engine = gde_global_get_singleton(&str_engine);
   if (engine == nullptr) {

@@ -2,7 +2,7 @@
 
 #include <dart_api.h>
 
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 // Because Godot has us switching between strong and weak
 // persitent handles, encapsulate that into a custom GC handle

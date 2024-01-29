@@ -37,7 +37,7 @@
     <ClInclude Include="gde_c_interface.h" />
     <ClInclude Include="gde_dart_converters.h" />
     <ClInclude Include="gde_wrapper.h" />
-    <ClInclude Include="godot_string_wrappers.h" />
+    <ClInclude Include="godot_string_helpers.h" />
     <ClInclude Include="ref_counted_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
@@ -96,13 +96,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)../dart_dll/include;$(ProjectDir)../../godot-headers;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)../dart_dll/include;$(ProjectDir)../../godot-cpp/gdextension;$(ProjectDir)../../godot-cpp;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(ProjectDir)../../godot-cpp/bin;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)../../example/2d_tutorial</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)../dart_dll/include;$(ProjectDir)../../godot-headers;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)../dart_dll/bin/win64;$(ProjectDir)../../godot-cpp/bin;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)../../example/2d_tutorial</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -153,7 +153,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>dart_dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dart_dll.lib;libgodot-cpp.windows.template_debug.dev.x86_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

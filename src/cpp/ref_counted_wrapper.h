@@ -1,6 +1,6 @@
 #pragma once
 
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 // This serves as a wrapper around RefCounted objects. Since
 // we don't import all of godot-cpp, we use this to wrap the

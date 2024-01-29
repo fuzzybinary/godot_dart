@@ -1,9 +1,9 @@
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
-#include "godot_string_wrappers.h"
+#include "godot_string_helpers.h"
 
 namespace godot_dart {
 
@@ -25,7 +25,7 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
     return;
   }
 
-  GDStringName gd_method_name("get_base_dir");
+  godot::StringName gd_method_name("get_base_dir");
   GDExtensionPtrBuiltInMethod get_base_dir = gde_variant_get_ptr_builtin_method(
       GDEXTENSION_VARIANT_TYPE_STRING, gd_method_name._native_ptr(), kGetBaseDirHash);
   if (get_base_dir == nullptr) {
@@ -35,11 +35,11 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
   }
 
   // Get the library path
-  GDString library_path;
+  godot::String library_path;
   gde_get_library_path(gde->get_library_ptr(), library_path._native_ptr());
 
   // Get the base dir from the library path
-  GDString gd_basedir_path;
+  godot::String gd_basedir_path;
   get_base_dir(library_path._native_ptr(), NULL, gd_basedir_path._native_ptr(), 0);
 
   // basedir_path to c string

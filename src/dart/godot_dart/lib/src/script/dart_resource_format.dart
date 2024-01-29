@@ -69,9 +69,8 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
       }
 
       _scriptCache[path] = script;
-    }
-
-    if (cacheMode == ResourceLoaderCacheMode.cacheModeIgnore.value) {
+      script.loadFromDisk(originalPath);
+    } else if (cacheMode == ResourceLoaderCacheMode.cacheModeIgnore.value) {
       script.loadFromDisk(originalPath);
     }
     script.setPath(path);

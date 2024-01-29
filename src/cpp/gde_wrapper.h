@@ -1,6 +1,6 @@
 #pragma once
 
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 #include "gde_c_interface.h"
 

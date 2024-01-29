@@ -14,7 +14,7 @@
   <ItemGroup>
     <ClInclude Include="dart_bindings.h" />
     <ClInclude Include="gde_wrapper.h" />
-    <ClInclude Include="godot_string_wrappers.h" />
+    <ClInclude Include="godot_string_helpers.h" />
     <ClInclude Include="dart_script_instance.h" />
     <ClInclude Include="gde_dart_converters.h" />
     <ClInclude Include="gde_c_interface.h" />

@@ -19,7 +19,7 @@ DartScriptInstance::~DartScriptInstance() {
   Dart_DeletePersistentHandle(_dart_script);
 }
 
-bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariantPtr p_value) {
+bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value) {
   GodotDartBindings *gde = GodotDartBindings::instance();
   if (gde == nullptr) {
     return false;
@@ -29,7 +29,7 @@ bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariant
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle field_name = p_name.to_dart();
+    Dart_Handle field_name = to_dart_string(p_name);
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
     DART_CHECK(script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
@@ -63,7 +63,7 @@ bool DartScriptInstance::set(const GDStringName &p_name, GDExtensionConstVariant
   return set_value;
 }
 
-bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionVariantPtr r_ret) {
+bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariantPtr r_ret) {
   GodotDartBindings *gde = GodotDartBindings::instance();
   if (gde == nullptr) {
     return false;
@@ -72,7 +72,7 @@ bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionVariantPtr r
   bool got_value = false;
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
-    Dart_Handle field_name = p_name.to_dart();
+    Dart_Handle field_name = to_dart_string(p_name);
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
@@ -103,6 +103,10 @@ bool DartScriptInstance::get(const GDStringName &p_name, GDExtensionVariantPtr r
   });
 
   return got_value;
+}
+
+bool DartScriptInstance::get_class_category(GDExtensionPropertyInfo *p_class_category) {
+  return false;
 }
 
 const GDExtensionPropertyInfo *DartScriptInstance::get_property_list(uint32_t *r_count) {
@@ -167,7 +171,8 @@ void DartScriptInstance::free_property_list(const GDExtensionPropertyInfo *p_lis
   });
 }
 
-GDExtensionVariantType DartScriptInstance::get_property_type(const GDStringName &p_name, GDExtensionBool *r_is_valid) {
+GDExtensionVariantType DartScriptInstance::get_property_type(const godot::StringName &p_name,
+                                                             GDExtensionBool *r_is_valid) {
   return GDExtensionVariantType();
 }
 
@@ -175,11 +180,11 @@ bool DartScriptInstance::validate_property(GDExtensionPropertyInfo *p_property) 
   return false;
 }
 
-GDExtensionBool DartScriptInstance::property_can_revert(const GDStringName &p_name) {
+GDExtensionBool DartScriptInstance::property_can_revert(const godot::StringName &p_name) {
   return false;
 }
 
-GDExtensionBool DartScriptInstance::property_get_revert(const GDStringName &p_name, GDExtensionVariantPtr r_ret) {
+GDExtensionBool DartScriptInstance::property_get_revert(const godot::StringName &p_name, GDExtensionVariantPtr r_ret) {
   return false;
 }
 
@@ -252,7 +257,7 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
   });
 }
 
-GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
+GDExtensionBool DartScriptInstance::has_method(const godot::StringName &p_name) {
   GodotDartBindings *gde = GodotDartBindings::instance();
   if (gde == nullptr) {
     return false;
@@ -267,7 +272,7 @@ GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
 
-    Dart_Handle method_info_args[] = {p_name.to_dart()};
+    Dart_Handle method_info_args[] = {to_dart_string(p_name)};
     DART_CHECK(method_info,
                Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
@@ -278,7 +283,7 @@ GDExtensionBool DartScriptInstance::has_method(const GDStringName &p_name) {
   return hasMethod;
 }
 
-void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionConstVariantPtr *p_args,
+void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensionConstVariantPtr *p_args,
                               GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return,
                               GDExtensionCallError *r_error) {
   GodotDartBindings *gde = GodotDartBindings::instance();
@@ -303,7 +308,7 @@ void DartScriptInstance::call(const GDStringName *p_method, const GDExtensionCon
     DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
                "Failed to get scirpt info");
 
-    Dart_Handle method_info_args[] = {p_method->to_dart()};
+    Dart_Handle method_info_args[] = {to_dart_string(*p_method)};
     DART_CHECK(method_info,
                Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
@@ -419,11 +424,11 @@ GDExtensionBool DartScriptInstance::is_placeholder() {
   return _is_placeholder;
 }
 
-bool DartScriptInstance::set_fallback(const GDStringName &p_name, GDExtensionConstVariantPtr p_value) {
+bool DartScriptInstance::set_fallback(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value) {
   return false;
 }
 
-bool DartScriptInstance::get_fallback(const GDStringName &p_name, GDExtensionVariantPtr r_ret) {
+bool DartScriptInstance::get_fallback(const godot::StringName &p_name, GDExtensionVariantPtr r_ret) {
   return false;
 }
 
@@ -435,16 +440,21 @@ GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
 
 GDExtensionBool script_instance_set(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name,
                                     GDExtensionConstVariantPtr p_value) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->set(*gd_name, p_value);
 }
 
 GDExtensionBool script_instance_get(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name,
                                     GDExtensionVariantPtr r_ret) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->get(*gd_name, r_ret);
+}
+
+GDExtensionBool script_instance_get_class_category(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionPropertyInfo* p_class_category) {
+  DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
+  return instance->get_class_category(p_class_category);
 }
 
 const GDExtensionPropertyInfo *script_instance_get_property_list(GDExtensionScriptInstanceDataPtr p_instance,
@@ -462,7 +472,7 @@ void script_instance_free_property_list(GDExtensionScriptInstanceDataPtr p_insta
 GDExtensionVariantType script_instance_get_property_type(GDExtensionScriptInstanceDataPtr p_instance,
                                                          GDExtensionConstStringNamePtr p_name,
                                                          GDExtensionBool *r_is_valid) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->get_property_type(*gd_name, r_is_valid);
 }
@@ -476,14 +486,14 @@ GDExtensionBool script_instance_validate_property(GDExtensionScriptInstanceDataP
 
 GDExtensionBool script_instance_property_can_revert(GDExtensionScriptInstanceDataPtr p_instance,
                                                     GDExtensionConstStringNamePtr p_name) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->property_can_revert(*gd_name);
 }
 
 GDExtensionBool script_instance_property_get_revert(GDExtensionScriptInstanceDataPtr p_instance,
                                                     GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->property_get_revert(*gd_name, r_ret);
 }
@@ -513,7 +523,7 @@ void script_instance_free_method_list(GDExtensionScriptInstanceDataPtr p_instanc
 
 GDExtensionBool script_instance_has_method(GDExtensionScriptInstanceDataPtr p_instance,
                                            GDExtensionConstStringNamePtr p_name) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->has_method(*gd_name);
 }
@@ -521,7 +531,7 @@ GDExtensionBool script_instance_has_method(GDExtensionScriptInstanceDataPtr p_in
 void script_instance_call(GDExtensionScriptInstanceDataPtr p_self, GDExtensionConstStringNamePtr p_method,
                           const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count,
                           GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
-  const GDStringName *gd_method = reinterpret_cast<const GDStringName *>(p_method);
+  const godot::StringName *gd_method = reinterpret_cast<const godot::StringName *>(p_method);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_self);
   instance->call(gd_method, p_args, p_argument_count, r_return, r_error);
 }
@@ -560,14 +570,14 @@ GDExtensionBool script_instance_is_placeholder(GDExtensionScriptInstanceDataPtr 
 
 GDExtensionBool script_instance_set_fallback(GDExtensionScriptInstanceDataPtr p_instance,
                                              GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->set_fallback(*gd_name, p_value);
 }
 
 GDExtensionBool script_instance_get_fallback(GDExtensionScriptInstanceDataPtr p_instance,
                                              GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret) {
-  const GDStringName *gd_name = reinterpret_cast<const GDStringName *>(p_name);
+  const godot::StringName *gd_name = reinterpret_cast<const godot::StringName *>(p_name);
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->get_fallback(*gd_name, r_ret);
 }
@@ -599,6 +609,7 @@ GDExtensionScriptInstanceInfo2 DartScriptInstance::script_instance_info = {
     script_instance_get,
     script_instance_get_property_list,
     script_instance_free_property_list,
+    nullptr,  // TODO: Check if we need to override this
     script_instance_property_can_revert,
     script_instance_property_get_revert,
     script_instance_get_owner,
