@@ -1,73 +1,45 @@
-#include "godot_string_wrappers.h"
+#include "godot_string_helpers.h"
 #include "gde_wrapper.h"
-#include <malloc.h>
 
 #include "dart_helpers.h"
-#include "gde_c_interface.h"
 
-// *****
-// GDString
-// *****
+godot::StringName create_godot_string_name(const Dart_Handle &from_dart) {
+  if (Dart_IsNull(from_dart)) {
+    return godot::StringName();
+  }
 
-GDExtensionPtrConstructor GDString::_constructor = nullptr;
-GDExtensionPtrConstructor GDString::_copy_constructor = nullptr;
-GDExtensionPtrConstructor GDString::_from_gdstringname_constructor = nullptr;
-GDExtensionPtrDestructor GDString::_destructor = nullptr;
+  const char *dart_cstring;
+  Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
+    GD_PRINT_ERROR(Dart_GetError(result));
+    return godot::StringName();
+  }
 
-void GDString::init() {
-  _constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
-  _copy_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 1);
-  _from_gdstringname_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
-  _destructor = gde_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
+  return godot::StringName(godot::String::utf8(dart_cstring));
 }
 
-GDString::GDString() {
-  _constructor(&_opaque, nullptr);
+godot::StringName* create_godot_string_name_ptr(const Dart_Handle &from_dart) {
+  if (Dart_IsNull(from_dart)) {
+    return new godot::StringName();
+  }
+
+  const char *dart_cstring;
+  Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
+    GD_PRINT_ERROR(Dart_GetError(result));
+    return new godot::StringName();
+  }
+
+  return new godot::StringName(godot::String::utf8(dart_cstring));
 }
 
-GDString::GDString(const GDString &from) {
-  const GDExtensionConstTypePtr args[1] = {&from};
-  _copy_constructor(&_opaque, args);
-}
-
-GDString::GDString(const GDStringName &from) {
-  const GDExtensionConstTypePtr args[1] = {&from};
-  _from_gdstringname_constructor(&_opaque, args);
-}
-
-GDString::GDString(const Dart_Handle &from_dart) {
-    if (Dart_IsNull(from_dart)) {
-      _constructor(&_opaque, nullptr);
-      return;
-    }
-
-    const char *dart_cstring;
-    Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
-    if (Dart_IsError(result)) {
-      GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
-      GD_PRINT_ERROR(Dart_GetError(result));
-      _constructor(&_opaque, nullptr);
-      return;
-    }
-      
-    gde_string_new_with_utf8_chars(&_opaque, dart_cstring);
-}
-
-GDString::GDString(const char *from) {
-  gde_string_new_with_utf8_chars(&_opaque, from);
-}
-
-GDString::~GDString() {
-  _destructor(&_opaque);
-}
-
-Dart_Handle GDString::to_dart() const {
-  GDExtensionInt length = gde_string_to_utf16_chars(_opaque, nullptr, 0);
-  char16_t *temp = (char16_t *)_alloca(sizeof(char16_t) * (length + 1));
-  gde_string_to_utf16_chars(_opaque, temp, length);
-  temp[length] = 0;
+Dart_Handle to_dart_string(const godot::StringName &from_godot) {
+  godot::String godot_string(from_godot);
+  godot::CharString utf8 = godot_string.utf8();
   
-  Dart_Handle dart_string = Dart_NewStringFromUTF16((uint16_t *)temp, length);
+  Dart_Handle dart_string = Dart_NewStringFromUTF8((const uint8_t *)utf8.get_data(), utf8.length());
   if (Dart_IsError(dart_string)) {
     GD_PRINT_ERROR("GodotDart: Error converting String to Dart String: ");
     GD_PRINT_ERROR(Dart_GetError(dart_string));
@@ -77,59 +49,47 @@ Dart_Handle GDString::to_dart() const {
   return dart_string;
 }
 
-// *****
-// GDStringName
-// *****
-
-GDExtensionPtrConstructor GDStringName::_constructor = nullptr;
-GDExtensionPtrConstructor GDStringName::_copy_constructor = nullptr;
-GDExtensionPtrConstructor GDStringName::_from_gdstring_constructor = nullptr;
-GDExtensionPtrDestructor GDStringName::_destructor = nullptr;
-
-void GDStringName::init() {
-  _constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 0);
-  _copy_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 1);
-  _from_gdstring_constructor = gde_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
-  _destructor = gde_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
-}
-
-GDStringName::GDStringName() {
-  _constructor(&_opaque, nullptr);
-}
-
-GDStringName::GDStringName(const GDStringName &from) {
-  const GDExtensionConstTypePtr args[1] = {&from};
-  _copy_constructor(&_opaque, args);
-}
-
-GDStringName::GDStringName(const GDString &from) {
-  const GDExtensionConstTypePtr args[1] = {&from};
-  _from_gdstring_constructor(&_opaque, args);
-}
-
-
-GDStringName::GDStringName(const Dart_Handle &from_dart) {
+godot::String create_godot_string(const Dart_Handle &from_dart) {
   if (Dart_IsNull(from_dart)) {
-    _constructor(&_opaque, nullptr);
-    return;
+    return godot::String();
   }
 
-  GDString str(from_dart);
-  const GDExtensionConstTypePtr args[1] = {&str};
-  _from_gdstring_constructor(&_opaque, args);
+  const char *dart_cstring;
+  Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
+    GD_PRINT_ERROR(Dart_GetError(result));
+    return godot::String();
+  }
+
+  return godot::String::utf8(dart_cstring);
 }
 
-GDStringName::GDStringName(const char *from) {
-  GDString str(from);
-  const GDExtensionConstTypePtr args[1] = {&str};
-  _from_gdstring_constructor(&_opaque, args);
+godot::String *create_godot_string_ptr(const Dart_Handle &from_dart) {
+  if (Dart_IsNull(from_dart)) {
+    return new godot::String();
+  }
+
+  const char *dart_cstring;
+  Dart_Handle result = Dart_StringToCString(from_dart, &dart_cstring);
+  if (Dart_IsError(result)) {
+    GD_PRINT_ERROR("GodotDart: Error converting Dart String property to Godot String");
+    GD_PRINT_ERROR(Dart_GetError(result));
+    return new godot::String();
+  }
+
+  return new godot::String(dart_cstring);
 }
 
-GDStringName::~GDStringName() {
-  _destructor(&_opaque);
-}
+Dart_Handle to_dart_string(const godot::String&from_godot) {
+  godot::CharString utf8 = from_godot.utf8();
 
-Dart_Handle GDStringName::to_dart() const {
-  GDString gd_string(*this);
-  return gd_string.to_dart();
+  Dart_Handle dart_string = Dart_NewStringFromUTF8((const uint8_t *)utf8.get_data(), utf8.length());
+  if (Dart_IsError(dart_string)) {
+    GD_PRINT_ERROR("GodotDart: Error converting String to Dart String: ");
+    GD_PRINT_ERROR(Dart_GetError(dart_string));
+    dart_string = Dart_Null();
+  }
+
+  return dart_string;
 }

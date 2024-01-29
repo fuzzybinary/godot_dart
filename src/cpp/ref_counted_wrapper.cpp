@@ -1,7 +1,7 @@
 #include "ref_counted_wrapper.h"
 
 #include "gde_c_interface.h"
-#include "godot_string_wrappers.h"
+#include "godot_string_helpers.h"
 
 GDExtensionMethodBindPtr RefCountedWrapper::init_ref_ptr_call = nullptr;
 GDExtensionMethodBindPtr RefCountedWrapper::reference_ptr_call = nullptr;
@@ -38,13 +38,13 @@ int RefCountedWrapper::get_reference_count() {
 
 void RefCountedWrapper::init() {
   const int class_hash = 2240911060;
-  GDStringName class_name("RefCounted");
+  godot::StringName class_name("RefCounted");
   init_ref_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), GDStringName("init_ref")._native_ptr(), 2240911060);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("init_ref")._native_ptr(), 2240911060);
   reference_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), GDStringName("reference")._native_ptr(), 2240911060);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("reference")._native_ptr(), 2240911060);
   unreference_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), GDStringName("unreference")._native_ptr(), 2240911060);
-  get_reference_count_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), GDStringName("get_reference_count")._native_ptr(), 3905245786);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("unreference")._native_ptr(), 2240911060);
+  get_reference_count_ptr_call = gde_classdb_get_method_bind(
+      class_name._native_ptr(), godot::StringName("get_reference_count")._native_ptr(), 3905245786);
 }

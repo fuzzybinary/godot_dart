@@ -3,6 +3,10 @@
 entry_symbol = "godot_dart_init"
 compatibility_minimum = 4.2
 
+[icons]
+
+DartScript = "res://logo_dart.svg"
+
 [libraries]
 
 windows.64 =   "godot_dart.dll"

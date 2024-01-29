@@ -6,7 +6,7 @@
 ///
 /// The funcitons are populated with static pointers during extension initialzation.
 
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 #if !defined(GDE_EXPORT)
 #if defined(_WIN32)

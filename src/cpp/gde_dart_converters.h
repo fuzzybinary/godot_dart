@@ -1,6 +1,6 @@
 #pragma once
 
-#include <godot/gdextension_interface.h>
+#include <gdextension/gdextension_interface.h>
 
 #include <dart_api.h>
 
