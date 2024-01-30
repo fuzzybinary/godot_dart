@@ -6,7 +6,7 @@
 ///
 /// The funcitons are populated with static pointers during extension initialzation.
 
-#include <gdextension/gdextension_interface.h>
+#include <gdextension_interface.h>
 
 #if !defined(GDE_EXPORT)
 #if defined(_WIN32)

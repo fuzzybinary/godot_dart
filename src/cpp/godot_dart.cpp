@@ -1,4 +1,4 @@
-#include <gdextension/gdextension_interface.h>
+#include <gdextension_interface.h>
 
 #include "dart_helpers.h"
 #include "dart_bindings.h"
@@ -13,9 +13,9 @@ const uint32_t kGetBaseDirHash = 3942272618;
 
 GodotDartBindings *dart_bindings = nullptr;
 
-void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
+void initialize_level(godot::ModuleInitializationLevel p_level) {
   // TODO - Should we setup different types at different times?
-  if (p_level != GDEXTENSION_INITIALIZATION_SCENE) {
+  if (p_level != godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE) {
     return;
   }
 
@@ -64,8 +64,8 @@ void initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
   }
 }
 
-void deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
-  if (p_level != GDEXTENSION_INITIALIZATION_SCENE) {
+void deinitialize_level(godot::ModuleInitializationLevel p_level) {
+  if (p_level != godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE) {
     return;
   }
 
@@ -80,24 +80,29 @@ void deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level) 
 
 extern "C" {
 
-void GDE_EXPORT initialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
-  godot_dart::initialize_level(userdata, p_level);
+void GDE_EXPORT initialize_level(godot::ModuleInitializationLevel p_level) {
+  godot_dart::initialize_level(p_level);
 }
 
-void GDE_EXPORT deinitialize_level(void *userdata, GDExtensionInitializationLevel p_level) {
-  godot_dart::deinitialize_level(userdata, p_level);
+void GDE_EXPORT deinitialize_level(godot::ModuleInitializationLevel p_level) {
+  godot_dart::deinitialize_level(p_level);
 }
 
-void GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
+bool GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
                                 GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-  
+  // TODO: Remove in favor of godot-cpp's version of this
   gde_init_c_interface(p_get_proc_address);
-  
+
   GDEWrapper::create_instance(p_get_proc_address, p_library);
 
-  r_initialization->initialize = initialize_level;
-  r_initialization->deinitialize = deinitialize_level;
-  r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
+  godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
+
+  init_obj.register_initializer(initialize_level);
+  init_obj.register_terminator(deinitialize_level);
+  init_obj.set_minimum_library_initialization_level(
+      godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE);
+
+  return init_obj.init();
 }
 
 }

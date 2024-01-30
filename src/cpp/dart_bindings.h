@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <dart_api.h>
-#include <gdextension/gdextension_interface.h>
+#include <gdextension_interface.h>
 
 #include "gde_dart_converters.h"
 

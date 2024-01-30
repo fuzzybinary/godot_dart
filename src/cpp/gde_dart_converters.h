@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gdextension/gdextension_interface.h>
+#include <gdextension_interface.h>
 
 #include <dart_api.h>
 

@@ -4,8 +4,9 @@ project(godot_dart VERSION 0.1)
 
 set(DART_DIR "${PROJECT_SOURCE_DIR}/../dart_dll")
 set(GODOT_CPP_DIR "${PROJECT_SOURCE_DIR}/../../godot-cpp")
+set(EXAMPLE_DIR "${PROJECT_SOURCE_DIR}/../../example")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
@@ -26,7 +27,7 @@ add_library(godot_dart SHARED
     gde_wrapper.h
     godot_dart.cpp
     godot_string_wrappers.cpp
-    godot_string_wrappers.h
+    godot_string_helpers.h
     ref_counted_wrapper.cpp
     ref_counted_wrapper.h
 )
@@ -34,7 +35,7 @@ add_library(godot_dart SHARED
 target_include_directories(godot_dart PUBLIC
     "${GODOT_CPP_DIR}/include"
     "${GODOT_CPP_DIR}/gen/include"
-    "${PROJECT_SOURCE_DIR}/../../godot-headers"
+    "${GODOT_CPP_DIR}/gdextension"
     "${DART_DIR}/include"
 )
 
@@ -49,10 +50,6 @@ find_library(DART_DLL_RELEASE
 )
 
 if(WIN32)
-    set_property(TARGET godot_dart PROPERTY
-        MSVC_RUNTIME_LIBRARY "MultiThreaded"
-    )
-
     target_compile_definitions(godot_dart PRIVATE
         _HAS_EXCEPTIONS=0
         _SCL_SECURE=0
@@ -73,7 +70,8 @@ if(WIN32)
         shlwapi
     )
     set_property(TARGET godot_dart PROPERTY
-             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
 # elseif(LINUX)
 #     set(THREADS_PREFER_PTHREAD_FLAG ON)
 #     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/linux-x64/clang/bin/clang")
@@ -96,3 +94,9 @@ target_link_libraries(godot_dart godot-cpp)
 
 # TODO: Debug / release dart_dll libraries
 target_link_libraries(godot_dart ${DART_DLL_RELEASE})
+
+# Copy dll to sample directories
+add_custom_command(TARGET godot_dart POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy -t "${EXAMPLE_DIR}/2d_tutorial" $<TARGET_FILE:godot_dart>
+  COMMAND_EXPAND_LISTS
+)

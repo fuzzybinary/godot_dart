@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gdextension/gdextension_interface.h>
+#include <gdextension_interface.h>
 
 #include "gde_c_interface.h"
 
