@@ -7,10 +7,6 @@
 
 namespace godot_dart {
 
-// Hashes from the extension_api.json. Since we don't generate all of the
-// bindings for C++ and only use the ones we need, these are just copied
-const uint32_t kGetBaseDirHash = 3942272618;
-
 GodotDartBindings *dart_bindings = nullptr;
 
 void initialize_level(godot::ModuleInitializationLevel p_level) {
@@ -25,23 +21,13 @@ void initialize_level(godot::ModuleInitializationLevel p_level) {
     return;
   }
 
-  godot::StringName gd_method_name("get_base_dir");
-  GDExtensionPtrBuiltInMethod get_base_dir = gde_variant_get_ptr_builtin_method(
-      GDEXTENSION_VARIANT_TYPE_STRING, gd_method_name._native_ptr(), kGetBaseDirHash);
-  if (get_base_dir == nullptr) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (cannot retrieve "
-                   "`String.get_base_dir` method)");
-    return;
-  }
-
   // Get the library path
   godot::String library_path;
   gde_get_library_path(gde->get_library_ptr(), library_path._native_ptr());
 
   // Get the base dir from the library path
-  godot::String gd_basedir_path;
-  get_base_dir(library_path._native_ptr(), NULL, gd_basedir_path._native_ptr(), 0);
-
+  godot::String gd_basedir_path = library_path.get_base_dir();
+  
   // basedir_path to c string
   GDExtensionInt basedir_path_size = gde_string_to_utf8_chars(gd_basedir_path._native_ptr(), NULL, 0);
   char *basedir_path = reinterpret_cast<char *>(gde_mem_alloc(basedir_path_size + 1));

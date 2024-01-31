@@ -1,8 +1,10 @@
 #include "dart_godot_binding.h"
 
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
+
 #include "dart_helpers.h"
 #include "dart_bindings.h"
-#include "ref_counted_wrapper.h"
 #include "gde_c_interface.h"
 
 void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
@@ -11,7 +13,8 @@ void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
   }
 
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)peer;
-  RefCountedWrapper ref_counted(binding->get_godot_object());
+  godot::RefCounted ref_counted;
+  ref_counted._owner = reinterpret_cast<godot::RefCounted *>(binding->get_godot_object());
   if (ref_counted.unreference()) {
     gde_object_destroy(binding->get_godot_object());
   } else {
@@ -35,7 +38,9 @@ DartGodotInstanceBinding::~DartGodotInstanceBinding() {
 
 void DartGodotInstanceBinding::initialize(Dart_Handle dart_object, bool is_refcounted) {
   if (is_refcounted) {
-    RefCountedWrapper ref_counted(_godot_object);
+    godot::RefCounted ref_counted;
+    ref_counted._owner = reinterpret_cast<godot::GodotObject *>(_godot_object);
+    
     int32_t refcount = ref_counted.get_reference_count();
     if (refcount == 0) {
       // We're the first reference. Hooray for us!
@@ -175,8 +180,9 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
     engine_binding->create_dart_object();
   }
 
-  RefCountedWrapper refcounted(engine_binding->get_godot_object());
-  int refcount = refcounted.get_reference_count();
+  godot::RefCounted ref_counted;
+  ref_counted._owner = reinterpret_cast<godot::Object *>(engine_binding->get_godot_object());
+  int refcount = ref_counted.get_reference_count();
 
   bool is_dieing = refcount == 0;
   if (bindings->_is_stopping) {

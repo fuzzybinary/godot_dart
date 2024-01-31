@@ -28,8 +28,6 @@ add_library(godot_dart SHARED
     godot_dart.cpp
     godot_string_wrappers.cpp
     godot_string_helpers.h
-    ref_counted_wrapper.cpp
-    ref_counted_wrapper.h
 )
 
 target_include_directories(godot_dart PUBLIC
