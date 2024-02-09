@@ -1,9 +1,14 @@
 #include <gdextension_interface.h>
 
+#include <godot_cpp/core/object.hpp>
+
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
 #include "godot_string_helpers.h"
+
+#include "dart_godot_binding.h"
+#include "dart_script_instance.h"
 
 namespace godot_dart {
 
@@ -40,8 +45,8 @@ void initialize_level(godot::ModuleInitializationLevel p_level) {
   basedir_path[basedir_path_size] = '\0';
 
   char dart_script_path[256], package_path[256];
-  sprintf_s(dart_script_path, "%s/src/main.dart", basedir_path);
-  sprintf_s(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
+  sprintf(dart_script_path, "%s/src/main.dart", basedir_path);
+  sprintf(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
 
   dart_bindings = new GodotDartBindings();
   if (!dart_bindings->initialize(dart_script_path, package_path)) {
@@ -59,6 +64,26 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
     dart_bindings->shutdown();
     delete dart_bindings;
     dart_bindings = nullptr;
+
+    for(const auto& itr : DartGodotInstanceBinding::s_instanceMap) {
+      godot::Object obj;
+      obj._owner = itr.second->get_godot_object();
+
+      auto str = obj.to_string().utf8();
+
+      printf("Leaked binding instance at %lx: %s\n", itr.first, str.get_data());
+    }
+    DartGodotInstanceBinding::s_instanceMap.clear();
+
+    for(const auto& itr : DartScriptInstance::s_instanceMap) {
+      godot::Object obj;
+      obj._owner = itr.second->_binding.get_godot_object();
+
+      auto str = obj.to_string().utf8();
+
+      printf("Leaked binding instance at %lx\n: %s", itr.first, str.get_data());
+      printf("   binding at %lx\n", (intptr_t)&itr.second->_binding);
+    }
   }
 }
 

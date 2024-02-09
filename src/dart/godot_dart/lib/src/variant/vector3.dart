@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import '../core/gdextension_ffi_bindings.dart';
@@ -71,20 +72,25 @@ class Vector3 extends BuiltinType {
     return Vector3(x: 0, y: 0, z: -1);
   }
 
-  Vector3.fromVariant(Variant variant) : super.nonFinalized() {
+  Vector3.fromVariant(Variant variant)
+      : this.fromVariantPtr(variant.nativePtr.cast());
+
+  @internal
+  Vector3.fromVariantPtr(GDExtensionVariantPtr variantPtr)
+      : super.nonFinalized() {
     _allocateOpaque();
     final c = getToTypeConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
     if (c == null) return;
 
-    c(_opaque.cast(), variant.nativePtr.cast());
+    c(_opaque.cast(), variantPtr);
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
       byteData.setUint8(i, _opaque[i]);
     }
   }
 
-  Vector3.fromPointer(Pointer<Void> pointer) : super.nonFinalized() {
+  Vector3.copyPtr(Pointer<Void> pointer) : super.nonFinalized() {
     final bytePtr = pointer.cast<Uint8>();
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
@@ -473,6 +479,6 @@ class Vector3 extends BuiltinType {
 
   void _allocateOpaque() {
     _opaque = calloc<Uint8>(_size);
-    BuiltinType.finalizer.attach(this, _opaque);
+    BuiltinType.finalizer.attach(this, _opaque.cast());
   }
 }

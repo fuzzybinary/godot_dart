@@ -54,10 +54,12 @@ public:
 
   static const GDExtensionScriptInstanceInfo2 *get_script_instance_info();
 
-private:
-  bool _is_placeholder;
+  static std::map<intptr_t, DartScriptInstance*> s_instanceMap; 
 
   DartGodotInstanceBinding _binding;
+
+private:
+  bool _is_placeholder;
 
   Dart_PersistentHandle _dart_script;
   GDExtensionObjectPtr _godot_script_obj;

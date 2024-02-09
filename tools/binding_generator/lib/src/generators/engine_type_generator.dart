@@ -165,11 +165,11 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
           () {
         for (final argument in arguments) {
           if (argument.typeCategory == TypeCategory.enumType) {
-            o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}.value),');
+            o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
           } else if (argument.dartType == 'Variant') {
             o.p('${escapeName(argument.name).toLowerCamelCase()},');
           } else {
-            o.p('convertToVariant(${escapeName(argument.name).toLowerCamelCase()}),');
+            o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
           }
         }
       }, ']);');

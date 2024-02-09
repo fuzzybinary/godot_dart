@@ -8,5 +8,6 @@ class TypedArray<T> extends Array {
   }
   static TypeInfo get sTypeInfo => Array.sTypeInfo;
 
-  TypedArray.fromPointer(Pointer<Void> ptr) : super.fromPointer(ptr);
+  TypedArray.fromVariantPtr(Pointer<Void> ptr) : super.fromVariantPtr(ptr);
+  TypedArray.copyPtr(Pointer<Void> ptr) : super.copyPtr(ptr);
 }

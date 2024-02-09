@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dart_api.h>
+#include <map>
 
 #include "gdextension_interface.h"
 
@@ -9,7 +10,7 @@
 class DartGodotInstanceBinding {
 public:
   DartGodotInstanceBinding(void *token, GDExtensionObjectPtr godot_object)
-      : _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object), _token(token) {
+      : _is_refcounted(false), _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object), _token(token) {
   }
 
   ~DartGodotInstanceBinding();
@@ -33,9 +34,16 @@ public:
 
   static GDExtensionInstanceBindingCallbacks engine_binding_callbacks;
 
+  static std::map<intptr_t, DartGodotInstanceBinding*> s_instanceMap;
+
 private:
+  void delete_dart_handle();
+  
+  bool _is_refcounted;
   bool _is_weak;
   void *_persistent_handle;
   GDExtensionObjectPtr _godot_object;
   void *_token;
 };
+
+void gde_weak_finalizer(void *isolate_callback_data, void *peer);

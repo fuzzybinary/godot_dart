@@ -23,20 +23,43 @@ void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
   }
 }
 
+std::map<intptr_t, DartGodotInstanceBinding*> DartGodotInstanceBinding::s_instanceMap;
+
 DartGodotInstanceBinding::~DartGodotInstanceBinding() {
   // Can't do anything as Dart is shutdown
-  if (GodotDartBindings::instance() == nullptr) return;
+  if (GodotDartBindings::instance() == nullptr) {
+    return;
+  }
 
+  s_instanceMap.erase((intptr_t)this);
+  
   if (_persistent_handle) {
-    if (_is_weak) {
-      Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)_persistent_handle);
+    // If we have an isolate group, we're likely running on the Finalizer.
+    // Don't attempt to execute on the Dart isolate if this is the case
+    // (it might be already doing things)
+    Dart_IsolateGroup current_isolate_group = Dart_CurrentIsolateGroup();
+    if(current_isolate_group) {
+      delete_dart_handle();
     } else {
-      Dart_DeletePersistentHandle((Dart_PersistentHandle)_persistent_handle);
+      GodotDartBindings::instance()->execute_on_dart_thread([&]{
+        delete_dart_handle();
+      });
     }
   }
 }
 
+void DartGodotInstanceBinding::delete_dart_handle() {
+  if (_is_weak) {
+    Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)_persistent_handle);
+  } else {
+    Dart_DeletePersistentHandle((Dart_PersistentHandle)_persistent_handle);
+  }
+}
+
 void DartGodotInstanceBinding::initialize(Dart_Handle dart_object, bool is_refcounted) {
+  s_instanceMap[(intptr_t)this] = this;
+  _is_refcounted = is_refcounted;
+
   if (is_refcounted) {
     godot::RefCounted ref_counted;
     ref_counted._owner = reinterpret_cast<godot::GodotObject *>(_godot_object);

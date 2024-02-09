@@ -1,3 +1,4 @@
 ﻿.vscode/
 *.user
 src/cpp/.build
+build/

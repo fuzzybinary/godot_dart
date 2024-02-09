@@ -17,6 +17,7 @@ class GameLogic extends Node {
 
   @GodotProperty()
   PackedScene? mobScene;
+
   var _score = 0;
   final _random = math.Random();
 

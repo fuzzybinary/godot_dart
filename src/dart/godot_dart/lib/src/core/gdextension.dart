@@ -46,6 +46,12 @@ class GodotDart {
     malloc.free(array);
   }
 
+  void callBuiltinDestructor(
+      GDExtensionPtrDestructor destructor, GDExtensionTypePtr base) {
+    void Function(GDExtensionTypePtr) d = destructor.asFunction();
+    d(base);
+  }
+
   void callBuiltinMethodPtr(
     GDExtensionPtrBuiltInMethod? method,
     GDExtensionTypePtr base,

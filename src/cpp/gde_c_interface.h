@@ -31,7 +31,9 @@ GDE_EXPORT void gde_print_error(const char *p_description, const char *p_functio
 GDE_EXPORT void gde_print_warning(const char *p_description, const char *p_function, const char *p_file, int32_t p_line,
                                   GDExtensionBool p_editor_notify);
 GDE_EXPORT void *gde_mem_alloc(size_t p_bytes);
+GDE_EXPORT void gde_mem_free(void* ptr);
 
+GDE_EXPORT void gde_variant_destroy(GDExtensionVariantPtr p_self);
 GDE_EXPORT GDExtensionPtrConstructor gde_variant_get_ptr_constructor(GDExtensionVariantType p_type,
                                                                      int32_t p_constructor);
 GDE_EXPORT GDExtensionPtrDestructor gde_variant_get_ptr_destructor(GDExtensionVariantType p_type);

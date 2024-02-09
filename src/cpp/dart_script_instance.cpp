@@ -7,15 +7,19 @@
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
 
+std::map<intptr_t, DartScriptInstance*> DartScriptInstance::s_instanceMap;
+
 DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner,
                                        bool is_placeholder, bool is_refcounted)
     : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_script_obj(nullptr) {
-
+  
+  s_instanceMap[(intptr_t)this] = this;
   _binding.initialize(for_object, is_refcounted);
   _dart_script = Dart_NewPersistentHandle(script);
 }
 
 DartScriptInstance::~DartScriptInstance() {
+  s_instanceMap.erase((intptr_t)this);
   Dart_DeletePersistentHandle(_dart_script);
 }
 
@@ -90,9 +94,9 @@ bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariant
     }
 
     DART_CHECK(dart_value, Dart_GetField(object, field_name), "Failed to get property");
-    Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
+    Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
     Dart_Handle args[] = {dart_value};
-    DART_CHECK(variant_result, Dart_Invoke(native_library, Dart_NewStringFromCString("_convertToVariant"), 1, args),
+    DART_CHECK(variant_result, Dart_New(variant_type, Dart_NewStringFromCString("fromObject"), 1, args),
                "Failed to convert prop to variant");
 
     void *variantDataPtr = get_opaque_address(variant_result);
@@ -346,9 +350,9 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
     }
 
     DART_CHECK(dart_ret, Dart_Invoke(object, dart_method_name, arg_count, dart_args), "Failed to call method");
-    Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
+    Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
     Dart_Handle args[] = {dart_ret};
-    Dart_Handle variant_result = Dart_Invoke(native_library, Dart_NewStringFromCString("_convertToVariant"), 1, args);
+    Dart_Handle variant_result = Dart_New(variant_type, Dart_NewStringFromCString("fromObject"), 1, args);
 
     if (Dart_IsError(variant_result)) {
       GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");

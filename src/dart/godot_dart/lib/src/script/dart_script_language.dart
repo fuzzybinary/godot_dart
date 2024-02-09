@@ -123,7 +123,7 @@ class $className extends $baseClassName  {
   Dictionary vValidate(String script, String path, bool validateFunctions,
       bool validateErrors, bool validateWarnings, bool validateSafeLines) {
     final validateResponse = Dictionary();
-    validateResponse[convertToVariant('valid')] = convertToVariant(true);
+    validateResponse[Variant.fromObject('valid')] = Variant.fromObject(true);
     return validateResponse;
   }
 

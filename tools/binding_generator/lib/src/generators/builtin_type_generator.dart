@@ -151,14 +151,27 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
 }
 
 void _writeConstructors(CodeSink o, BuiltinClass builtin) {
-  o.b('${builtin.dartName}.fromPointer(Pointer<Void> ptr) {', () {
-    o.p('gde.dartBindings.variantCopyFromNative(this, ptr);');
+  o.b('${builtin.dartName}.fromVariantPtr(GDExtensionVariantPtr ptr) {', () {
+    o.p('final c = getToTypeConstructor(GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()});');
+    o.p('c!(nativePtr.cast(), ptr);');
+    //o.p('gde.dartBindings.variantCopyFromNative(this, ptr);');
   }, '}');
   o.nl();
 
   for (final constructor in builtin.constructors) {
     final arguments = constructor.arguments?.map((e) => e.proxy).toList() ?? [];
     final constructorName = getConstructorName(builtin.name, constructor);
+
+    if (constructorName == '.copy') {
+      // Add a second constructor to copy from a Pointer (used in Ptr calls)
+      o.b('${builtin.dartName}.copyPtr(GDExtensionConstTypePtr ptr) {', () {
+        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
+            () {
+          o.p('ptr.cast(),');
+        }, ']);');
+      }, '}');
+    }
+
     // Special cases -- fromGDString, fromStringName, and copy constructors for GDString and StringName
     if ((builtin.name == 'String' || builtin.name == 'StringName') &&
         constructorName == '.copy') {
@@ -171,6 +184,7 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
       o.nl();
       continue;
     }
+
     if (constructorName == '.fromGDString' ||
         constructorName == '.fromStringName') {
       final fromArgument = constructor.arguments!.first;
@@ -302,11 +316,11 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       if (method.isVararg) {
         // Special case.. use `variantCall` instead
         final retValStr = method.returnType != null ? 'Variant retVal = ' : '';
-        o.p('Variant self = convertToVariant(this);');
+        o.p('final self = Variant.fromObject(this);');
         if (method.arguments != null && method.arguments!.isNotEmpty) {
           o.b('final allArgs = <Variant>[', () {
             for (final arg in arguments) {
-              o.p('convertToVariant(${escapeName(arg.name).toLowerCamelCase()}),');
+              o.p('Variant.fromObject(${escapeName(arg.name).toLowerCamelCase()}),');
             }
             o.p('...vargs,');
           }, '];');
@@ -409,14 +423,14 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
     var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
     o.b('$dartReturnType operator [](int index) {', () {
-      o.p('final self = convertToVariant(this);');
+      o.p('final self = Variant.fromObject(this);');
       o.p('final ret = gde.variantGetIndexed(self, index);');
       o.p('return convertFromVariant(ret, null) as $dartReturnType;');
     }, '}');
     o.nl();
     o.b('void operator []=(int index, $dartReturnType value) {', () {
-      o.p('final self = convertToVariant(this);');
-      o.p('final variantValue = convertToVariant(value);');
+      o.p('final self = Variant.fromObject(this);');
+      o.p('final variantValue = Variant.fromObject(value);');
       o.p('gde.variantSetIndexed(self, index, variantValue);');
     }, '}');
     o.nl();

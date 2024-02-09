@@ -79,7 +79,7 @@ void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodIn
 
 void gde_free_method_info_fields(GDExtensionMethodInfo *method_info) {
   if (method_info->name != nullptr) {
-    delete method_info->name;
+    delete reinterpret_cast<godot::StringName*>(method_info->name);
   }
 
   gde_free_property_info_fields(&method_info->return_value);

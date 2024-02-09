@@ -121,6 +121,11 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
                      Dart_GetNonNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args_2), false,
                      "Error getting Pointer<Pointer<Void> type");
       _void_pointer_pointer_type = Dart_NewPersistentHandle(pointer_to_pointer);
+
+      DART_CHECK_RET(variant,
+                     Dart_GetNonNullableType(_core_types_library, Dart_NewStringFromCString("Variant"), 0, nullptr),
+                     false, "Error getting Variant type");
+      _variant_type = Dart_NewPersistentHandle(variant);
     }
 
     // All set up, setup the instance
@@ -189,7 +194,6 @@ void GodotDartBindings::shutdown() {
   Dart_ExitScope();
   //Dart_ExitIsolate();
 
-  // Don't actually shut down. Godot still has some cleanup to do. 😡
   _is_stopping = true;
   Dart_ShutdownIsolate();
   DartDll_Shutdown();
@@ -293,7 +297,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
       ret_type_info.variant_type != GDEXTENSION_VARIANT_TYPE_NIL,
       &ret_info,
       GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE,
-      args_length,
+      static_cast<uint32_t>(args_length),
       arg_info,
       arg_meta_info,
       0,
@@ -445,12 +449,12 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     if (!Dart_IsError(result)) {
       // Call back into Dart to convert to Variant. This may get moved back into C at some point but
       // the logic and type checking is easier in Dart.
-      Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
+      Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
       Dart_Handle args[] = {result};
-      Dart_Handle variant_result = Dart_Invoke(native_library, Dart_NewStringFromCString("_convertToVariant"), 1, args);
+      Dart_Handle variant_result = Dart_New(variant_type, Dart_NewStringFromCString("fromObject"), 1, args);
       if (Dart_IsError(variant_result)) {
         GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
-        GD_PRINT_ERROR(Dart_GetError(result));
+        GD_PRINT_ERROR(Dart_GetError(variant_result));
       } else {
         void *variantDataPtr = get_opaque_address(variant_result);
         if (variantDataPtr) {
@@ -881,8 +885,21 @@ GDE_EXPORT Dart_Handle dart_object_from_instance_binding(GDExtensionClassInstanc
   return obj;
 }
 
-GDE_EXPORT void variant_copy(void *dest, void *src, int size) {
+GDE_EXPORT void dart_memcpy(void *dest, void *src, int size) {
   memcpy(dest, src, size);
+}
+
+GDE_EXPORT void finalize_builtin_object(uint8_t *builtin_object_info) {
+  if (builtin_object_info == nullptr) {
+    return;
+  }
+
+  GDExtensionPtrDestructor *destructor = reinterpret_cast<GDExtensionPtrDestructor *>(builtin_object_info);
+  void *opaque = builtin_object_info + sizeof(GDExtensionPtrDestructor);
+  if (destructor != nullptr) {
+    (*destructor)(opaque);
+    gde_mem_free(builtin_object_info);
+  }
 }
 
 GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object) {
@@ -893,7 +910,8 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   gde_object_destroy(extention_object);
 }
 
-GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder, bool is_refcounted) {
+GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder,
+                                        bool is_refcounted) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (!bindings || godot_object == nullptr) {
     return nullptr;

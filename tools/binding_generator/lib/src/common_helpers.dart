@@ -172,7 +172,7 @@ String getArgumentDefaultValue(Argument arg, String defaultValue) {
   switch (arg.type) {
     case 'Variant':
       if (defaultValue == 'null') return 'Variant()';
-      if (defaultValue == '0') return 'convertToVariant(0)';
+      if (defaultValue == '0') return 'Variant.fromObject(0)';
       break;
     case 'Vector2':
     case 'Vector2i':
@@ -474,11 +474,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   final varName = escapeName(argument.name).toLowerCamelCase();
   var decl = 'final ${argument.dartType} $varName';
   if (argument.type == 'String') {
-    o.p('final GDString gd$varName = GDString.fromPointer(args.elementAt($index).value);');
+    o.p('final GDString gd$varName = GDString.copyPtr(args.elementAt($index).value);');
     o.p('$decl = gd$varName.toDartString();');
     return;
   } else if (argument.type == 'StringName') {
-    o.p('final StringName gd$varName = StringName.fromPointer(args.elementAt($index).value);');
+    o.p('final StringName gd$varName = StringName.copyPtr(args.elementAt($index).value);');
     o.p('$decl = GDString.fromStringName(gd$varName).toDartString();');
     return;
   }
@@ -492,7 +492,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
       }
       break;
     case TypeCategory.builtinClass:
-      o.p('$decl = ${argument.rawDartType}.fromPointer(args.elementAt($index).value);');
+      if (argument.type == 'Variant') {
+        o.p('$decl = Variant.fromVariantPtr(args.elementAt($index).value);');
+      } else {
+        o.p('$decl = ${argument.rawDartType}.copyPtr(args.elementAt($index).value);');
+      }
       break;
     case TypeCategory.primitive:
       final castType =
@@ -516,7 +520,7 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
       o.p('$decl = args.elementAt($index).cast<Pointer<Uint32>>().value.value;');
       break;
     case TypeCategory.typedArray:
-      o.p('$decl = ${argument.dartType}.fromPointer(args.elementAt($index).value);');
+      o.p('$decl = ${argument.dartType}.copyPtr(args.elementAt($index).value);');
       break;
     case TypeCategory.voidType:
       if (argument.dartType.startsWith('Pointer')) {
@@ -529,11 +533,13 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
 void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   if (argument.type == 'String') {
     o.p('final retGdString = GDString.fromString(ret);');
-    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdString);');
+    o.p('gde.dartBindings');
+    o.p('    .memcpy(retPtr, retGdString.nativePtr.cast(), GDString.sTypeInfo.size);');
     return;
   } else if (argument.type == 'StringName') {
     o.p('final retGdStringName = StringName.fromString(ret);');
-    o.p('gde.dartBindings.variantCopyToNative(retPtr, retGdStringName);');
+    o.p('gde.dartBindings');
+    o.p('    .memcpy(retPtr, retGdStringName.nativePtr.cast(), StringName.sTypeInfo.size);');
     return;
   }
 
@@ -545,7 +551,8 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
           argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
       break;
     case TypeCategory.builtinClass:
-      ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
+      ret +=
+          'gde.dartBindings.memcpy(retPtr, ret.nativePtr.cast(), ret.typeInfo.size)';
       break;
     case TypeCategory.primitive:
       final castType =
@@ -568,7 +575,8 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
       ret += 'retPtr.cast<Uint32>().value = ret';
       break;
     case TypeCategory.typedArray:
-      ret += 'gde.dartBindings.variantCopyToNative(retPtr, ret)';
+      ret +=
+          'gde.dartBindings.memcpy(retPtr, ret.nativePtr.cast(), ret.typeInfo.size)';
       break;
     case TypeCategory.voidType:
       return;

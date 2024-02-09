@@ -13,7 +13,7 @@
 #define DART_CHECK_RET(var, expr, ret, message)                                                                        \
   Dart_Handle var = (expr);                                                                                            \
   if (Dart_IsError(var)) {                                                                                             \
-    GD_PRINT_ERROR("GodotDart: "##message##": ");                                                                      \
+    GD_PRINT_ERROR("GodotDart: " message ": ");                                                                      \
     GD_PRINT_ERROR(Dart_GetError(var));                                                                                \
     return ret;                                                                                                        \
   }

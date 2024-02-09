@@ -16,13 +16,18 @@ class GodotDartNativeBindings {
           'Dart_DeletePersistentHandle')
       .asFunction<void Function(Pointer<Void>)>();
 
-  late final _variantCopy = processLib
+  late final memcpy = processLib
       .lookup<
           NativeFunction<
               Void Function(
-                  Pointer<Void>, Pointer<Void>, Int32)>>('variant_copy')
+                  Pointer<Void>, Pointer<Void>, Int32)>>('dart_memcpy')
       .asFunction<void Function(Pointer<Void>, Pointer<Void>, int size)>(
           isLeaf: true);
+
+  /// Only use for destructable builtin objects
+  late final finalizeBuiltinObject =
+      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
+          'finalize_builtin_object');
 
   late final finalizeExtensionObject =
       processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
@@ -102,21 +107,13 @@ class GodotDartNativeBindings {
       _deletePersistentHandle(handle);
     }
   }
-
-  void variantCopyToNative(Pointer<Void> dest, BuiltinType src) {
-    _variantCopy(dest, src.nativePtr.cast(), src.typeInfo.size);
-  }
-
-  void variantCopyFromNative(BuiltinType dest, Pointer<Void> src) {
-    _variantCopy(dest.nativePtr.cast(), src, dest.typeInfo.size);
-  }
 }
 
 // Potentially move this, just here for convenience
-@pragma('vm:entry-point')
-Variant _convertToVariant(Object? object) {
-  return convertToVariant(object);
-}
+// @pragma('vm:entry-point')
+// Variant _convertToVariant(Object? object) {
+//   return convertToVariant(object);
+// }
 
 @pragma('vm:entry-point')
 List<Object?> _variantsToDart(
@@ -138,7 +135,7 @@ List<Object?> _variantsToDart(
 
 @pragma('vm:entry-point')
 Object? _variantPtrToDart(Pointer<Void> variantPtr, TypeInfo typeInfo) {
-  var variant = Variant.fromPointer(variantPtr);
+  var variant = Variant.fromVariantPtr(variantPtr);
   if (typeInfo.variantType ==
       GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
     // Keep as variant

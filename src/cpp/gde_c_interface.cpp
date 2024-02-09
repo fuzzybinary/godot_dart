@@ -33,6 +33,20 @@ void *gde_mem_alloc(size_t p_bytes) {
   return nullptr;
 }
 
+static GDExtensionInterfaceMemFree _mem_free_func = nullptr;
+void gde_mem_free(void* p_mem) {
+  if (_mem_free_func) {
+    _mem_free_func(p_mem);
+  }  
+}
+
+static GDExtensionInterfaceVariantDestroy _variant_destroy_func = nullptr;
+void gde_variant_destroy(GDExtensionVariantPtr p_self) {
+  if (_variant_destroy_func) {
+    return _variant_destroy_func(p_self);
+  }
+}
+
 static GDExtensionInterfaceVariantGetPtrConstructor _variant_get_ptr_constructor_func = nullptr;
 GDExtensionPtrConstructor gde_variant_get_ptr_constructor(GDExtensionVariantType p_type, int32_t p_constructor) {
   if (_variant_get_ptr_constructor_func) {
@@ -366,6 +380,8 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(print_error, GDExtensionInterfacePrintError);
   LOAD_METHOD(print_warning, GDExtensionInterfacePrintWarning);
   LOAD_METHOD(mem_alloc, GDExtensionInterfaceMemAlloc);
+  LOAD_METHOD(mem_free, GDExtensionInterfaceMemFree);
+  LOAD_METHOD(variant_destroy, GDExtensionInterfaceVariantDestroy);
   LOAD_METHOD(variant_get_ptr_constructor, GDExtensionInterfaceVariantGetPtrConstructor);
   LOAD_METHOD(variant_get_ptr_destructor, GDExtensionInterfaceVariantGetPtrDestructor);
   LOAD_METHOD(variant_new_copy, GDExtensionInterfaceVariantNewCopy);

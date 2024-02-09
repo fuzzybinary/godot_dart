@@ -8,6 +8,7 @@ set(EXAMPLE_DIR "${PROJECT_SOURCE_DIR}/../../example")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_BUILD_TYPE Debug)
 
 add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 
@@ -44,7 +45,7 @@ find_library(DART_DLL_DEBUG
 
 find_library(DART_DLL_RELEASE
     NAMES "dart_dll"
-    HINTS "${DART_DIR}/bin/win64"
+    HINTS "${DART_DIR}/bin/win64" "${DART_DIR}/bin/linux_x64"
 )
 
 if(WIN32)
@@ -70,18 +71,14 @@ if(WIN32)
     set_property(TARGET godot_dart PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
     )
-# elseif(LINUX)
-#     set(THREADS_PREFER_PTHREAD_FLAG ON)
-#     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/linux-x64/clang/bin/clang")
-#     set(CMAKE_CXX_COMPILER "${DART_DIR}/buildtools/linux-x64/clang/bin/clang++")
-#     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -nostdlib++ ${DART_DIR}/buildtools/linux-x64/clang/lib/x86_64-unknown-linux-gnu/libc++.a")
-#     #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+elseif(LINUX)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-#     find_package(Threads REQUIRED)
-#     target_link_libraries(godot_dart 
-#         Threads::Threads
-#         ${CMAKE_DL_LIBS}
-#     )
+    find_package(Threads REQUIRED)
+    target_link_libraries(godot_dart 
+        Threads::Threads
+        ${CMAKE_DL_LIBS}
+    )
 # elseif(APPLE)
 #     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang")
 #     set(CMAKE_CXX_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang++")

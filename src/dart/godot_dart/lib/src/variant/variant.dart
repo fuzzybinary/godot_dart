@@ -12,11 +12,13 @@ typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
 typedef GDExtensionTypeFromVariant = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
+typedef VariantConstructor = void Function(
+    GDExtensionVariantPtr, GDExtensionTypePtr);
 
 late List<GDExtensionVariantFromType?> _fromTypeConstructor;
 late List<GDExtensionTypeFromVariant?> _toTypeConstructor;
 
-typedef BuiltinConstructor = BuiltinType Function();
+typedef BuiltinConstructor = BuiltinType Function(GDExtensionVariantPtr);
 Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
 void initVariantBindings(GDExtensionFFI ffIinterface) {
@@ -50,78 +52,93 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
   GDString.initBindings();
 
   StringName.initBindings();
-  _dartBuiltinConstructors[StringName.sTypeInfo.variantType] = StringName.new;
+  _dartBuiltinConstructors[StringName.sTypeInfo.variantType] =
+      StringName.fromVariantPtr;
 
   // Generate this?
   Vector2.initBindings();
-  _dartBuiltinConstructors[Vector2.sTypeInfo.variantType] = Vector2.new;
+  _dartBuiltinConstructors[Vector2.sTypeInfo.variantType] =
+      Vector2.fromVariantPtr;
   Vector2i.initBindings();
-  _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] = Vector2i.new;
+  _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] =
+      Vector2i.fromVariantPtr;
   Vector3i.initBindings();
-  _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] = Vector3i.new;
+  _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] =
+      Vector3i.fromVariantPtr;
   Vector4.initBindings();
-  _dartBuiltinConstructors[Vector4.sTypeInfo.variantType] = Vector4.new;
+  _dartBuiltinConstructors[Vector4.sTypeInfo.variantType] =
+      Vector4.fromVariantPtr;
   Vector4i.initBindings();
-  _dartBuiltinConstructors[Vector4i.sTypeInfo.variantType] = Vector4i.new;
+  _dartBuiltinConstructors[Vector4i.sTypeInfo.variantType] =
+      Vector4i.fromVariantPtr;
   Quaternion.initBindings();
-  _dartBuiltinConstructors[Quaternion.sTypeInfo.variantType] = Quaternion.new;
+  _dartBuiltinConstructors[Quaternion.sTypeInfo.variantType] =
+      Quaternion.fromVariantPtr;
   Rect2.initBindings();
-  _dartBuiltinConstructors[Rect2.sTypeInfo.variantType] = Rect2.new;
+  _dartBuiltinConstructors[Rect2.sTypeInfo.variantType] = Rect2.fromVariantPtr;
   Rect2i.initBindings();
-  _dartBuiltinConstructors[Rect2i.sTypeInfo.variantType] = Rect2i.new;
+  _dartBuiltinConstructors[Rect2i.sTypeInfo.variantType] =
+      Rect2i.fromVariantPtr;
   Transform2D.initBindings();
-  _dartBuiltinConstructors[Transform2D.sTypeInfo.variantType] = Transform2D.new;
+  _dartBuiltinConstructors[Transform2D.sTypeInfo.variantType] =
+      Transform2D.fromVariantPtr;
   Plane.initBindings();
-  _dartBuiltinConstructors[Plane.sTypeInfo.variantType] = Plane.new;
+  _dartBuiltinConstructors[Plane.sTypeInfo.variantType] = Plane.fromVariantPtr;
   AABB.initBindings();
-  _dartBuiltinConstructors[AABB.sTypeInfo.variantType] = AABB.new;
+  _dartBuiltinConstructors[AABB.sTypeInfo.variantType] = AABB.fromVariantPtr;
   Basis.initBindings();
-  _dartBuiltinConstructors[Basis.sTypeInfo.variantType] = Basis.new;
+  _dartBuiltinConstructors[Basis.sTypeInfo.variantType] = Basis.fromVariantPtr;
   Transform3D.initBindings();
-  _dartBuiltinConstructors[Transform3D.sTypeInfo.variantType] = Transform3D.new;
+  _dartBuiltinConstructors[Transform3D.sTypeInfo.variantType] =
+      Transform3D.fromVariantPtr;
   Projection.initBindings();
-  _dartBuiltinConstructors[Projection.sTypeInfo.variantType] = Projection.new;
+  _dartBuiltinConstructors[Projection.sTypeInfo.variantType] =
+      Projection.fromVariantPtr;
   Color.initBindings();
-  _dartBuiltinConstructors[Color.sTypeInfo.variantType] = Color.new;
+  _dartBuiltinConstructors[Color.sTypeInfo.variantType] = Color.fromVariantPtr;
   NodePath.initBindings();
-  _dartBuiltinConstructors[NodePath.sTypeInfo.variantType] = NodePath.new;
+  _dartBuiltinConstructors[NodePath.sTypeInfo.variantType] =
+      NodePath.fromVariantPtr;
   RID.initBindings();
-  _dartBuiltinConstructors[RID.sTypeInfo.variantType] = RID.new;
+  _dartBuiltinConstructors[RID.sTypeInfo.variantType] = RID.fromVariantPtr;
   Callable.initBindings();
-  _dartBuiltinConstructors[Callable.sTypeInfo.variantType] = Callable.new;
+  _dartBuiltinConstructors[Callable.sTypeInfo.variantType] =
+      Callable.fromVariantPtr;
   Signal.initBindings();
-  _dartBuiltinConstructors[Signal.sTypeInfo.variantType] = Signal.new;
+  _dartBuiltinConstructors[Signal.sTypeInfo.variantType] =
+      Signal.fromVariantPtr;
   Dictionary.initBindings();
-  _dartBuiltinConstructors[Dictionary.sTypeInfo.variantType] = Dictionary.new;
+  _dartBuiltinConstructors[Dictionary.sTypeInfo.variantType] =
+      Dictionary.fromVariantPtr;
   Array.initBindings();
-  _dartBuiltinConstructors[Array.sTypeInfo.variantType] = Array.new;
+  _dartBuiltinConstructors[Array.sTypeInfo.variantType] = Array.fromVariantPtr;
   PackedByteArray.initBindings();
   _dartBuiltinConstructors[PackedByteArray.sTypeInfo.variantType] =
-      PackedByteArray.new;
+      PackedByteArray.fromVariantPtr;
   PackedInt32Array.initBindings();
   _dartBuiltinConstructors[PackedInt32Array.sTypeInfo.variantType] =
-      PackedInt32Array.new;
+      PackedInt32Array.fromVariantPtr;
   PackedInt64Array.initBindings();
   _dartBuiltinConstructors[PackedInt64Array.sTypeInfo.variantType] =
-      PackedInt64Array.new;
+      PackedInt64Array.fromVariantPtr;
   PackedFloat32Array.initBindings();
   _dartBuiltinConstructors[PackedFloat32Array.sTypeInfo.variantType] =
-      PackedFloat32Array.new;
+      PackedFloat32Array.fromVariantPtr;
   PackedFloat64Array.initBindings();
   _dartBuiltinConstructors[PackedFloat64Array.sTypeInfo.variantType] =
-      PackedFloat64Array.new;
+      PackedFloat64Array.fromVariantPtr;
   PackedStringArray.initBindings();
   _dartBuiltinConstructors[PackedStringArray.sTypeInfo.variantType] =
-      PackedStringArray.new;
+      PackedStringArray.fromVariantPtr;
   PackedVector2Array.initBindings();
   _dartBuiltinConstructors[PackedVector2Array.sTypeInfo.variantType] =
-      PackedVector2Array.new;
+      PackedVector2Array.fromVariantPtr;
   PackedVector3Array.initBindings();
   _dartBuiltinConstructors[PackedVector3Array.sTypeInfo.variantType] =
-      PackedVector3Array.new;
+      PackedVector3Array.fromVariantPtr;
   PackedColorArray.initBindings();
   _dartBuiltinConstructors[PackedColorArray.sTypeInfo.variantType] =
-      PackedColorArray.new;
+      PackedColorArray.fromVariantPtr;
 }
 
 @internal
@@ -130,7 +147,12 @@ GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
 }
 
 // TODO: Variant probably shouldn't extend BuiltinType?
-class Variant extends BuiltinType {
+class Variant extends BuiltinType implements Finalizable {
+  static final finalizer = Finalizer((Pointer<Uint8> mem) {
+    gde.ffiBindings.gde_variant_destroy(mem.cast());
+    calloc.free(mem);
+  });
+
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
@@ -145,109 +167,116 @@ class Variant extends BuiltinType {
   TypeInfo get typeInfo => sTypeInfo;
 
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
+
   @override
   Pointer<Uint8> get nativePtr => _opaque;
 
-  Variant() : super();
-
-  Variant.fromPointer(Pointer<void> ptr) {
-    gde.dartBindings.variantCopyFromNative(this, ptr.cast());
+  Variant() : super.nonFinalized() {
+    gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
+    _attachFinalizer();
   }
+
+  Variant.fromObject(Object? obj) : super.nonFinalized() {
+    _initFromObject(obj);
+    _attachFinalizer();
+  }
+
+  Variant.fromVariantPtr(Pointer<void> ptr) : super.nonFinalized() {
+    gde.ffiBindings.gde_variant_new_copy(nativePtr.cast(), ptr.cast());
+    _attachFinalizer();
+  }
+
+  // Variant.constructFromPointer(Pointer<void> ptr, VariantConstructor c)
+  //     : super.nonFinalized() {
+
+  //   _attachFinalizer();
+  // }
 
   int getType() {
     return gde.ffiBindings.gde_variant_get_type(_opaque.cast());
   }
-}
 
-Variant convertToVariant(Object? obj) {
-  final ret = Variant();
-  final objectType = obj?.runtimeType;
-  void Function(GDExtensionVariantPtr, GDExtensionTypePtr)? c;
-
-  // First easy checks, are we null?
-  if (obj == null) {
-    gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
-    // } else if (obj is Ref) {
-    //   final referencedObj = obj.obj;
-    //   if (referencedObj == null) {
-    //     gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
-    //   } else {
-    //     // Already an Object, but constructor expects a pointer to the object
-    //     Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
-    //     ptrToObj.value = referencedObj.nativePtr;
-    //     c = _fromTypeConstructor[
-    //         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-    //     c?.call(ret.nativePtr.cast(), ptrToObj.cast());
-    //     malloc.free(ptrToObj);
-    //   }
-  } else if (obj is ExtensionType) {
-    // Already an Object, but constructor expects a pointer to the object
-    Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
-    ptrToObj.value = obj.nativePtr;
-    c = _fromTypeConstructor[
-        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-    c?.call(ret.nativePtr.cast(), ptrToObj.cast());
-    malloc.free(ptrToObj);
-  } else if (obj is Pointer) {
-    // Passed in a pointer, assume we know what we're doing and this is actually a
-    // pointer to a Godot object.
-    // TODO: Try to find a way to remove this to prevent abuse.
-    c = _fromTypeConstructor[
-        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
-    c?.call(ret.nativePtr.cast(), obj.cast());
-  } else if (obj is BuiltinType) {
-    // Builtin type
-    var typeInfo = obj.typeInfo;
-    c = _fromTypeConstructor[typeInfo.variantType];
-    c?.call(ret.nativePtr.cast(), obj.nativePtr.cast());
-  } else {
-    // Convert built in types
-    using((arena) {
-      switch (objectType) {
-        case bool:
-          final b = arena.allocate<GDExtensionBool>(sizeOf<GDExtensionBool>());
-          b.value = (obj as bool) ? 1 : 0;
-          c = _fromTypeConstructor[
-              GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL];
-          c?.call(ret.nativePtr.cast(), b.cast());
-          break;
-        case int:
-          final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
-          i.value = obj as int;
-          c = _fromTypeConstructor[
-              GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
-          c?.call(ret.nativePtr.cast(), i.cast());
-          break;
-        case double:
-          final d = arena.allocate<Double>(sizeOf<Double>());
-          d.value = obj as double;
-          c = _fromTypeConstructor[
-              GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT];
-          c?.call(ret.nativePtr.cast(), d.cast());
-          break;
-        case String:
-          final gdString = GDString.fromString(obj as String);
-          c = _fromTypeConstructor[
-              GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
-          c?.call(ret.nativePtr.cast(), gdString.nativePtr.cast());
-          break;
-        // TODO: All the other variant types (dictionary? List?)
-        default:
-          // If we got here, return nil variant
-          gde.ffiBindings.gde_variant_new_nil(ret.nativePtr.cast());
-      }
-    });
+  void _attachFinalizer() {
+    finalizer.attach(this, _opaque.cast());
   }
 
-  return ret;
+  void _initFromObject(Object? obj) {
+    if (obj == null) {
+      gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
+    } else if (obj is ExtensionType) {
+      // Already an Object, but constructor expects a pointer to the object
+      Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
+      ptrToObj.value = obj.nativePtr;
+      final c = _fromTypeConstructor[
+          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+      c!.call(nativePtr.cast(), ptrToObj.cast());
+      malloc.free(ptrToObj);
+    } else if (obj is Pointer) {
+      // Passed in a pointer, assume we know what we're doing and this is actually a
+      // pointer to a Godot object.
+      // TODO: Try to find a way to remove this to prevent abuse.
+      final c = _fromTypeConstructor[
+          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+      c!.call(nativePtr.cast(), obj.cast());
+    } else if (obj is BuiltinType) {
+      // Builtin type
+      final typeInfo = obj.typeInfo;
+      final c = _fromTypeConstructor[typeInfo.variantType];
+      c!.call(nativePtr.cast(), obj.nativePtr.cast());
+    } else {
+      // Convert built in types
+      using((arena) {
+        // TODO: remove this use of runtimeType? Won't work for generics.
+        switch (obj.runtimeType) {
+          case bool:
+            final b =
+                arena.allocate<GDExtensionBool>(sizeOf<GDExtensionBool>());
+            b.value = (obj as bool) ? 1 : 0;
+            final c = _fromTypeConstructor[
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL];
+            c!(nativePtr.cast(), b.cast());
+            break;
+          case int:
+            final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
+            i.value = obj as int;
+            final c = _fromTypeConstructor[
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
+            c!(nativePtr.cast(), i.cast());
+            break;
+          case double:
+            final d = arena.allocate<Double>(sizeOf<Double>());
+            d.value = obj as double;
+            final c = _fromTypeConstructor[
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT];
+            c!(nativePtr.cast(), d.cast());
+            break;
+          case String:
+            final gdString = GDString.fromString(obj as String);
+            final c = _fromTypeConstructor[
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
+            c!(nativePtr.cast(), gdString.nativePtr.cast());
+            break;
+          // TODO: All the other variant types (dictionary? List?)
+          default:
+            // If we got here, return nil variant
+            throw ArgumentError(
+                'Trying to create Variant with unsupported object type ${obj.runtimeType}',
+                'obj');
+        }
+      });
+    }
+  }
 }
 
-Object? convertFromVariant(
-  Variant variant,
-  TypeInfo? typeInfo,
-) {
+// Mostly use from C where we don't need to hold a copy of the Variant and
+// can copy it directly from its pointer. Prevents an extra constructor / destructor
+// call.
+@pragma('vm:entry-point')
+Object? convertFromVariantPtr(
+    GDExtensionVariantPtr variantPtr, TypeInfo? typeInfo) {
   Object? ret;
-  int variantType = variant.getType();
+
+  int variantType = gde.ffiBindings.gde_variant_get_type(variantPtr.cast());
   void Function(GDExtensionTypePtr, GDExtensionVariantPtr)? c;
   if (variantType > 0 && variantType < _toTypeConstructor.length) {
     c = _toTypeConstructor[variantType];
@@ -259,10 +288,10 @@ Object? convertFromVariant(
   }
 
   // Do we have a CoreType that we can use to match?
+  // TODO: Replace `new` with `fromVariantPtr`
   final builtinConstructor = _dartBuiltinConstructors[variantType];
   if (builtinConstructor != null) {
-    var builtin = builtinConstructor();
-    c(builtin.nativePtr.cast(), variant.nativePtr.cast());
+    var builtin = builtinConstructor(variantPtr);
     return builtin;
   }
 
@@ -273,40 +302,40 @@ Object? convertFromVariant(
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL:
         Pointer<GDExtensionBool> ptr =
             arena.allocate(sizeOf<GDExtensionBool>());
-        c!(ptr.cast(), variant.nativePtr.cast());
+        c!(ptr.cast(), variantPtr);
         ret = ptr.value != 0;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT:
         Pointer<GDExtensionInt> ptr = arena.allocate(sizeOf<GDExtensionInt>());
-        c!(ptr.cast(), variant.nativePtr.cast());
+        c!(ptr.cast(), variantPtr);
         ret = ptr.value;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT:
         Pointer<Double> ptr = arena.allocate(sizeOf<Double>());
-        c!(ptr.cast(), variant.nativePtr.cast());
+        c!(ptr.cast(), variantPtr);
         ret = ptr.value;
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING_NAME:
         var gdStringName = StringName();
-        c!(gdStringName.nativePtr.cast(), variant.nativePtr.cast());
+        c!(gdStringName.nativePtr.cast(), variantPtr);
         ret = gdStringName.toDartString();
         break;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
-        c!(gdString.nativePtr.cast(), variant.nativePtr.cast());
+        c!(gdString.nativePtr.cast(), variantPtr);
         ret = gdString.toDartString();
         break;
 
       // Or a hand-implemented object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
-        ret = Vector3.fromVariant(variant);
+        ret = Vector3.fromVariantPtr(variantPtr);
         break;
 
       // Or a wrapped object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
-        c!(ptr.cast(), variant.nativePtr.cast());
+        c!(ptr.cast(), variantPtr);
         ret = gde.dartBindings.gdObjectToDartObject(
           ptr.value,
           typeInfo?.bindingToken,
@@ -318,5 +347,14 @@ Object? convertFromVariant(
         ret = null;
     }
   });
+
   return ret;
+}
+
+// Use in all cases where you already have a Dart Variant.
+Object? convertFromVariant(
+  Variant variant,
+  TypeInfo? typeInfo,
+) {
+  return convertFromVariantPtr(variant.nativePtr.cast(), typeInfo);
 }

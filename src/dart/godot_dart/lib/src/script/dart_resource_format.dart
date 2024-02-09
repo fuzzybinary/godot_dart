@@ -75,7 +75,7 @@ class DartResourceFormatLoader extends ResourceFormatLoader {
     }
     script.setPath(path);
 
-    return convertToVariant(script);
+    return Variant.fromObject(script);
   }
 
   @override

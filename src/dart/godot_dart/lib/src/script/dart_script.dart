@@ -105,7 +105,7 @@ class DartScript extends ScriptExtension {
 
     if (_scriptInfo != null) {
       for (final signal in _scriptInfo!.signals) {
-        gdSignals.append(convertToVariant(signal.asDict()));
+        gdSignals.append(Variant.fromObject(signal.asDict()));
       }
     }
 
@@ -121,7 +121,7 @@ class DartScript extends ScriptExtension {
 
     if (_scriptInfo != null) {
       for (final method in _scriptInfo!.methods) {
-        gdMethods.append(convertToVariant(method.asDict()));
+        gdMethods.append(Variant.fromObject(method.asDict()));
       }
     }
 
@@ -137,7 +137,7 @@ class DartScript extends ScriptExtension {
 
     if (_scriptInfo != null) {
       for (final prop in _scriptInfo!.properties) {
-        gdProperties.append(convertToVariant(prop.asDict()));
+        gdProperties.append(Variant.fromObject(prop.asDict()));
       }
     }
 

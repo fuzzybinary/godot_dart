@@ -23,16 +23,17 @@ class MethodInfo {
 
   Dictionary asDict() {
     var dict = Dictionary();
-    dict[convertToVariant('name')] = convertToVariant(name);
+    dict[Variant.fromObject('name')] = Variant.fromObject(name);
     var argsArray = Array();
     for (int i = 0; i < args.length; ++i) {
-      argsArray.append(convertToVariant(args[i].asDict()));
+      argsArray.append(Variant.fromObject(args[i].asDict()));
     }
-    dict[convertToVariant('args')] = convertToVariant(argsArray);
+    dict[Variant.fromObject('args')] = Variant.fromObject(argsArray);
     if (returnInfo != null) {
-      dict[convertToVariant('return')] = convertToVariant(returnInfo?.asDict());
+      dict[Variant.fromObject('return')] =
+          Variant.fromObject(returnInfo?.asDict());
     }
-    dict[convertToVariant('flags')] = convertToVariant(flags);
+    dict[Variant.fromObject('flags')] = Variant.fromObject(flags);
 
     return dict;
   }

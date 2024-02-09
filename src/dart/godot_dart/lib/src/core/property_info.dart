@@ -18,12 +18,13 @@ class PropertyInfo {
   Dictionary asDict() {
     final dict = Dictionary();
 
-    dict[convertToVariant('type')] = convertToVariant(typeInfo.variantType);
-    dict[convertToVariant('name')] = convertToVariant(name);
-    dict[convertToVariant('class_name')] = convertToVariant(typeInfo.className);
-    dict[convertToVariant('hint')] = convertToVariant(hint);
-    dict[convertToVariant('hint_string')] = convertToVariant(hintString);
-    dict[convertToVariant('usage')] = convertToVariant(flags);
+    dict[Variant.fromObject('type')] = Variant.fromObject(typeInfo.variantType);
+    dict[Variant.fromObject('name')] = Variant.fromObject(name);
+    dict[Variant.fromObject('class_name')] =
+        Variant.fromObject(typeInfo.className);
+    dict[Variant.fromObject('hint')] = Variant.fromObject(hint);
+    dict[Variant.fromObject('hint_string')] = Variant.fromObject(hintString);
+    dict[Variant.fromObject('usage')] = Variant.fromObject(flags);
 
     return dict;
   }
