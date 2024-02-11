@@ -119,7 +119,7 @@
       "name": "godot_dart",
       "rootUri": "../../godot_dart",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.0"
     },
     {
       "name": "json_annotation",
@@ -239,10 +239,10 @@
       "name": "godot_dart_build",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.0"
     }
   ],
-  "generated": "2024-02-01T23:18:55.785469Z",
+  "generated": "2024-02-10T04:27:01.465542Z",
   "generator": "pub",
   "generatorVersion": "3.2.3"
 }

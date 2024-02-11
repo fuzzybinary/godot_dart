@@ -24,7 +24,7 @@ class GameLogic extends Node {
   GameLogic() : super();
 
   GameLogic.withNonNullOwner(Pointer<Void> owner)
-      : super.withNonNullOwner(owner);
+	  : super.withNonNullOwner(owner);
 
   @override
   void vReady() {}
@@ -34,65 +34,65 @@ class GameLogic extends Node {
 
   @GodotExport()
   void gameOver() {
-    getNodeT<Timer>('ScoreTimer')?.stop();
-    getNodeT<Timer>('MobTimer')?.stop();
+	getNodeT<Timer>('ScoreTimer')?.stop();
+	getNodeT<Timer>('MobTimer')?.stop();
 
-    getNodeT<Hud>('HUD')?.showGameOver();
+	getNodeT<Hud>('HUD')?.showGameOver();
 
-    getTree()?.callGroup('mobs', 'queue_free');
-    getNodeT<AudioStreamPlayer>('Music')?.stop();
-    getNodeT<AudioStreamPlayer>('DeathSound')?.play();
+	getTree()?.callGroup('mobs', 'queue_free');
+	getNodeT<AudioStreamPlayer>('Music')?.stop();
+	getNodeT<AudioStreamPlayer>('DeathSound')?.play();
   }
 
   @GodotExport()
   void newGame() {
-    _score = 0;
-    var startPosition = getNodeT<Marker2D>('StartPosition')!;
-    var player = getNodeT<Player>();
+	_score = 0;
+	var startPosition = getNodeT<Marker2D>('StartPosition')!;
+	var player = getNodeT<Player>();
 
-    player?.start(startPosition.getPosition());
+	player?.start(startPosition.getPosition());
 
-    getNodeT<Timer>('StartTimer')?.start();
+	getNodeT<Timer>('StartTimer')?.start();
 
-    final hud = getNodeT<Hud>('HUD');
-    hud?.updateScore(_score);
-    hud?.showMessage('Get Ready!');
+	final hud = getNodeT<Hud>('HUD');
+	hud?.updateScore(_score);
+	hud?.showMessage('Get Ready!');
 
-    getNodeT<AudioStreamPlayer>('Music')?.play();
+	getNodeT<AudioStreamPlayer>('Music')?.play();
   }
 
   @GodotExport()
   void onScoreTimerTimeout() {
-    _score++;
-    getNodeT<Hud>('HUD')?.updateScore(_score);
+	_score++;
+	getNodeT<Hud>('HUD')?.updateScore(_score);
   }
 
   @GodotExport()
   void onStartTimerTimeout() {
-    getNodeT<Timer>('MobTimer')?.start();
-    getNodeT<Timer>('ScoreTimer')?.start();
+	getNodeT<Timer>('MobTimer')?.start();
+	getNodeT<Timer>('ScoreTimer')?.start();
   }
 
   @GodotExport()
   void onMobTimerTimeout() {
-    final mob = mobScene?.instantiate()?.cast<Mob>();
-    if (mob != null) {
-      var mobSpawnLocation =
-          getNodeT<PathFollow2D>('MobPath/MobSpawnLocation')!;
-      mobSpawnLocation.setProgressRatio(_random.nextDouble());
+	final mob = mobScene?.instantiate()?.cast<Mob>();
+	if (mob != null) {
+	  var mobSpawnLocation =
+		  getNodeT<PathFollow2D>('MobPath/MobSpawnLocation')!;
+	  mobSpawnLocation.setProgressRatio(_random.nextDouble());
 
-      var direction = mobSpawnLocation.getRotation() + math.pi / 2;
+	  var direction = mobSpawnLocation.getRotation() + math.pi / 2;
 
-      mob.setPosition(mobSpawnLocation.getPosition());
+	  mob.setPosition(mobSpawnLocation.getPosition());
 
-      direction += -(math.pi / 4) + _random.nextDouble() * (math.pi / 2);
-      mob.setRotation(direction);
+	  direction += -(math.pi / 4) + _random.nextDouble() * (math.pi / 2);
+	  mob.setRotation(direction);
 
-      var velocity = Vector2.fromXY(150 + _random.nextDouble() * 100, 0);
-      velocity = velocity.rotated(direction);
-      mob.setLinearVelocity(velocity);
+	  var velocity = Vector2.fromXY(150 + _random.nextDouble() * 100, 0);
+	  velocity = velocity.rotated(direction);
+	  mob.setLinearVelocity(velocity);
 
-      addChild(mob);
-    }
+	  addChild(mob);
+	}
   }
 }

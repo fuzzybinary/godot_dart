@@ -211,6 +211,8 @@ class Variant extends BuiltinType implements Finalizable {
           GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
       c!.call(nativePtr.cast(), ptrToObj.cast());
       malloc.free(ptrToObj);
+    } else if (obj is Variant) {
+      gde.ffiBindings.gde_variant_new_copy(nativePtr.cast(), nativePtr.cast());
     } else if (obj is Pointer) {
       // Passed in a pointer, assume we know what we're doing and this is actually a
       // pointer to a Godot object.
@@ -226,39 +228,44 @@ class Variant extends BuiltinType implements Finalizable {
     } else {
       // Convert built in types
       using((arena) {
-        // TODO: remove this use of runtimeType? Won't work for generics.
-        switch (obj.runtimeType) {
-          case bool:
+        switch (obj) {
+          case final bool obj:
             final b =
                 arena.allocate<GDExtensionBool>(sizeOf<GDExtensionBool>());
-            b.value = (obj as bool) ? 1 : 0;
+            b.value = obj ? 1 : 0;
             final c = _fromTypeConstructor[
                 GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL];
             c!(nativePtr.cast(), b.cast());
             break;
-          case int:
+          case final Enum obj:
             final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
-            i.value = obj as int;
+            i.value = obj.index;
             final c = _fromTypeConstructor[
                 GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
             c!(nativePtr.cast(), i.cast());
             break;
-          case double:
+          case final int obj:
+            final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
+            i.value = obj;
+            final c = _fromTypeConstructor[
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
+            c!(nativePtr.cast(), i.cast());
+            break;
+          case final double obj:
             final d = arena.allocate<Double>(sizeOf<Double>());
-            d.value = obj as double;
+            d.value = obj;
             final c = _fromTypeConstructor[
                 GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT];
             c!(nativePtr.cast(), d.cast());
             break;
-          case String:
-            final gdString = GDString.fromString(obj as String);
+          case final String obj:
+            final gdString = GDString.fromString(obj);
             final c = _fromTypeConstructor[
                 GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
             c!(nativePtr.cast(), gdString.nativePtr.cast());
             break;
           // TODO: All the other variant types (dictionary? List?)
           default:
-            // If we got here, return nil variant
             throw ArgumentError(
                 'Trying to create Variant with unsupported object type ${obj.runtimeType}',
                 'obj');
@@ -288,7 +295,6 @@ Object? convertFromVariantPtr(
   }
 
   // Do we have a CoreType that we can use to match?
-  // TODO: Replace `new` with `fromVariantPtr`
   final builtinConstructor = _dartBuiltinConstructors[variantType];
   if (builtinConstructor != null) {
     var builtin = builtinConstructor(variantPtr);

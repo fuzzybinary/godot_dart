@@ -93,7 +93,7 @@ Future<void> generateNativeStructures(
     }
     o.nl();
 
-    o.b('class ${nativeStruct.dartName} extends Struct {', () {
+    o.b('final class ${nativeStruct.dartName} extends Struct {', () {
       // Write fields
       for (final field in fields) {
         var dartType = getCorrectedType(field.type);
