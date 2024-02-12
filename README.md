@@ -8,10 +8,12 @@ And I want to use it in Godot.
 
 # Current State
 
-```
-⚠ NOTE -- Current master of this extension currently requires [this PR](https://github.com/godotengine/godot/pull/80671). Once that
-PR is merged, this extension will only be Godot 4.2 compatible
-```
+> [!WARNING]  
+> The current `master` branch of this extension is unstable after a massive rewrite of `Variant` that is ongoing.
+
+> [!NOTE]  
+> This extension is compatible with Godot 4.2+
+
 
 Here's a list of planned features and work still to be done ( ✅ - Seems to be
 working, 🟨 - Partially working, ❌ - Not working)
@@ -31,29 +33,22 @@ Some notes about the current state:
 * The binding is likely leaking both Dart objects and native allocations. I
   intend on making a pass through to make sure all of that is cleaned up at some
   point and correctly utilizes native finalizers.
-* Right now Godot will crash on exit because the binding isn't cleaning up after
-  itself and it tried to free Dart objects after Dart has aready been shut down.
-* The binding has a possibility of taking 1 ms of time every frame waiting for messages
-  from Dart, because of the call to `Dart_WaitForEvent(1)`. If there are no events in
-  queue, this method will wait for 1ms before moving on. I'll need to add a "no wait"
-  version to Dart directly (or have the Dart team do it) in order to fix.
 
 # Using
 
-```
-I have only tested this on Windows. I know for certain it will only work on 'float_64' builds of Godot.
-```
+> [!NOTE]  
+> This extension is compatible with Godot 4.2+ x64 and has been tested for Linux and Windows
+
 
 ## Things you will need
 
 * A clone of this repo.
-* Dart (2.19 Current Stable, not tested with 3.0)
+* Dart 3.0 stable
 * Godot 4.2.x - Note above the pending pull request.
 * A build of the [Dart Shared
   Library](https://github.com/fuzzybinary/dart_shared_libray). Windows x64 .dlls
-  for Dart 2.19 are provided in `src/dart_dll/bin/win64`.
-* A way to build `src/cpp`. A Visual Studio solution is provided if you have
-  Visual Studio. If not, use your favorite tool to build the provided files.
+  for Dart 3 are provided in `src/dart_dll/bin/win64`.
+* CMake 3.21+
 
 ## Current Setup
 
@@ -211,6 +206,5 @@ void main() {
 # More Info
 
 This utilizes my custom built Dart shared library for embedding Dart, the source
-for which is available
-[here](https://github.com/fuzzybinary/dart_shared_libray). I've included the
-win64 prebuilt binaries in this repo for simplicity.
+for which is available [here](https://github.com/fuzzybinary/dart_shared_libray). 
+I've included the win64 prebuilt binaries in this repo for simplicity.
