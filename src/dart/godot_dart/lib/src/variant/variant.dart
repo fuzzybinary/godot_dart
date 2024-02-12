@@ -146,8 +146,7 @@ GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
   return _toTypeConstructor[type];
 }
 
-// TODO: Variant probably shouldn't extend BuiltinType?
-class Variant extends BuiltinType implements Finalizable {
+class Variant implements Finalizable {
   static final finalizer = Finalizer((Pointer<Uint8> mem) {
     gde.ffiBindings.gde_variant_destroy(mem.cast());
     calloc.free(mem);
@@ -163,34 +162,26 @@ class Variant extends BuiltinType implements Finalizable {
     size: _size,
   );
 
-  @override
   TypeInfo get typeInfo => sTypeInfo;
 
   final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
 
-  @override
   Pointer<Uint8> get nativePtr => _opaque;
 
-  Variant() : super.nonFinalized() {
+  Variant() {
     gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
     _attachFinalizer();
   }
 
-  Variant.fromObject(Object? obj) : super.nonFinalized() {
+  Variant.fromObject(Object? obj) {
     _initFromObject(obj);
     _attachFinalizer();
   }
 
-  Variant.fromVariantPtr(Pointer<void> ptr) : super.nonFinalized() {
+  Variant.fromVariantPtr(Pointer<void> ptr) {
     gde.ffiBindings.gde_variant_new_copy(nativePtr.cast(), ptr.cast());
     _attachFinalizer();
   }
-
-  // Variant.constructFromPointer(Pointer<void> ptr, VariantConstructor c)
-  //     : super.nonFinalized() {
-
-  //   _attachFinalizer();
-  // }
 
   int getType() {
     return gde.ffiBindings.gde_variant_get_type(_opaque.cast());
@@ -212,7 +203,8 @@ class Variant extends BuiltinType implements Finalizable {
       c!.call(nativePtr.cast(), ptrToObj.cast());
       malloc.free(ptrToObj);
     } else if (obj is Variant) {
-      gde.ffiBindings.gde_variant_new_copy(nativePtr.cast(), nativePtr.cast());
+      gde.ffiBindings
+          .gde_variant_new_copy(nativePtr.cast(), obj.nativePtr.cast());
     } else if (obj is Pointer) {
       // Passed in a pointer, assume we know what we're doing and this is actually a
       // pointer to a Godot object.
