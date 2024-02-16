@@ -93,8 +93,9 @@ class GodotDart {
     ExtensionType? instance,
     List<Variant> args,
   ) {
-    final ret = Variant();
+    Variant? ret;
     using((arena) {
+      final variantOpaque = arena.allocate(Variant.sTypeInfo.size);
       final errorPtr =
           arena.allocate<GDExtensionCallError>(sizeOf<GDExtensionCallError>());
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
@@ -107,22 +108,24 @@ class GodotDart {
         instance?.nativePtr.cast() ?? nullptr.cast(),
         argArray,
         args.length,
-        ret.nativePtr.cast(),
+        variantOpaque.cast(),
         errorPtr.cast(),
       );
       if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
         throw Exception(
             'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
       }
+      ret = Variant.fromVariantPtr(variantOpaque);
     });
 
-    return ret;
+    return ret ?? Variant();
   }
 
   Variant variantCall(Variant self, String methodName, List<Variant> args) {
-    final ret = Variant();
+    Variant? ret;
     final gdMethodName = StringName.fromString(methodName);
     using((arena) {
+      final variantOpaque = arena.allocate(Variant.sTypeInfo.size);
       final errorPtr =
           arena.allocate<GDExtensionCallError>(sizeOf<GDExtensionCallError>());
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
@@ -135,31 +138,39 @@ class GodotDart {
         gdMethodName.nativePtr.cast(),
         argArray,
         args.length,
-        ret.nativePtr.cast(),
+        variantOpaque.cast(),
         errorPtr.cast(),
       );
       if (errorPtr.ref.error != GDExtensionCallErrorType.GDEXTENSION_CALL_OK) {
         throw Exception(
             'Error calling function in Godot: Error ${errorPtr.ref.error}, Argument ${errorPtr.ref.argument}, Expected ${errorPtr.ref.expected}');
       }
+      ret = Variant.fromVariantPtr(variantOpaque);
     });
 
-    return ret;
+    return ret ?? Variant();
   }
 
   Variant variantGetIndexed(Variant self, int index) {
-    Variant ret = Variant();
+    Variant? ret;
     using((arena) {
+      final variantOpaque = arena.allocate(Variant.sTypeInfo.size);
       final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
       final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
       ffiBindings.gde_variant_get_indexed(
-          self.nativePtr.cast(), index, ret.nativePtr.cast(), valid, oob);
+        self.nativePtr.cast(),
+        index,
+        variantOpaque.cast(),
+        valid,
+        oob,
+      );
       if (oob.value != 0) {
         throw RangeError.index(index, self);
       }
+      ret = Variant.fromVariantPtr(variantOpaque);
     });
 
-    return ret;
+    return ret ?? Variant();
   }
 
   void variantSetIndexed(Variant self, int index, Variant value) {
@@ -167,7 +178,12 @@ class GodotDart {
       final valid = arena.allocate<Uint8>(sizeOf<Uint8>());
       final oob = arena.allocate<Uint8>(sizeOf<Uint8>());
       ffiBindings.gde_variant_set_indexed(
-          self.nativePtr.cast(), index, value.nativePtr.cast(), valid, oob);
+        self.nativePtr.cast(),
+        index,
+        value.nativePtr.cast(),
+        valid,
+        oob,
+      );
       if (oob.value != 0) {
         throw RangeError.index(index, self);
       }

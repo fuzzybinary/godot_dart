@@ -1,6 +1,7 @@
 #include <gdextension_interface.h>
 
-#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 
 #include "dart_helpers.h"
 #include "dart_bindings.h"
@@ -66,13 +67,26 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
     dart_bindings = nullptr;
 
     for(const auto& itr : DartGodotInstanceBinding::s_instanceMap) {
-      godot::Object obj;
-      obj._owner = itr.second->get_godot_object();
-
-      auto str = obj.to_string().utf8();
-
-      printf("Leaked binding instance at %lx: %s\n", itr.first, str.get_data());
+      DartGodotInstanceBinding *binding = itr.second;
+      GDExtensionObjectPtr godot_object = binding->get_godot_object();
+      if (!binding->is_weak()) {
+        if (binding->is_refcounted()) {
+          // Unref Dart's copy.
+          godot::RefCounted ref_counted;
+          ref_counted._owner = reinterpret_cast<godot::RefCounted *>(godot_object);
+          if (ref_counted.unreference()) {
+            // Dart was the last thing holding and couldn't convert to weak as part of shutdown
+            gde_object_destroy(godot_object);
+          }
+        } else {
+          // Godot should ask to destroy this.
+        }
+      } else {
+        // This should also not happen. If it's weak, Dart should have destroyed it.
+        assert(false);
+      }
     }
+
     DartGodotInstanceBinding::s_instanceMap.clear();
 
     for(const auto& itr : DartScriptInstance::s_instanceMap) {
@@ -105,6 +119,7 @@ bool GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_ad
   gde_init_c_interface(p_get_proc_address);
 
   GDEWrapper::create_instance(p_get_proc_address, p_library);
+
 
   godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 

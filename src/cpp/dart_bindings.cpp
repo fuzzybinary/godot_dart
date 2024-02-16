@@ -949,14 +949,14 @@ GDE_EXPORT void perform_frame_maintenance() {
   }
   Dart_EnterScope();
 
-  uint64_t currentTime = Dart_TimelineGetMicros();
-  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more
-
   DartDll_DrainMicrotaskQueue();
   while (bindings->_pending_messages > 0) {
     DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
     bindings->_pending_messages--;
   }
+
+  uint64_t currentTime = Dart_TimelineGetMicros();
+  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more
 
   Dart_ExitScope();
 }

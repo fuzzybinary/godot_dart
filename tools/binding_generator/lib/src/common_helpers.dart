@@ -533,13 +533,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
 void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   if (argument.type == 'String') {
     o.p('final retGdString = GDString.fromString(ret);');
-    o.p('gde.dartBindings');
-    o.p('    .memcpy(retPtr, retGdString.nativePtr.cast(), GDString.sTypeInfo.size);');
+    o.p('retGdString.constructCopy(retPtr);');
     return;
   } else if (argument.type == 'StringName') {
     o.p('final retGdStringName = StringName.fromString(ret);');
-    o.p('gde.dartBindings');
-    o.p('    .memcpy(retPtr, retGdStringName.nativePtr.cast(), StringName.sTypeInfo.size);');
+    o.p('retGdStringName.constructCopy(retPtr);');
     return;
   }
 
@@ -551,8 +549,7 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
           argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
       break;
     case TypeCategory.builtinClass:
-      ret +=
-          'gde.dartBindings.memcpy(retPtr, ret.nativePtr.cast(), ret.typeInfo.size)';
+      ret += 'ret.constructCopy(retPtr)';
       break;
     case TypeCategory.primitive:
       final castType =
@@ -575,8 +572,7 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
       ret += 'retPtr.cast<Uint32>().value = ret';
       break;
     case TypeCategory.typedArray:
-      ret +=
-          'gde.dartBindings.memcpy(retPtr, ret.nativePtr.cast(), ret.typeInfo.size)';
+      ret += 'ret.constructCopy(retPtr)';
       break;
     case TypeCategory.voidType:
       return;

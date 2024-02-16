@@ -170,6 +170,15 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
           o.p('ptr.cast(),');
         }, ']);');
       }, '}');
+
+      // Add constructCopy, which help us return builtin types
+      o.p('@override');
+      o.b('void constructCopy(GDExtensionTypePtr ptr) {', () {
+        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, ptr, [',
+            () {
+          o.p('nativePtr.cast(),');
+        }, ']);');
+      }, '}');
     }
 
     // Special cases -- fromGDString, fromStringName, and copy constructors for GDString and StringName

@@ -24,6 +24,9 @@ export 'src/variant/variant.dart' hide getToTypeConstructor;
 late GodotDart _globalExtension;
 DartScriptLanguage? _dartScriptLanguage;
 
+DartResourceFormatLoader? _resourceFormatLoader;
+DartResourceFormatSaver? _resourceFormatSaver;
+
 @pragma('vm:entry-point')
 DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
   final godotDart = DynamicLibrary.process();
@@ -50,8 +53,10 @@ DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
   var engine = Engine.singleton;
   engine.registerScriptLanguage(_dartScriptLanguage);
 
-  ResourceLoader.singleton.addResourceFormatLoader(DartResourceFormatLoader());
-  ResourceSaver.singleton.addResourceFormatSaver(DartResourceFormatSaver());
+  _resourceFormatLoader = DartResourceFormatLoader();
+  ResourceLoader.singleton.addResourceFormatLoader(_resourceFormatLoader);
+  _resourceFormatSaver = DartResourceFormatSaver();
+  ResourceSaver.singleton.addResourceFormatSaver(_resourceFormatSaver);
 
   print('Everything loaded a-ok!');
 
@@ -61,6 +66,9 @@ DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
 @pragma('vm:entry-point')
 void _unregisterGodot() {
   Engine.singleton.unregisterScriptLanguage(_dartScriptLanguage);
+
+  ResourceLoader.singleton.removeResourceFormatLoader(_resourceFormatLoader);
+  ResourceSaver.singleton.removeResourceFormatSaver(_resourceFormatSaver);
 }
 
 typedef PrintClosure = void Function(String line);

@@ -19,7 +19,6 @@ bool GDEWrapper::initialize() {
 }
 
 bool GDEWrapper::is_editor_hint() {
-
   godot::Engine* engine = godot::Engine::get_singleton();
   if (engine == nullptr) {
     return false;

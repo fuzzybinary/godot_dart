@@ -20,6 +20,10 @@ abstract class BuiltinType {
     finalizer.attach(this, nativePtr);
   }
 
+  /// This is used by the generators to call the FFI copy constructors for
+  /// builtin types, usually as part of returning them from a ptr call.
+  void constructCopy(GDExtensionTypePtr ptr);
+
   /// This const constructor allows classes that we implement to lazily
   /// initialize their nativePtr members and add them to the finalizer
   /// at that point.

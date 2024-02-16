@@ -71,6 +71,10 @@ if(WIN32)
     set_property(TARGET godot_dart PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
     )
+    set_target_properties(godot_dart PROPERTIES
+        VS_DEBUGGER_COMMAND "C:\\Projects\\godot\\bin\\godot.windows.editor.dev.x86_64.exe"
+        VS_DEBUGGER_COMMAND_ARGUMENTS "--verbose --editor --path \"C:\\Users\\Jeff Ward\\Projects\\GodotExperiments\\godot_dart\\example\\2d_tutorial\""
+    )
 elseif(LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 

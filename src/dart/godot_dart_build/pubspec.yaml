@@ -23,4 +23,4 @@ dependencies:
   pubspec_parse: ^1.2.3
 
 dev_dependencies:
-  lints: ^2.0.0b
+  lints: ^2.0.0

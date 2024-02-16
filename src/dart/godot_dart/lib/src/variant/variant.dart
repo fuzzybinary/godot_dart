@@ -62,6 +62,7 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
   Vector2i.initBindings();
   _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] =
       Vector2i.fromVariantPtr;
+  Vector3.initBindings();
   Vector3i.initBindings();
   _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] =
       Vector3i.fromVariantPtr;
@@ -185,6 +186,10 @@ class Variant implements Finalizable {
 
   int getType() {
     return gde.ffiBindings.gde_variant_get_type(_opaque.cast());
+  }
+
+  void constructCopy(GDExtensionTypePtr ptr) {
+    gde.ffiBindings.gde_variant_new_copy(ptr, nativePtr.cast());
   }
 
   void _attachFinalizer() {

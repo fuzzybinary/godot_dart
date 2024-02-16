@@ -37,6 +37,13 @@ class Vector3 extends BuiltinType {
   }
 
   @override
+  void constructCopy(GDExtensionTypePtr ptr) {
+    gde.callBuiltinConstructor(_bindings.constructor_1!, ptr, [
+      nativePtr.cast(),
+    ]);
+  }
+
+  @override
   TypeInfo get typeInfo => sTypeInfo;
 
   Pointer<Uint8> _opaque = nullptr;
@@ -481,4 +488,17 @@ class Vector3 extends BuiltinType {
     _opaque = calloc<Uint8>(_size);
     BuiltinType.finalizer.attach(this, _opaque.cast());
   }
+
+  static final _Vector3Bindings _bindings = _Vector3Bindings();
+  static void initBindings() {
+    _bindings.constructor_0 = gde.variantGetConstructor(
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3, 0);
+    _bindings.constructor_1 = gde.variantGetConstructor(
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3, 1);
+  }
+}
+
+class _Vector3Bindings {
+  GDExtensionPtrConstructor? constructor_0;
+  GDExtensionPtrConstructor? constructor_1;
 }

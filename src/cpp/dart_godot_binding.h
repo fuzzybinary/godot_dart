@@ -21,6 +21,9 @@ public:
   bool is_weak() const {
     return _is_weak;
   }
+  bool is_refcounted() const {
+    return _is_refcounted;
+  }
 
   Dart_Handle get_dart_object();
   GDExtensionObjectPtr get_godot_object() const {

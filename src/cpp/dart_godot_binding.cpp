@@ -32,7 +32,7 @@ DartGodotInstanceBinding::~DartGodotInstanceBinding() {
   }
 
   s_instanceMap.erase((intptr_t)this);
-  
+
   if (_persistent_handle) {
     // If we have an isolate group, we're likely running on the Finalizer.
     // Don't attempt to execute on the Dart isolate if this is the case
@@ -63,19 +63,16 @@ void DartGodotInstanceBinding::initialize(Dart_Handle dart_object, bool is_refco
   if (is_refcounted) {
     godot::RefCounted ref_counted;
     ref_counted._owner = reinterpret_cast<godot::GodotObject *>(_godot_object);
-    
-    int32_t refcount = ref_counted.get_reference_count();
-    if (refcount == 0) {
-      // We're the first reference. Hooray for us!
-      // Hold weak until more things reference
-      _is_weak = true;
-      _persistent_handle = (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer);
-      ref_counted.init_ref();
-    } else {
+
+    // Create our initial handle weak before calling init_ref, which may callback into reference
+    _is_weak = true;
+    _persistent_handle = (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer);
+    ref_counted.init_ref();
+
+    int32_t count = ref_counted.get_reference_count();
+    if (_is_weak && count > 1) {
       // Not the first reference. Hold strong until we're the only reference
-      _is_weak = false;
-      _persistent_handle = (void *)Dart_NewPersistentHandle(dart_object);
-      ref_counted.reference();
+      convert_to_strong();
     }
   } else {
     // Not refcounted, always hold strong
@@ -199,12 +196,11 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
   }
 
   DartGodotInstanceBinding *engine_binding = reinterpret_cast<DartGodotInstanceBinding *>(p_instance);
-  if (!engine_binding->is_initialized()) {
-    engine_binding->create_dart_object();
-  }
+  godot::Object *godot_object = reinterpret_cast<godot::Object *>(engine_binding->get_godot_object());
+  assert(engine_binding->is_initialized());
 
   godot::RefCounted ref_counted;
-  ref_counted._owner = reinterpret_cast<godot::Object *>(engine_binding->get_godot_object());
+  ref_counted._owner = godot_object;
   int refcount = ref_counted.get_reference_count();
 
   bool is_dieing = refcount == 0;
