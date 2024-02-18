@@ -1,11 +1,11 @@
 #include "dart_script_instance.h"
 
 #include <dart_api.h>
-#include <godot_cpp/classes/ref_counted.hpp>
 
 #include "dart_bindings.h"
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
+#include "ref_counted_wrapper.h"
 
 std::map<intptr_t, DartScriptInstance*> DartScriptInstance::s_instanceMap;
 
@@ -380,8 +380,7 @@ void DartScriptInstance::to_string(GDExtensionBool *r_is_valid, GDExtensionStrin
 }
 
 void DartScriptInstance::ref_count_incremented() {
-  godot::RefCounted ref_counted;
-  ref_counted._owner = reinterpret_cast<godot::GodotObject *>(_binding.get_godot_object());
+  RefCountedWrapper ref_counted(_binding.get_godot_object());
   int refcount = ref_counted.get_reference_count();
 
   // Refcount incremented, change our reference to strong to prevent Dart from finalizing
@@ -391,8 +390,7 @@ void DartScriptInstance::ref_count_incremented() {
 }
 
 GDExtensionBool DartScriptInstance::ref_count_decremented() {
-  godot::RefCounted ref_counted;
-  ref_counted._owner = reinterpret_cast<godot::GodotObject *>(_binding.get_godot_object());
+  RefCountedWrapper ref_counted(_binding.get_godot_object());
   int refcount = ref_counted.get_reference_count();
 
   if (refcount == 1 && !_binding.is_weak()) {

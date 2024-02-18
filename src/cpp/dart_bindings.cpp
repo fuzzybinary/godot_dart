@@ -12,7 +12,6 @@
 
 #include <gdextension_interface.h>
 #include <godot_cpp/variant/string.hpp>
-#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
 #include "dart_godot_binding.h"
@@ -20,6 +19,7 @@
 #include "dart_script_instance.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
+#include "ref_counted_wrapper.h"
 
 // Forward declarations for Dart callbacks and helpers
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
@@ -236,8 +236,7 @@ void GodotDartBindings::remove_pending_ref_change(DartGodotInstanceBinding *bind
 
 void GodotDartBindings::perform_pending_ref_changes() {
   for (auto binding : _pending_ref_changes) {
-    godot::RefCounted ref_counted;
-    ref_counted._owner = reinterpret_cast<godot::RefCounted *>(binding->get_godot_object());
+    RefCountedWrapper ref_counted(binding->get_godot_object());
     int ref_count = ref_counted.get_reference_count();
     if (ref_count > 1 && binding->is_weak()) {
       execute_on_dart_thread([&] { binding->convert_to_strong(); });

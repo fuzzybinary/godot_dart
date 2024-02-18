@@ -1,6 +1,5 @@
 #include <gdextension_interface.h>
 
-#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/object.hpp>
 
 #include "dart_helpers.h"
@@ -10,6 +9,7 @@
 
 #include "dart_godot_binding.h"
 #include "dart_script_instance.h"
+#include "ref_counted_wrapper.h"
 
 namespace godot_dart {
 
@@ -72,18 +72,13 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
       if (!binding->is_weak()) {
         if (binding->is_refcounted()) {
           // Unref Dart's copy.
-          godot::RefCounted ref_counted;
-          ref_counted._owner = reinterpret_cast<godot::RefCounted *>(godot_object);
+          RefCountedWrapper ref_counted(godot_object);
           if (ref_counted.unreference()) {
             // Dart was the last thing holding and couldn't convert to weak as part of shutdown
             gde_object_destroy(godot_object);
           } else {
             godot::Object obj;
             obj._owner = godot_object;
-
-            auto str = obj.to_string().utf8();
-
-            printf("Binding instance still alive at %lx\n:  %s\n", itr.first, str.get_data());
           }
         } else {
           // Godot should ask to destroy this.
@@ -102,6 +97,7 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
 
       auto str = obj.to_string().utf8();
 
+      // TODO: Remove when we know we're not leaking
       printf("Leaked binding instance at %lx\n: %s", itr.first, str.get_data());
       printf("   binding at %lx\n", (intptr_t)&itr.second->_binding);
     }

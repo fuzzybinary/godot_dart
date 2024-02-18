@@ -3,6 +3,7 @@
 #include "godot_cpp/classes/engine.hpp"
 
 #include "godot_string_helpers.h"
+#include "ref_counted_wrapper.h"
 
 GDEWrapper *GDEWrapper::_instance = nullptr;
 
@@ -15,6 +16,8 @@ void GDEWrapper::create_instance(GDExtensionInterfaceGetProcAddress gde_get_proc
 }
 
 bool GDEWrapper::initialize() {
+  RefCountedWrapper::init();
+
   return true;
 }
 
