@@ -54,10 +54,6 @@ Future<void> generateBuiltinBindings(
       o.p('@override');
       o.p('TypeInfo get typeInfo => sTypeInfo;');
       o.nl();
-      o.p('final Pointer<Uint8> _opaque = calloc<Uint8>(_size);');
-      o.nl();
-      o.p('@override');
-      o.p('Pointer<Uint8> get nativePtr => _opaque;');
 
       o.b('static void initBindingsConstructorDestructor() {', () {
         for (final constructor in builtin.constructors) {
@@ -151,7 +147,11 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
 }
 
 void _writeConstructors(CodeSink o, BuiltinClass builtin) {
-  o.b('${builtin.dartName}.fromVariantPtr(GDExtensionVariantPtr ptr) {', () {
+  final superConstructor =
+      'super(_size, ${builtin.hasDestructor ? '_bindings.destructor' : 'null'})';
+
+  o.b('${builtin.dartName}.fromVariantPtr(GDExtensionVariantPtr ptr)', () {
+    o.p('  : $superConstructor {');
     o.p('final c = getToTypeConstructor(GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()});');
     o.p('c!(nativePtr.cast(), ptr);');
     //o.p('gde.dartBindings.variantCopyFromNative(this, ptr);');
@@ -164,7 +164,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
 
     if (constructorName == '.copy') {
       // Add a second constructor to copy from a Pointer (used in Ptr calls)
-      o.b('${builtin.dartName}.copyPtr(GDExtensionConstTypePtr ptr) {', () {
+      o.b('${builtin.dartName}.copyPtr(GDExtensionConstTypePtr ptr)', () {
+        o.p('  : $superConstructor {');
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
           o.p('ptr.cast(),');
@@ -174,6 +175,7 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
       // Add constructCopy, which help us return builtin types
       o.p('@override');
       o.b('void constructCopy(GDExtensionTypePtr ptr) {', () {
+        // TODO: Do I need to call the destructor here?
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, ptr, [',
             () {
           o.p('nativePtr.cast(),');
@@ -184,7 +186,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     // Special cases -- fromGDString, fromStringName, and copy constructors for GDString and StringName
     if ((builtin.name == 'String' || builtin.name == 'StringName') &&
         constructorName == '.copy') {
-      o.b('${builtin.dartName}.copy(final ${builtin.dartName} from) {', () {
+      o.b('${builtin.dartName}.copy(final ${builtin.dartName} from)', () {
+        o.p('  : $superConstructor {');
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
           o.p('from.nativePtr.cast(),');
@@ -199,7 +202,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
       final fromArgument = constructor.arguments!.first;
       final dartType =
           fromArgument.type == 'String' ? 'GDString' : 'StringName';
-      o.b('${builtin.dartName}$constructorName(final $dartType from) {', () {
+      o.b('${builtin.dartName}$constructorName(final $dartType from)', () {
+        o.p('  : $superConstructor {');
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
           o.p('from.nativePtr.cast(),');
@@ -216,7 +220,8 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
         o.p('final $type ${escapeName(argument.name).toLowerCamelCase()},');
       }
     }, ')', newLine: false);
-    o.b(' {', () {
+    o.b('', () {
+      o.p('  : $superConstructor {');
       withAllocationBlock(arguments, null, o, () {
         writeArgumentAllocations(arguments, o);
 

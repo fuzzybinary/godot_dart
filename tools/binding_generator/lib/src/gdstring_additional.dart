@@ -6,7 +6,8 @@ import 'code_sink.dart';
 
 /// Create GDString from String
 void gdStringFromString(CodeSink o) {
-  o.b('GDString.fromString(String string) {', () {
+  o.b('GDString.fromString(String string)', () {
+    o.p('  : super(_size, _bindings.destructor) {');
     o.p('final native = string.toNativeUtf8();');
     o.p('gde.ffiBindings.gde_string_new_with_utf8_chars(nativePtr.cast(), native.cast());');
     o.nl();
@@ -17,7 +18,8 @@ void gdStringFromString(CodeSink o) {
 }
 
 void stringNameFromString(CodeSink o) {
-  o.b('StringName.fromString(String string) {', () {
+  o.b('StringName.fromString(String string)', () {
+    o.p('  : super(_size, _bindings.destructor) {');
     o.p('final gdString = GDString.fromString(string);');
     o.p('gde.callBuiltinConstructor(_bindings.constructor_2!, nativePtr.cast(), [');
     o.p('  gdString.nativePtr.cast(),');

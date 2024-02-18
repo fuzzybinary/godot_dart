@@ -26,8 +26,9 @@ void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
 std::map<intptr_t, DartGodotInstanceBinding*> DartGodotInstanceBinding::s_instanceMap;
 
 DartGodotInstanceBinding::~DartGodotInstanceBinding() {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
   // Can't do anything as Dart is shutdown
-  if (GodotDartBindings::instance() == nullptr) {
+  if (bindings == nullptr) {
     return;
   }
 
@@ -45,6 +46,7 @@ DartGodotInstanceBinding::~DartGodotInstanceBinding() {
         delete_dart_handle();
       });
     }
+    bindings->remove_pending_ref_change(this);
   }
 }
 
@@ -113,6 +115,8 @@ bool DartGodotInstanceBinding::convert_to_strong() {
 
 bool DartGodotInstanceBinding::convert_to_weak() {
   if (_is_weak) return true;
+
+  DartBlockScope scope;
 
   Dart_Handle object = Dart_HandleFromPersistent((Dart_PersistentHandle)_persistent_handle);
   if (Dart_IsNull(object)) {
@@ -209,30 +213,40 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
   }
 
   if (engine_binding->is_weak() && is_dieing) {
-    // We can't jump to the dart thread if a weak reference is dieing.
-    return is_dieing;
+    // Fast out, can't do anything with dieing weak pointers.
+    return true;
   }
 
-  bindings->execute_on_dart_thread([&] {
-    DartBlockScope scope;
+  // If we're on the finalizer, we can't run any conversions, we'll have to hold them until we're done
+  // performing finalization
+  bool is_finalizer = Dart_CurrentIsolate() == nullptr && Dart_CurrentIsolateGroup() != nullptr;
 
-    if (p_reference) {
-      // Refcount incremented, change our reference to strong to prevent Dart from finalizing
-      if (refcount > 1 && engine_binding->is_weak()) {
-        engine_binding->convert_to_strong();
-      }
-
-      is_dieing = false;
-    } else {
-      if (refcount == 1 && !engine_binding->is_weak()) {
-        // We're the only ones holding on, switch us to weak so Dart will delete when it
-        // has no more references
-        engine_binding->convert_to_weak();
-
-        is_dieing = false;
+  if (p_reference) {
+    // Refcount incremented, change our reference to strong to prevent Dart from finalizing
+    if (refcount > 1 && engine_binding->is_weak()) {
+      if (!is_finalizer) {
+        bindings->execute_on_dart_thread([&] { 
+          engine_binding->convert_to_strong();
+        });
+      } else {
+        bindings->add_pending_ref_change(engine_binding);
       }
     }
-  });
+
+    is_dieing = false;
+  } else {
+    if (refcount == 1 && !engine_binding->is_weak()) {
+      if (!is_finalizer) {
+        bindings->execute_on_dart_thread([&] {
+          engine_binding->convert_to_weak();
+        });
+      } else {
+        bindings->add_pending_ref_change(engine_binding);
+      }
+      
+      is_dieing = false;
+    }
+  }
 
   return is_dieing;
 }

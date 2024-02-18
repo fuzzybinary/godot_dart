@@ -18,7 +18,6 @@ struct TypeInfo {
 void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info);
 
 void *get_object_address(Dart_Handle variant_handle);
-void *get_opaque_address(Dart_Handle variant_handle);
 
 void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodInfo *method_info);
 void gde_free_method_info_fields(GDExtensionMethodInfo *method_info);

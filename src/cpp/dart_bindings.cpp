@@ -1,5 +1,6 @@
 ﻿#include "dart_bindings.h"
 
+
 #include <functional>
 #include <iostream>
 #include <string.h>
@@ -11,6 +12,7 @@
 
 #include <gdextension_interface.h>
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
 #include "dart_godot_binding.h"
@@ -224,6 +226,29 @@ Dart_Handle GodotDartBindings::new_dart_void_pointer(void *ptr) {
   return Dart_New(_void_pointer_pointer_type, Dart_NewStringFromCString("fromAddress"), 1, args);
 }
 
+void GodotDartBindings::add_pending_ref_change(DartGodotInstanceBinding *bindings) {
+  _pending_ref_changes.insert(bindings);
+}
+
+void GodotDartBindings::remove_pending_ref_change(DartGodotInstanceBinding *binding) {
+  _pending_ref_changes.erase(binding);
+}
+
+void GodotDartBindings::perform_pending_ref_changes() {
+  for (auto binding : _pending_ref_changes) {
+    godot::RefCounted ref_counted;
+    ref_counted._owner = reinterpret_cast<godot::RefCounted *>(binding->get_godot_object());
+    int ref_count = ref_counted.get_reference_count();
+    if (ref_count > 1 && binding->is_weak()) {
+      execute_on_dart_thread([&] { binding->convert_to_strong(); });
+    }
+    else if (ref_count == 1 && !binding->is_weak()) {
+      execute_on_dart_thread([&] { binding->convert_to_weak(); });
+    }
+  }
+  _pending_ref_changes.clear();
+}
+
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                                     Dart_Handle args_list, MethodFlags method_flags) {
   MethodInfo *info = new MethodInfo();
@@ -328,7 +353,7 @@ void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart
   prop_info.name = gd_name._native_ptr();
 
   Dart_Handle class_name_prop = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
-  void *gd_class_name = get_opaque_address(class_name_prop);
+  void *gd_class_name = get_object_address(class_name_prop);
   prop_info.class_name = reinterpret_cast<GDExtensionStringNamePtr>(gd_class_name);
 
   {
@@ -456,7 +481,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
         GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
         GD_PRINT_ERROR(Dart_GetError(variant_result));
       } else {
-        void *variantDataPtr = get_opaque_address(variant_result);
+        void *variantDataPtr = get_object_address(variant_result);
         if (variantDataPtr) {
           gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
         }
@@ -608,11 +633,11 @@ void bind_class(Dart_NativeArguments args) {
     return;
   }
 
-  void *sn_name = get_opaque_address(name);
+  void *sn_name = get_object_address(name);
   if (sn_name == nullptr) {
     return;
   }
-  void *sn_parent = get_opaque_address(parent);
+  void *sn_parent = get_object_address(parent);
   if (sn_parent == nullptr) {
     return;
   }
@@ -678,7 +703,7 @@ void gd_string_to_dart_string(Dart_NativeArguments args) {
   }
 
   Dart_Handle dart_gd_string = Dart_GetNativeArgument(args, 1);
-  const godot::String *gd_string = reinterpret_cast<godot::String *>(get_opaque_address(dart_gd_string));
+  const godot::String *gd_string = reinterpret_cast<godot::String *>(get_object_address(dart_gd_string));
 
   Dart_Handle dart_string = to_dart_string(*gd_string);
 
@@ -820,11 +845,11 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
   Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
 
-  type_info->type_name = get_opaque_address(class_name);
+  type_info->type_name = get_object_address(class_name);
   if (Dart_IsNull(parent_class)) {
     type_info->parent_name = nullptr;
   } else {
-    type_info->parent_name = get_opaque_address(parent_class);
+    type_info->parent_name = get_object_address(parent_class);
   }
   int64_t temp;
   Dart_IntegerToInt64(variant_type, &temp);
@@ -885,8 +910,13 @@ GDE_EXPORT Dart_Handle dart_object_from_instance_binding(GDExtensionClassInstanc
   return obj;
 }
 
-GDE_EXPORT void dart_memcpy(void *dest, void *src, int size) {
-  memcpy(dest, src, size);
+GDE_EXPORT void finalize_variant(GDExtensionVariantPtr variant) {
+  if (variant == nullptr) {
+    return;
+  }
+
+  gde_variant_destroy(variant);
+  gde_mem_free(variant);
 }
 
 GDE_EXPORT void finalize_builtin_object(uint8_t *builtin_object_info) {
@@ -896,10 +926,10 @@ GDE_EXPORT void finalize_builtin_object(uint8_t *builtin_object_info) {
 
   GDExtensionPtrDestructor *destructor = reinterpret_cast<GDExtensionPtrDestructor *>(builtin_object_info);
   void *opaque = builtin_object_info + sizeof(GDExtensionPtrDestructor);
-  if (destructor != nullptr) {
+  if (*destructor != nullptr) {
     (*destructor)(opaque);
-    gde_mem_free(builtin_object_info);
   }
+  gde_mem_free(builtin_object_info);
 }
 
 GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object) {
@@ -954,6 +984,10 @@ GDE_EXPORT void perform_frame_maintenance() {
     DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
     bindings->_pending_messages--;
   }
+
+  // Back with a current isolate, let's take care of any pending ref count changes,
+  // which we couldn't do while the finalizer was running.
+  bindings->perform_pending_ref_changes();
 
   uint64_t currentTime = Dart_TimelineGetMicros();
   Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more

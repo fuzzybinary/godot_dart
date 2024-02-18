@@ -1,33 +1,45 @@
 import 'dart:ffi';
 
-import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
 
 /// Core interface for types that can convert to Variant (the builtin types)
-abstract class BuiltinType {
+abstract class BuiltinType implements Finalizable {
   @internal
-  static final Finalizer<Pointer<Uint8>> finalizer = Finalizer((mem) {
-    calloc.free(mem);
-  });
+  static final finalizer =
+      NativeFinalizer(gde.dartBindings.finalizeBuiltinObject);
+
+  Pointer<Uint8> _opaque = nullptr;
 
   TypeInfo get typeInfo;
-  Pointer<Uint8> get nativePtr;
+  Pointer<Uint8> get nativePtr {
+    if (_opaque == nullptr) {
+      return nullptr;
+    }
+    return _opaque.elementAt(GodotDart.destructorSize);
+  }
 
-  BuiltinType() {
-    finalizer.attach(this, nativePtr);
+  BuiltinType(int size, GDExtensionPtrDestructor? destructor) {
+    allocateOpaque(size, destructor);
+    finalizer.attach(this, _opaque.cast());
+  }
+
+  /// This constructor allows classes that we implement to lazily
+  /// initialize their nativePtr members
+  BuiltinType.nonFinalized();
+
+  @protected
+  void allocateOpaque(int size, GDExtensionPtrDestructor? destructor) {
+    _opaque =
+        gde.ffiBindings.gde_mem_alloc(GodotDart.destructorSize + size).cast();
+    _opaque.cast<GDExtensionPtrDestructor>().value = destructor ?? nullptr;
   }
 
   /// This is used by the generators to call the FFI copy constructors for
   /// builtin types, usually as part of returning them from a ptr call.
   void constructCopy(GDExtensionTypePtr ptr);
-
-  /// This const constructor allows classes that we implement to lazily
-  /// initialize their nativePtr members and add them to the finalizer
-  /// at that point.
-  const BuiltinType.nonFinalized();
 }
 
 /// Core interface for engine classes

@@ -99,7 +99,7 @@ bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariant
     DART_CHECK(variant_result, Dart_New(variant_type, Dart_NewStringFromCString("fromObject"), 1, args),
                "Failed to convert prop to variant");
 
-    void *variantDataPtr = get_opaque_address(variant_result);
+    void *variantDataPtr = get_object_address(variant_result);
     if (variantDataPtr) {
       gde_variant_new_copy(r_ret, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       got_value = true;
@@ -358,7 +358,7 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
       GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
       GD_PRINT_ERROR(Dart_GetError(variant_result));
     } else {
-      void *variantDataPtr = get_opaque_address(variant_result);
+      void *variantDataPtr = get_object_address(variant_result);
       if (variantDataPtr) {
         gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       }

@@ -77,6 +77,13 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
           if (ref_counted.unreference()) {
             // Dart was the last thing holding and couldn't convert to weak as part of shutdown
             gde_object_destroy(godot_object);
+          } else {
+            godot::Object obj;
+            obj._owner = godot_object;
+
+            auto str = obj.to_string().utf8();
+
+            printf("Binding instance still alive at %lx\n:  %s\n", itr.first, str.get_data());
           }
         } else {
           // Godot should ask to destroy this.

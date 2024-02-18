@@ -5,11 +5,13 @@
 #include <semaphore>
 #include <thread>
 #include <vector>
+#include <set>
 
 #include <dart_api.h>
 #include <gdextension_interface.h>
 
 #include "gde_dart_converters.h"
+#include "dart_godot_binding.h"
 
 enum class MethodFlags : int32_t {
   None,
@@ -41,6 +43,10 @@ public:
   void execute_on_dart_thread(std::function<void()> work);
   Dart_Handle new_dart_void_pointer(void *ptr);
 
+  void add_pending_ref_change(DartGodotInstanceBinding *bindings);
+  void remove_pending_ref_change(DartGodotInstanceBinding *bindings);
+  void perform_pending_ref_changes();
+
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
   static void *get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name);
@@ -62,6 +68,7 @@ public:
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
+  std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;
   Dart_PersistentHandle _core_types_library;
@@ -74,5 +81,3 @@ public:
   Dart_PersistentHandle _void_pointer_pointer_type;
   Dart_PersistentHandle _variant_type;
 };
-
-void *get_opaque_address(Dart_Handle variant_handle);

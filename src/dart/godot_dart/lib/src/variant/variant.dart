@@ -148,10 +148,7 @@ GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
 }
 
 class Variant implements Finalizable {
-  static final finalizer = Finalizer((Pointer<Uint8> mem) {
-    gde.ffiBindings.gde_variant_destroy(mem.cast());
-    calloc.free(mem);
-  });
+  static final finalizer = NativeFinalizer(gde.dartBindings.finalizeVariant);
 
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
@@ -165,7 +162,7 @@ class Variant implements Finalizable {
 
   TypeInfo get typeInfo => sTypeInfo;
 
-  final Pointer<Uint8> _opaque = calloc<Uint8>(_size);
+  final Pointer<Uint8> _opaque = gde.ffiBindings.gde_mem_alloc(_size).cast();
 
   Pointer<Uint8> get nativePtr => _opaque;
 

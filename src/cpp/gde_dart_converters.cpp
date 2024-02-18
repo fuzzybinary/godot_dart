@@ -24,24 +24,6 @@ void *get_object_address(Dart_Handle engine_handle) {
   return reinterpret_cast<void *>(object_ptr);
 }
 
-void *get_opaque_address(Dart_Handle variant_handle) {
-  // TODO: Look for a better way convert the variant.
-  Dart_Handle opaque = Dart_GetField(variant_handle, Dart_NewStringFromCString("_opaque"));
-  if (Dart_IsError(opaque)) {
-    GD_PRINT_ERROR(Dart_GetError(opaque));
-    return nullptr;
-  }
-  Dart_Handle address = Dart_GetField(opaque, Dart_NewStringFromCString("address"));
-  if (Dart_IsError(address)) {
-    GD_PRINT_ERROR(Dart_GetError(address));
-    return nullptr;
-  }
-  uint64_t variantDataPtr = 0;
-  Dart_IntegerToUint64(address, &variantDataPtr);
-
-  return reinterpret_cast<void *>(variantDataPtr);
-}
-
 void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodInfo *method_info) {
   DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");  
   method_info->name = create_godot_string_name_ptr(dart_name);

@@ -16,15 +16,9 @@ class GodotDartNativeBindings {
           'Dart_DeletePersistentHandle')
       .asFunction<void Function(Pointer<Void>)>();
 
-  late final memcpy = processLib
-      .lookup<
-          NativeFunction<
-              Void Function(
-                  Pointer<Void>, Pointer<Void>, Int32)>>('dart_memcpy')
-      .asFunction<void Function(Pointer<Void>, Pointer<Void>, int size)>(
-          isLeaf: true);
+  late final finalizeVariant = processLib
+      .lookup<NativeFunction<Void Function(Pointer<Void>)>>('finalize_variant');
 
-  /// Only use for destructable builtin objects
   late final finalizeBuiltinObject =
       processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
           'finalize_builtin_object');

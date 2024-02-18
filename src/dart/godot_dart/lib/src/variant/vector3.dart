@@ -2,7 +2,6 @@ import 'dart:ffi';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
@@ -46,7 +45,7 @@ class Vector3 extends BuiltinType {
   @override
   TypeInfo get typeInfo => sTypeInfo;
 
-  Pointer<Uint8> _opaque = nullptr;
+  final Pointer<Uint8> _opaque = nullptr;
   final Float32List _data = Float32List(3);
 
   double get x => _data[0];
@@ -85,7 +84,7 @@ class Vector3 extends BuiltinType {
   @internal
   Vector3.fromVariantPtr(GDExtensionVariantPtr variantPtr)
       : super.nonFinalized() {
-    _allocateOpaque();
+    allocateOpaque(sTypeInfo.size, null);
     final c = getToTypeConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
     if (c == null) return;
@@ -476,17 +475,12 @@ class Vector3 extends BuiltinType {
 
   void _updateOpaque() {
     if (_opaque == nullptr) {
-      _allocateOpaque();
+      allocateOpaque(sTypeInfo.size, null);
     }
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
       _opaque[i] = byteData.getUint8(i);
     }
-  }
-
-  void _allocateOpaque() {
-    _opaque = calloc<Uint8>(_size);
-    BuiltinType.finalizer.attach(this, _opaque.cast());
   }
 
   static final _Vector3Bindings _bindings = _Vector3Bindings();
