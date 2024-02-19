@@ -1,7 +1,7 @@
 #include "ref_counted_wrapper.h"
 
 #include "gde_c_interface.h"
-#include "godot_string_helpers.h"
+#include "godot_string_wrappers.h"
 
 GDExtensionMethodBindPtr RefCountedWrapper::init_ref_ptr_call = nullptr;
 GDExtensionMethodBindPtr RefCountedWrapper::reference_ptr_call = nullptr;

@@ -2,8 +2,8 @@
 
 #include <gdextension_interface.h>
 
-#include "dart_godot_binding.h"
-#include "godot_string_helpers.h"
+#include "dart_instance_binding.h"
+#include "godot_string_wrappers.h"
 
 class DartScriptInstance {
 public:

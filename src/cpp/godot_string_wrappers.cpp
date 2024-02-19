@@ -1,4 +1,4 @@
-#include "godot_string_helpers.h"
+#include "godot_string_wrappers.h"
 #include "gde_wrapper.h"
 
 #include "dart_helpers.h"

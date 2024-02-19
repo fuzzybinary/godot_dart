@@ -2,7 +2,7 @@
 
 #include "godot_cpp/classes/engine.hpp"
 
-#include "godot_string_helpers.h"
+#include "godot_string_wrappers.h"
 #include "ref_counted_wrapper.h"
 
 GDEWrapper *GDEWrapper::_instance = nullptr;

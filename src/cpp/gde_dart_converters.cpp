@@ -5,7 +5,7 @@
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
-#include "godot_string_helpers.h"
+#include "godot_string_wrappers.h"
 
 void *get_object_address(Dart_Handle engine_handle) {
   Dart_Handle native_ptr = Dart_GetField(engine_handle, Dart_NewStringFromCString("nativePtr"));

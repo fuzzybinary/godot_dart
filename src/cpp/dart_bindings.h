@@ -11,7 +11,7 @@
 #include <gdextension_interface.h>
 
 #include "gde_dart_converters.h"
-#include "dart_godot_binding.h"
+#include "dart_instance_binding.h"
 
 enum class MethodFlags : int32_t {
   None,

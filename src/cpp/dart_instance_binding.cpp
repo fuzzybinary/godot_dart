@@ -1,4 +1,4 @@
-#include "dart_godot_binding.h"
+#include "dart_instance_binding.h"
 
 #include <godot_cpp/classes/object.hpp>
 

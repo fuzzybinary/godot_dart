@@ -15,8 +15,8 @@ add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 add_library(godot_dart SHARED
     dart_bindings.cpp
     dart_bindings.h
-    dart_godot_binding.cpp
-    dart_godot_binding.h
+    "dart_instance_binding.cpp"
+    "dart_instance_binding.h"
     dart_helpers.h
     dart_script_instance.cpp
     dart_script_instance.h
@@ -28,7 +28,7 @@ add_library(godot_dart SHARED
     gde_wrapper.h
     godot_dart.cpp
     godot_string_wrappers.cpp
-    godot_string_helpers.h
+    godot_string_wrappers.h
     ref_counted_wrapper.cpp
     ref_counted_wrapper.h
 )

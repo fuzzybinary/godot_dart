@@ -14,7 +14,7 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
-#include "dart_godot_binding.h"
+#include "dart_instance_binding.h"
 #include "dart_helpers.h"
 #include "dart_script_instance.h"
 #include "gde_dart_converters.h"

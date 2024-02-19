@@ -5,9 +5,9 @@
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
-#include "godot_string_helpers.h"
+#include "godot_string_wrappers.h"
 
-#include "dart_godot_binding.h"
+#include "dart_instance_binding.h"
 #include "dart_script_instance.h"
 #include "ref_counted_wrapper.h"
 
