@@ -7,15 +7,6 @@ import 'gdextension_ffi_bindings.dart';
 class GodotDartNativeBindings {
   late final DynamicLibrary processLib;
 
-  late final _handleFromPersistent = processLib
-      .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
-          'Dart_HandleFromPersistent')
-      .asFunction<Object? Function(Pointer<Void>)>();
-  late final _deletePersistentHandle = processLib
-      .lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-          'Dart_DeletePersistentHandle')
-      .asFunction<void Function(Pointer<Void>)>();
-
   late final finalizeVariant = processLib
       .lookup<NativeFunction<Void Function(Pointer<Void>)>>('finalize_variant');
 
@@ -91,23 +82,7 @@ class GodotDartNativeBindings {
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);
   }
-
-  void clearPersistentHandle(Pointer<Void> handle) {
-    final obj = _handleFromPersistent(handle);
-    if (obj != null) {
-      if (obj is ExtensionType) {
-        obj.detachOwner();
-      }
-      _deletePersistentHandle(handle);
-    }
-  }
 }
-
-// Potentially move this, just here for convenience
-// @pragma('vm:entry-point')
-// Variant _convertToVariant(Object? object) {
-//   return convertToVariant(object);
-// }
 
 @pragma('vm:entry-point')
 List<Object?> _variantsToDart(

@@ -175,7 +175,6 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
       // Add constructCopy, which help us return builtin types
       o.p('@override');
       o.b('void constructCopy(GDExtensionTypePtr ptr) {', () {
-        // TODO: Do I need to call the destructor here?
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, ptr, [',
             () {
           o.p('nativePtr.cast(),');
