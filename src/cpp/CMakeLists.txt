@@ -15,8 +15,8 @@ add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 add_library(godot_dart SHARED
     dart_bindings.cpp
     dart_bindings.h
-    "dart_instance_binding.cpp"
-    "dart_instance_binding.h"
+    dart_instance_binding.cpp
+    dart_instance_binding.h
     dart_helpers.h
     dart_script_instance.cpp
     dart_script_instance.h
@@ -27,10 +27,18 @@ add_library(godot_dart SHARED
     gde_wrapper.cpp
     gde_wrapper.h
     godot_dart.cpp
+    godot_dart_runtime_plugin.h
+    godot_dart_runtime_plugin.cpp
     godot_string_wrappers.cpp
     godot_string_wrappers.h
     ref_counted_wrapper.cpp
     ref_counted_wrapper.h
+    editor/godot_dart_editor_plugin.cpp
+    editor/godot_dart_editor_plugin.h 
+    editor/dart_templates.cpp
+    editor/dart_templates.h
+    editor/progress_dialog.h
+    editor/progress_dialog.cpp
 )
 
 target_include_directories(godot_dart PUBLIC
@@ -99,5 +107,6 @@ target_link_libraries(godot_dart ${DART_DLL_RELEASE})
 # Copy dll to sample directories
 add_custom_command(TARGET godot_dart POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy -t "${EXAMPLE_DIR}/2d_tutorial" $<TARGET_FILE:godot_dart>
+  COMMAND ${CMAKE_COMMAND} -E copy -t "${EXAMPLE_DIR}/empty_test" $<TARGET_FILE:godot_dart>
   COMMAND_EXPAND_LISTS
 )

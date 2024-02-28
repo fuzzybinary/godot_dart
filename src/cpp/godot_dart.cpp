@@ -1,21 +1,33 @@
 #include <gdextension_interface.h>
 
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/editor_plugin_registration.hpp>
 
 #include "dart_helpers.h"
 #include "dart_bindings.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
+#include "godot_dart_runtime_plugin.h"
 
 #include "dart_instance_binding.h"
 #include "dart_script_instance.h"
 #include "ref_counted_wrapper.h"
 
+#include "editor/godot_dart_editor_plugin.h"
+#include "editor/progress_dialog.h"
+
 namespace godot_dart {
 
-GodotDartBindings *dart_bindings = nullptr;
+GodotDartRuntimePlugin *runtime_plugin = nullptr;
 
 void initialize_level(godot::ModuleInitializationLevel p_level) {
+  if (p_level == godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_EDITOR) {
+    godot::ClassDB::register_class<GodotDartEditorPlugin>();
+    godot::ClassDB::register_class<ProgressDialog>();
+
+    godot::EditorPlugins::add_by_type<GodotDartEditorPlugin>();
+  }
+
   // TODO - Should we setup different types at different times?
   if (p_level != godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE) {
     return;
@@ -28,32 +40,8 @@ void initialize_level(godot::ModuleInitializationLevel p_level) {
   }
 
   // Get the library path
-  godot::String library_path;
-  gde_get_library_path(gde->get_library_ptr(), library_path._native_ptr());
-
-  // Get the base dir from the library path
-  godot::String gd_basedir_path = library_path.get_base_dir();
-  
-  // basedir_path to c string
-  GDExtensionInt basedir_path_size = gde_string_to_utf8_chars(gd_basedir_path._native_ptr(), NULL, 0);
-  char *basedir_path = reinterpret_cast<char *>(gde_mem_alloc(basedir_path_size + 1));
-  if (basedir_path == NULL) {
-    GD_PRINT_ERROR("GodotDart: Initialization Error (Memory allocation failure)");
-    return;
-  }
-
-  gde_string_to_utf8_chars(gd_basedir_path._native_ptr(), basedir_path, basedir_path_size);
-  basedir_path[basedir_path_size] = '\0';
-
-  char dart_script_path[256], package_path[256];
-  sprintf(dart_script_path, "%s/src/main.dart", basedir_path);
-  sprintf(package_path, "%s/src/.dart_tool/package_config.json", basedir_path);
-
-  dart_bindings = new GodotDartBindings();
-  if (!dart_bindings->initialize(dart_script_path, package_path)) {
-    delete dart_bindings;
-    dart_bindings = nullptr;
-  }
+  runtime_plugin = new GodotDartRuntimePlugin();
+  runtime_plugin->base_init();
 }
 
 void deinitialize_level(godot::ModuleInitializationLevel p_level) {
@@ -61,46 +49,8 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
     return;
   }
 
-  if (dart_bindings) {
-    dart_bindings->shutdown();
-    delete dart_bindings;
-    dart_bindings = nullptr;
-
-    for(const auto& itr : DartGodotInstanceBinding::s_instanceMap) {
-      DartGodotInstanceBinding *binding = itr.second;
-      GDExtensionObjectPtr godot_object = binding->get_godot_object();
-      if (!binding->is_weak()) {
-        if (binding->is_refcounted()) {
-          // Unref Dart's copy.
-          RefCountedWrapper ref_counted(godot_object);
-          if (ref_counted.unreference()) {
-            // Dart was the last thing holding and couldn't convert to weak as part of shutdown
-            gde_object_destroy(godot_object);
-          } else {
-            godot::Object obj;
-            obj._owner = godot_object;
-          }
-        } else {
-          // Godot should ask to destroy this.
-        }
-      } else {
-        // This should also not happen. If it's weak, Dart should have destroyed it.
-        assert(false);
-      }
-    }
-
-    DartGodotInstanceBinding::s_instanceMap.clear();
-
-    for(const auto& itr : DartScriptInstance::s_instanceMap) {
-      godot::Object obj;
-      obj._owner = itr.second->_binding.get_godot_object();
-
-      auto str = obj.to_string().utf8();
-
-      // TODO: Remove when we know we're not leaking
-      printf("Leaked binding instance at %lx\n: %s", itr.first, str.get_data());
-      printf("   binding at %lx\n", (intptr_t)&itr.second->_binding);
-    }
+  if (runtime_plugin != nullptr) {
+    runtime_plugin->shutdown_dart_bindings();
   }
 }
 
@@ -118,11 +68,8 @@ void GDE_EXPORT deinitialize_level(godot::ModuleInitializationLevel p_level) {
 
 bool GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
                                 GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-  // TODO: Remove in favor of godot-cpp's version of this
   gde_init_c_interface(p_get_proc_address);
-
   GDEWrapper::create_instance(p_get_proc_address, p_library);
-
 
   godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 
