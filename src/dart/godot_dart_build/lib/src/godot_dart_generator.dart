@@ -101,14 +101,10 @@ class GodotDartBuilder extends Builder {
   void _generateAttachMethod(c.LibraryBuilder libraryBuilder) {
     final methodBuilder = c.MethodBuilder()
       ..name = 'attachScriptResolver'
-      ..returns = c.refer('void')
-      ..requiredParameters.add(
-        c.Parameter((p) => p
-          ..type = c.refer('DartScriptLanguage')
-          ..name = 'dart'),
-      );
+      ..returns = c.refer('void');
     final methodBody = StringBuffer();
-    methodBody.writeln('dart.typeResolver = _resolveScriptToType;');
+    methodBody.writeln(
+        'gde.dartBindings.attachScriptResolver(_resolveScriptToType);');
 
     methodBuilder.body = c.Code(methodBody.toString());
     libraryBuilder.body.add(methodBuilder.build());

@@ -3,6 +3,7 @@
 #include <string>
 
 #include "dart_bindings.h"
+#include "script/dart_resource_format.h"
 
 // This class wraps the Dart bindings for Godot so we can do the following:
 //   - Detect if a Dart project exists before loading
@@ -35,4 +36,7 @@ private:
 
   GodotDartBindings *_dart_bindings;
   std::string _root_dart_dir;
+
+  godot::Ref<DartResourceFormatLoader> _resource_format_loader;
+  godot::Ref<DartResourceFormatSaver> _resource_format_saver;
 };

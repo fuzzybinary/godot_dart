@@ -19,6 +19,8 @@ enum class MethodFlags : int32_t {
   PropertySetter,
 };
 
+class DartScript;
+
 class GodotDartBindings {
 public:
   static GodotDartBindings *instance() {
@@ -33,19 +35,20 @@ public:
   bool initialize(const char *script_path, const char *package_config);
   void shutdown();
 
-  GDExtensionScriptLanguagePtr get_language() const {
-    return _dart_language;
-  }
-
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                    Dart_Handle args_list, MethodFlags method_flags);
   void add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info);
   void execute_on_dart_thread(std::function<void()> work);
   Dart_Handle new_dart_void_pointer(void *ptr);
+  void perform_frame_maintanance();
 
   void add_pending_ref_change(DartGodotInstanceBinding *bindings);
   void remove_pending_ref_change(DartGodotInstanceBinding *bindings);
   void perform_pending_ref_changes();
+
+  void* create_script_instance(Dart_Handle type, const DartScript* script, void *godot_object, bool is_placeholder,
+                              bool is_refcounted);
+  Dart_Handle get_godot_script_info(Dart_Handle dart_type);
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
@@ -75,7 +78,6 @@ public:
   Dart_PersistentHandle _native_library;
 
   // Some things we need often
-  GDExtensionScriptLanguagePtr _dart_language;
   Dart_PersistentHandle _void_pointer_type;
   Dart_PersistentHandle _void_pointer_optional_type;
   Dart_PersistentHandle _void_pointer_pointer_type;

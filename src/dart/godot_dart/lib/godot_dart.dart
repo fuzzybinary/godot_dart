@@ -5,8 +5,6 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
-import 'src/script/dart_resource_format.dart';
-import 'src/script/dart_script.dart';
 
 export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
@@ -17,18 +15,13 @@ export 'src/gen/classes/engine_classes.dart';
 export 'src/gen/global_constants.dart';
 export 'src/gen/variant/builtins.dart';
 export 'src/godot_dart_extensions.dart';
-export 'src/script/dart_script_language.dart';
 export 'src/variant/variant.dart' hide getToTypeConstructor;
 
 // ignore: unused_element
 late GodotDart _globalExtension;
-DartScriptLanguage? _dartScriptLanguage;
-
-DartResourceFormatLoader? _resourceFormatLoader;
-DartResourceFormatSaver? _resourceFormatSaver;
 
 @pragma('vm:entry-point')
-DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
+void _registerGodot(int libraryAddress, int bindingCallbacks) {
   final godotDart = DynamicLibrary.process();
   final ffiInterface = GDExtensionFFI(godotDart);
 
@@ -44,32 +37,11 @@ DartScriptLanguage _registerGodot(int libraryAddress, int bindingCallbacks) {
 
   SignalAwaiter.bind();
 
-  DartScriptLanguage.initBindings();
-  DartScript.initBindings();
-  DartResourceFormatLoader.initBindings();
-  DartResourceFormatSaver.initBindings();
-  _dartScriptLanguage = DartScriptLanguage();
-
-  var engine = Engine.singleton;
-  engine.registerScriptLanguage(_dartScriptLanguage);
-
-  _resourceFormatLoader = DartResourceFormatLoader();
-  ResourceLoader.singleton.addResourceFormatLoader(_resourceFormatLoader);
-  _resourceFormatSaver = DartResourceFormatSaver();
-  ResourceSaver.singleton.addResourceFormatSaver(_resourceFormatSaver);
-
   print('Everything loaded a-ok!');
-
-  return _dartScriptLanguage!;
 }
 
 @pragma('vm:entry-point')
-void _unregisterGodot() {
-  Engine.singleton.unregisterScriptLanguage(_dartScriptLanguage);
-
-  ResourceLoader.singleton.removeResourceFormatLoader(_resourceFormatLoader);
-  ResourceSaver.singleton.removeResourceFormatSaver(_resourceFormatSaver);
-}
+void _unregisterGodot() {}
 
 typedef PrintClosure = void Function(String line);
 @pragma('vm:entry-point')

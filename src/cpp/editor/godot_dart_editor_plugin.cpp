@@ -14,12 +14,12 @@
 #include "../godot_dart_runtime_plugin.h"
 
 #include "dart_templates.h"
-#include "progress_dialog.h"
+#include "dart_progress_dialog.h"
 
 using namespace godot;
 
 GodotDartEditorPlugin::GodotDartEditorPlugin() {
-  _progress_dialog = memnew(ProgressDialog);
+  _progress_dialog = memnew(DartProgressDialog);
   add_child(_progress_dialog);
 }
 

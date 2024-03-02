@@ -2,6 +2,7 @@
 
 #include <dart_api.h>
 
+#include "script/dart_script_language.h"
 #include "dart_bindings.h"
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
@@ -9,18 +10,17 @@
 
 std::map<intptr_t, DartScriptInstance*> DartScriptInstance::s_instanceMap;
 
-DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner,
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, GDExtensionObjectPtr owner,
                                        bool is_placeholder, bool is_refcounted)
     : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_script_obj(nullptr) {
   
   s_instanceMap[(intptr_t)this] = this;
   _binding.initialize(for_object, is_refcounted);
-  _dart_script = Dart_NewPersistentHandle(script);
+  _dart_script = script;
 }
 
 DartScriptInstance::~DartScriptInstance() {
   s_instanceMap.erase((intptr_t)this);
-  Dart_DeletePersistentHandle(_dart_script);
 }
 
 bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value) {
@@ -304,6 +304,7 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
 
   Dart_Handle *dart_args = nullptr;
 
+  // TODO: Revisit this, we can probably do it simpler now
   gde->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
@@ -403,25 +404,7 @@ GDExtensionBool DartScriptInstance::ref_count_decremented() {
 }
 
 GDExtensionObjectPtr DartScriptInstance::get_script() {
-  if (_godot_script_obj == nullptr) {
-    GodotDartBindings::instance()->execute_on_dart_thread([&] {
-      DartBlockScope scope;
-
-      Dart_Handle dart_script_obj = Dart_HandleFromPersistent(_dart_script);
-
-      DART_CHECK(obj_native_ptr, Dart_GetField(dart_script_obj, Dart_NewStringFromCString("nativePtr")),
-                 "Failed getting nativePtr for Script");
-      Dart_Handle address = Dart_GetField(obj_native_ptr, Dart_NewStringFromCString("address"));
-      if (Dart_IsError(address)) {
-        GD_PRINT_ERROR(Dart_GetError(address));
-      }
-      uint64_t obj_ptr = 0;
-      Dart_IntegerToUint64(address, &obj_ptr);
-      _godot_script_obj = reinterpret_cast<GDExtensionObjectPtr>(obj_ptr);
-    });
-  }
-
-  return _godot_script_obj;
+  return _dart_script->_owner;
 }
 
 GDExtensionBool DartScriptInstance::is_placeholder() {
@@ -437,7 +420,11 @@ bool DartScriptInstance::get_fallback(const godot::StringName &p_name, GDExtensi
 }
 
 GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
-  return GodotDartBindings::instance()->get_language();
+  auto ptr = DartScriptLanguage::instance();
+  if (ptr == nullptr) {
+    return nullptr;
+  }
+  return ptr->_owner;
 }
 
 // * Static Callback Functions for Godot */

@@ -1,6 +1,5 @@
 ﻿#include "dart_bindings.h"
 
-
 #include <functional>
 #include <iostream>
 #include <string.h>
@@ -14,12 +13,13 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
-#include "dart_instance_binding.h"
 #include "dart_helpers.h"
+#include "dart_instance_binding.h"
 #include "dart_script_instance.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "ref_counted_wrapper.h"
+#include "script/dart_script_language.h"
 
 // Forward declarations for Dart callbacks and helpers
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
@@ -154,9 +154,6 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
       };
       DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args),
                      false, "Error calling '_registerGodot'");
-
-      // Get the language pointer from the result:
-      _dart_language = get_object_address(result);
     }
 
     // And call the main function from the user supplied library
@@ -226,6 +223,27 @@ Dart_Handle GodotDartBindings::new_dart_void_pointer(void *ptr) {
   return Dart_New(_void_pointer_pointer_type, Dart_NewStringFromCString("fromAddress"), 1, args);
 }
 
+void GodotDartBindings::perform_frame_maintanance() {
+  execute_on_dart_thread([&] {
+    Dart_EnterScope();
+
+    DartDll_DrainMicrotaskQueue();
+    while (_pending_messages > 0) {
+      DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
+      _pending_messages--;
+    }
+
+    // Back with a current isolate, let's take care of any pending ref count changes,
+    // which we couldn't do while the finalizer was running.
+    perform_pending_ref_changes();
+
+    uint64_t currentTime = Dart_TimelineGetMicros();
+    Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more
+
+    Dart_ExitScope();
+  });
+}
+
 void GodotDartBindings::add_pending_ref_change(DartGodotInstanceBinding *bindings) {
   _pending_ref_changes.insert(bindings);
 }
@@ -240,12 +258,45 @@ void GodotDartBindings::perform_pending_ref_changes() {
     int ref_count = ref_counted.get_reference_count();
     if (ref_count > 1 && binding->is_weak()) {
       execute_on_dart_thread([&] { binding->convert_to_strong(); });
-    }
-    else if (ref_count == 1 && !binding->is_weak()) {
+    } else if (ref_count == 1 && !binding->is_weak()) {
       execute_on_dart_thread([&] { binding->convert_to_weak(); });
     }
   }
   _pending_ref_changes.clear();
+}
+
+void *GodotDartBindings::create_script_instance(Dart_Handle type, const DartScript *script, void *godot_object,
+                                                bool is_placeholder, bool is_refcounted) {
+  GDExtensionScriptInstancePtr godot_script_instance = nullptr;
+
+  execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    Dart_Handle dart_pointer = new_dart_void_pointer(godot_object);
+    Dart_Handle args[1] = {dart_pointer};
+    DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
+                   "Error creating bindings");
+
+    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, const_cast<DartScript *>(script),
+                                                                 godot_object, is_placeholder, is_refcounted);
+    godot_script_instance =
+        gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
+                                    reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
+  });
+
+  return godot_script_instance;
+}
+
+Dart_Handle GodotDartBindings::get_godot_script_info(Dart_Handle dart_type) {
+  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
+  Dart_Handle script_info = Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo"));
+
+  if (Dart_IsError(script_info)) {
+    GD_PRINT_ERROR(Dart_GetError(script_info));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(script_info)));
+  }
+
+  return script_info;
 }
 
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -777,16 +828,26 @@ void get_godot_type_info(Dart_NativeArguments args) {
 }
 
 void get_godot_script_info(Dart_NativeArguments args) {
-  Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
-  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
-  Dart_Handle script_info = Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo"));
-  if (Dart_IsError(script_info)) {
-    GD_PRINT_ERROR(Dart_GetError(script_info));
-    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(script_info)));
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (!bindings) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
     return;
   }
 
+  Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
+  Dart_Handle script_info = bindings->get_godot_script_info(dart_type);
   Dart_SetReturnValue(args, script_info);
+}
+
+void attach_script_resolver(Dart_NativeArguments args) {
+  DartScriptLanguage *script_language = DartScriptLanguage::instance();
+  if (!script_language) {
+    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
+    return;
+  }
+
+  Dart_Handle resolver = Dart_GetNativeArgument(args, 1);
+  script_language->attach_script_resolver(resolver);
 }
 
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
@@ -820,6 +881,8 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotScriptInfo")) {
     *auto_setup_scope = true;
     ret = get_godot_script_info;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::attachScriptResolver")) {
+    ret = attach_script_resolver;
   }
 
   Dart_ExitScope();
@@ -909,6 +972,15 @@ GDE_EXPORT Dart_Handle dart_object_from_instance_binding(GDExtensionClassInstanc
   return obj;
 }
 
+GDE_EXPORT GDExtensionScriptInstanceDataPtr get_script_instance(GDExtensionConstObjectPtr godot_object) {
+  DartScriptLanguage *script_language = DartScriptLanguage::instance();
+  if (script_language == nullptr) {
+    return nullptr;
+  }
+
+  return gde_object_get_script_instance(godot_object, script_language->_owner);
+}
+
 GDE_EXPORT void finalize_variant(GDExtensionVariantPtr variant) {
   if (variant == nullptr) {
     return;
@@ -939,27 +1011,6 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   gde_object_destroy(extention_object);
 }
 
-GDE_EXPORT void *create_script_instance(Dart_Handle type, Dart_Handle script, void *godot_object, bool is_placeholder,
-                                        bool is_refcounted) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings || godot_object == nullptr) {
-    return nullptr;
-  }
-
-  Dart_Handle dart_pointer = bindings->new_dart_void_pointer(godot_object);
-  Dart_Handle args[1] = {dart_pointer};
-  DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
-                 "Error creating bindings");
-
-  DartScriptInstance *script_instance =
-      new DartScriptInstance(dart_object, script, godot_object, is_placeholder, is_refcounted);
-  GDExtensionScriptInstancePtr godot_script_instance =
-      gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
-                                  reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-
-  return godot_script_instance;
-}
-
 GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_instance) {
   if (!script_instance) {
     return Dart_Null();
@@ -973,25 +1024,9 @@ GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_in
 
 GDE_EXPORT void perform_frame_maintenance() {
   GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    return;
+  if (bindings) {
+    bindings->perform_frame_maintanance();
   }
-  Dart_EnterScope();
-
-  DartDll_DrainMicrotaskQueue();
-  while (bindings->_pending_messages > 0) {
-    DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
-    bindings->_pending_messages--;
-  }
-
-  // Back with a current isolate, let's take care of any pending ref count changes,
-  // which we couldn't do while the finalizer was running.
-  bindings->perform_pending_ref_changes();
-
-  uint64_t currentTime = Dart_TimelineGetMicros();
-  Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more
-
-  Dart_ExitScope();
 }
 
 GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {

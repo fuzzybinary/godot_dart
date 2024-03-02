@@ -1,4 +1,4 @@
-#include "progress_dialog.h"
+#include "dart_progress_dialog.h"
 
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/label.hpp>
@@ -8,7 +8,7 @@
 
 using namespace godot;
 
-ProgressDialog::ProgressDialog() : vbox(nullptr), label(nullptr), progress_bar(nullptr) {
+DartProgressDialog::DartProgressDialog() : vbox(nullptr), label(nullptr), progress_bar(nullptr) {
   set_wrap_controls(true);
   set_transient(true);
   set_exclusive(true);
@@ -31,20 +31,20 @@ ProgressDialog::ProgressDialog() : vbox(nullptr), label(nullptr), progress_bar(n
   child_controls_changed();
 }
 
-ProgressDialog::~ProgressDialog() {
+DartProgressDialog::~DartProgressDialog() {
 }
 
-void ProgressDialog::_bind_methods() {
-  ClassDB::bind_method(godot::D_METHOD("set_text"), &ProgressDialog::set_text);
-  ClassDB::bind_method(godot::D_METHOD("set_progress"), &ProgressDialog::set_progress);
+void DartProgressDialog::_bind_methods() {
+  ClassDB::bind_method(godot::D_METHOD("set_text"), &DartProgressDialog::set_text);
+  ClassDB::bind_method(godot::D_METHOD("set_progress"), &DartProgressDialog::set_progress);
 }
 
-void ProgressDialog::set_text(const godot::String &text) {
+void DartProgressDialog::set_text(const godot::String &text) {
   label->set_text(text);
   child_controls_changed();
 }
 
-void ProgressDialog::set_progress(float percent) {
+void DartProgressDialog::set_progress(float percent) {
   progress_bar->set_value_no_signal(percent);
   child_controls_changed();
 }

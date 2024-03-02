@@ -253,8 +253,7 @@ extension GodotObjectCast on GodotObject {
       // TODO: What case is there where there is a class tag but no binding token?
     } else {
       // Try getting the script instance, and casting from that
-      final scriptInstance = gde.ffiBindings.gde_object_get_script_instance(
-          nativePtr, DartScriptLanguage.singleton.nativePtr);
+      final scriptInstance = gde.dartBindings.getScriptInstance(nativePtr);
       if (scriptInstance != nullptr) {
         final o = gde.dartBindings.objectFromScriptInstance(scriptInstance);
         if (o is T) {

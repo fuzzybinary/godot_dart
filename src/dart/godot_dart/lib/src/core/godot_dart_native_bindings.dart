@@ -1,8 +1,9 @@
 import 'dart:ffi';
 
 import '../../godot_dart.dart';
-import '../script/dart_script.dart';
 import 'gdextension_ffi_bindings.dart';
+
+typedef ScriptResolver = Type? Function(String scriptPath);
 
 class GodotDartNativeBindings {
   late final DynamicLibrary processLib;
@@ -20,14 +21,6 @@ class GodotDartNativeBindings {
   late final performFrameMaintenance = processLib
       .lookup<NativeFunction<Void Function()>>('perform_frame_maintenance')
       .asFunction<void Function()>();
-  late final createScriptInstance = processLib
-      .lookup<
-          NativeFunction<
-              Pointer<Void> Function(Handle, Handle, Pointer<Void>, Bool,
-                  Bool)>>('create_script_instance')
-      .asFunction<
-          Pointer<Void> Function(
-              Type, DartScript, Pointer<Void>, bool, bool)>();
   late final objectFromScriptInstance = processLib
       .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
           'object_from_script_instance')
@@ -48,6 +41,15 @@ class GodotDartNativeBindings {
       .lookup<NativeFunction<Handle Function(GDExtensionClassInstancePtr)>>(
           'dart_object_from_instance_binding')
       .asFunction<Object Function(GDExtensionClassInstancePtr)>();
+
+  late final getScriptInstance = processLib
+      .lookup<
+          NativeFunction<
+              GDExtensionScriptInstanceDataPtr Function(
+                  GDExtensionConstObjectPtr)>>('get_script_instance')
+      .asFunction<
+          GDExtensionScriptInstanceDataPtr Function(
+              GDExtensionConstObjectPtr)>();
 
   GodotDartNativeBindings() {
     processLib = DynamicLibrary.process();
@@ -78,6 +80,9 @@ class GodotDartNativeBindings {
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotScriptInfo')
   external ScriptInfo getGodotScriptInfo(Type type);
+
+  @pragma('vm:external-name', 'GodotDartNativeBindings::attachScriptResolver')
+  external void attachScriptResolver(ScriptResolver resolver);
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);

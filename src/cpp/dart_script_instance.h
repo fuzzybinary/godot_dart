@@ -1,13 +1,17 @@
 #pragma once
 
 #include <gdextension_interface.h>
+#include <godot_cpp/classes/ref_counted.hpp>
 
 #include "dart_instance_binding.h"
+#include "script/dart_script.h"
 #include "godot_string_wrappers.h"
+
+class DartScript;
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, Dart_Handle script, GDExtensionObjectPtr owner, bool is_placeholder,
+  DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, GDExtensionObjectPtr owner, bool is_placeholder,
                      bool is_refcounted);
   ~DartScriptInstance();
 
@@ -61,7 +65,7 @@ public:
 private:
   bool _is_placeholder;
 
-  Dart_PersistentHandle _dart_script;
+  godot::Ref<DartScript> _dart_script;
   GDExtensionObjectPtr _godot_script_obj;
 
   static GDExtensionScriptInstanceInfo2 script_instance_info;

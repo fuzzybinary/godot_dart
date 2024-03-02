@@ -5,7 +5,7 @@
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/thread.hpp>
 
-class ProgressDialog;
+class DartProgressDialog;
 
 class GodotDartEditorPlugin : public godot::EditorPlugin {
   GDCLASS(GodotDartEditorPlugin, EditorPlugin)
@@ -28,6 +28,6 @@ private:
   
   void create_project();
 
-  ProgressDialog *_progress_dialog;
+  DartProgressDialog *_progress_dialog;
   godot::Ref<godot::Thread> _project_create_thread;
 };

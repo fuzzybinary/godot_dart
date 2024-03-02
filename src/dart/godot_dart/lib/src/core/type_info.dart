@@ -52,8 +52,15 @@ class ScriptInfo {
     required this.properties,
   });
 
+  bool hasMethod(String methodName) => getMethodInfo(methodName) != null;
+  bool hasSignal(String signalName) => getSignalInfo(signalName) != null;
+
   MethodInfo? getMethodInfo(String methodName) {
     return methods.firstWhereOrNull((e) => e.name == methodName);
+  }
+
+  MethodInfo? getSignalInfo(String signalName) {
+    return signals.firstWhereOrNull((e) => e.name == signalName);
   }
 
   PropertyInfo? getPropertyInfo(String propertyName) {

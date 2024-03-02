@@ -14,7 +14,7 @@
 #include "ref_counted_wrapper.h"
 
 #include "editor/godot_dart_editor_plugin.h"
-#include "editor/progress_dialog.h"
+#include "editor/dart_progress_dialog.h"
 
 namespace godot_dart {
 
@@ -23,7 +23,7 @@ GodotDartRuntimePlugin *runtime_plugin = nullptr;
 void initialize_level(godot::ModuleInitializationLevel p_level) {
   if (p_level == godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_EDITOR) {
     godot::ClassDB::register_class<GodotDartEditorPlugin>();
-    godot::ClassDB::register_class<ProgressDialog>();
+    godot::ClassDB::register_class<DartProgressDialog>();
 
     godot::EditorPlugins::add_by_type<GodotDartEditorPlugin>();
   }

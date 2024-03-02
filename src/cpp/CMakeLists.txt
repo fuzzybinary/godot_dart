@@ -37,8 +37,14 @@ add_library(godot_dart SHARED
     editor/godot_dart_editor_plugin.h 
     editor/dart_templates.cpp
     editor/dart_templates.h
-    editor/progress_dialog.h
-    editor/progress_dialog.cpp
+    "editor/dart_progress_dialog.h"
+    "editor/dart_progress_dialog.cpp"
+    script/dart_script_language.cpp
+    script/dart_script_language.h
+    script/dart_script.h
+    script/dart_script.cpp
+    script/dart_resource_format.h
+    script/dart_resource_format.cpp
 )
 
 target_include_directories(godot_dart PUBLIC

@@ -8,12 +8,12 @@ namespace godot {
   class VBoxContainer;
 }
 
-class ProgressDialog : public godot::Window {
-  GDCLASS(ProgressDialog, godot::Window);
+class DartProgressDialog : public godot::Window {
+  GDCLASS(DartProgressDialog, godot::Window);
 
 public:
-  ProgressDialog();
-  ~ProgressDialog();
+  DartProgressDialog();
+  ~DartProgressDialog();
   
   void set_text(const godot::String &text);
   void set_progress(float percent);  
