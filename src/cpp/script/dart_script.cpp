@@ -35,6 +35,12 @@ DartScript::~DartScript() {
 void DartScript::_bind_methods() {
 }
 
+godot::Ref<Script> DartScript::_get_base_script() const {
+  refresh_type();
+
+  return _base_script;
+}
+
 godot::ScriptLanguage *DartScript::_get_language() const {
   return DartScriptLanguage::instance();
 }
@@ -230,9 +236,55 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_property_list() con
 }
 
 godot::Error DartScript::_reload(bool keep_state) {
+  // Force a reload:
+  if (_dart_type != nullptr) {
+    Dart_DeletePersistentHandle(_dart_type);
+    _dart_type = nullptr;
+  }
   refresh_type();
 
   return godot::Error::OK;
+}
+
+bool DartScript::_is_tool() const {
+  return false;
+}
+
+godot::StringName DartScript::_get_instance_base_type() const {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (bindings == nullptr || _dart_type == nullptr) {
+    return godot::StringName();
+  }
+
+  godot::StringName native_base_type;
+  bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    Dart_Handle dart_type = Dart_HandleFromPersistent(_dart_type);
+    DART_CHECK(type_info, Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo")), "Failed getting type info");
+    DART_CHECK(dart_native_type_name, Dart_GetField(type_info, Dart_NewStringFromCString("nativeTypeName")), "Failed to get nativeTypeName");
+    
+    native_base_type = *(godot::StringName *)get_object_address(dart_native_type_name);
+  });
+  
+  return native_base_type;
+}
+
+godot::TypedArray<godot::Dictionary> DartScript::_get_documentation() const {
+  // TODO: See if the Dart VM can get me this info
+  return godot::TypedArray<godot::Dictionary>();
+}
+
+bool DartScript::_has_property_default_value(const godot::StringName &property) const {
+  return false;
+}
+
+godot::Variant DartScript::_get_property_default_value(const godot::StringName &property) const {
+  return godot::Variant();
+}
+
+godot::StringName DartScript::_get_global_name() const {
+  return godot::StringName();
 }
 
 void DartScript::load_from_disk(const godot::String &path) {
@@ -294,6 +346,8 @@ void DartScript::refresh_type() const {
     return;
   }
 
+  _base_script.unref();
+
   bindings->execute_on_dart_thread([&] {
     // Delete old persistent handles
     if (_dart_type != nullptr) {
@@ -306,15 +360,24 @@ void DartScript::refresh_type() const {
     }
 
     DartBlockScope scope;
+    DartScriptLanguage *language = DartScriptLanguage::instance();
 
     String path = get_path();
-
-    Dart_Handle dart_type = DartScriptLanguage::instance()->get_type_for_script(path);
+    
+    Dart_Handle dart_type = language->get_type_for_script(path);
     if (dart_type != nullptr) {
       _dart_type = Dart_NewPersistentHandle(dart_type);
-      Dart_Handle script_info = bindings->get_godot_script_info(dart_type);
+      DART_CHECK(type_info, Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo")),
+                 "Failed getting type info");
+      DART_CHECK(script_info, Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo")), "Failed to get scriptInfo");
       if (script_info != nullptr) {
         _script_info = Dart_NewPersistentHandle(script_info);
+
+        // Find the base type
+        Dart_Handle base_type = Dart_GetField(type_info, Dart_NewStringFromCString("parentType"));
+        if (Dart_IsNull(base_type)) {
+          _base_script = language->find_script_for_type(script_info);
+        }
       }
     }
   });

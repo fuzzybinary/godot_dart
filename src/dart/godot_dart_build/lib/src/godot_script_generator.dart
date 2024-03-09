@@ -29,10 +29,31 @@ class GodotScriptAnnotationGenerator
   String _createTypeInfo(ClassElement element) {
     final buffer = StringBuffer();
 
+    // Find the first superclass that has nativeTypeName defined
+    ClassElement? nativeType;
+    InterfaceElement? searchElement = element;
+    while (searchElement != null) {
+      if (searchElement is ClassElement) {
+        final nativeTypeNameField = searchElement.getField('nativeTypeName');
+        if (nativeTypeNameField != null && nativeTypeNameField.isStatic) {
+          nativeType = searchElement;
+          break;
+        }
+      }
+      // Continue searching up the tree
+      searchElement = searchElement.supertype?.element;
+    }
+
+    if (nativeType == null) {
+      log.warning('Could not determine nativeTypeName of ${element.name}');
+    }
+
     buffer.writeln('TypeInfo _\$${element.name}TypeInfo() => TypeInfo(');
     buffer.writeln('  ${element.name},');
     buffer.writeln('  StringName.fromString(\'${element.name}\'),');
-    buffer.writeln('  parentClass: ${element.supertype}.sTypeInfo.className,');
+    buffer.writeln(
+        '  StringName.fromString(${nativeType?.name}.nativeTypeName),');
+    buffer.writeln('  parentType: ${element.supertype},');
     buffer.writeln('  vTable: ${element.supertype}.sTypeInfo.vTable,');
     buffer.writeln('  scriptInfo: ScriptInfo(');
 

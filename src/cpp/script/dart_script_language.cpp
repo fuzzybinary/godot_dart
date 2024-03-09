@@ -1,9 +1,11 @@
 #include "dart_script_language.h"
 
+#include <godot_cpp/classes/resource_loader.hpp>
+
 #include "../dart_bindings.h"
 #include "../dart_helpers.h"
-#include "../godot_string_wrappers.h"
 #include "../editor/dart_templates.h"
+#include "../godot_string_wrappers.h"
 
 #include "dart_script.h"
 
@@ -16,7 +18,7 @@ DartScriptLanguage *DartScriptLanguage::instance() {
   return s_instance;
 }
 
-DartScriptLanguage::DartScriptLanguage() : _script_resolver(nullptr) {
+DartScriptLanguage::DartScriptLanguage() : _type_resolver(nullptr) {
 }
 
 void DartScriptLanguage::_thread_enter() {
@@ -60,6 +62,73 @@ bool DartScriptLanguage::_handles_global_class_type(const godot::String &type) c
   return type == _get_type();
 }
 
+godot::Dictionary DartScriptLanguage::_get_global_class_name(const godot::String &path) const {
+  return godot::Dictionary();
+}
+
+bool DartScriptLanguage::_overrides_external_editor() {
+  return false;
+}
+
+godot::PackedStringArray DartScriptLanguage::_get_string_delimiters() const {
+  godot::PackedStringArray delimiters;
+  delimiters.append("\" \"");
+  delimiters.append("' '");
+  delimiters.append("\"\"\" \"\"\"");
+  delimiters.append("''' '''");
+  return delimiters;
+}
+
+godot::PackedStringArray DartScriptLanguage::_get_comment_delimiters() const {
+  godot::PackedStringArray delimiters;
+  delimiters.append("//");
+  delimiters.append("/* */");
+  return delimiters;
+}
+
+godot::PackedStringArray DartScriptLanguage::_get_doc_comment_delimiters() const {
+  godot::PackedStringArray delimiters;
+  delimiters.append("///");
+  return delimiters;
+}
+
+godot::Dictionary DartScriptLanguage::_validate(const godot::String &script, const godot::String &path,
+                                                bool validate_functions, bool validate_errors, bool validate_warnings,
+                                                bool validate_safe_lines) const {
+  return godot::Dictionary();
+}
+
+godot::PackedStringArray DartScriptLanguage::_get_reserved_words() const {
+  godot::PackedStringArray words;
+
+  static const char *_reserved_words[] = {
+      // Reserved keywords
+      "abstract", "as",       "assert",   "async",     "await",    "base",       "break",   "case",     "catch",
+      "class",    "const",    "continue", "covariant", "default",  "deferred",   "do",      "dynamic",  "else",
+      "enum",     "export",   "extends",  "extension", "external", "factory",    "false",   "final",    "finally",
+      "for",      "Function", "get",      "hide",      "if",       "implements", "import",  "in",       "interface",
+      "is",       "late",     "library",  "mixin",     "new",      "null",       "on",      "operator", "part",
+      "required", "rethrow",  "return",   "sealed",    "set",      "show",       "static",  "super",    "switch",
+      "sync",     "this",     "throw",    "true",      "try",      "type",       "typedef", "var",      "void",
+      "when",     "while",    "with",     "yield",     nullptr};
+
+  const char **w = _reserved_words;
+
+  while (*w) {
+    words.push_back(*w);
+    w++;
+  }
+
+  return words;
+}
+
+bool DartScriptLanguage::_is_control_flow_keyword(const godot::String &keyword) const {
+  return keyword == "break" || keyword == "case" || keyword == "catch" || keyword == "continue" ||
+         keyword == "default" || keyword == "do" || keyword == "else" || keyword == "finally" || keyword == "for" ||
+         keyword == "if" || keyword == "return" || keyword == "switch" || keyword == "throw" || keyword == "try" ||
+         keyword == "while" || keyword == "yeild";
+}
+
 godot::String DartScriptLanguage::_validate_path(const godot::String &path) const {
   return godot::String();
 }
@@ -79,7 +148,7 @@ godot::Ref<godot::Script> DartScriptLanguage::_make_template(const godot::String
   script.instantiate();
   script->set_source_code(source);
   script->set_name(class_name);
-  
+
   return script;
 }
 
@@ -93,18 +162,18 @@ godot::String DartScriptLanguage::_auto_indent_code(godot::String code, int from
   return code;
 }
 
-void DartScriptLanguage::attach_script_resolver(Dart_Handle resolver) {
+void DartScriptLanguage::attach_type_resolver(Dart_Handle resolver) {
   if (resolver != nullptr) {
-    if (_script_resolver != nullptr) {
-      Dart_DeletePersistentHandle(_script_resolver);
+    if (_type_resolver != nullptr) {
+      Dart_DeletePersistentHandle(_type_resolver);
     }
 
-    _script_resolver = Dart_NewPersistentHandle(resolver);
+    _type_resolver = Dart_NewPersistentHandle(resolver);
   }
 }
 
 Dart_Handle DartScriptLanguage::get_type_for_script(const godot::String &path) const {
-  if (_script_resolver == nullptr) {
+  if (_type_resolver == nullptr) {
     return Dart_Null();
   }
 
@@ -115,14 +184,68 @@ Dart_Handle DartScriptLanguage::get_type_for_script(const godot::String &path) c
 
   Dart_Handle ret = Dart_Null();
 
-  bindings->execute_on_dart_thread([&] { 
-    Dart_Handle resolver = Dart_HandleFromPersistent(_script_resolver);
+  bindings->execute_on_dart_thread([&] {
+    Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);
     Dart_Handle dart_path = to_dart_string(path);
     Dart_Handle args[] = {dart_path};
 
-    DART_CHECK(value, Dart_InvokeClosure(resolver, 1, args), "Failed to invoke resolver closure!");
+    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("typeFromPath"), 1, args),
+               "Failed to invoke resolver!");
     ret = value;
   });
-  
+
+  return ret;
+}
+
+godot::String DartScriptLanguage::get_script_for_type(Dart_Handle dart_type) const {
+  if (_type_resolver == nullptr) {
+    return godot::String();
+  }
+
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (bindings == nullptr) {
+    return godot::String();
+  }
+
+  godot::String ret;
+
+  bindings->execute_on_dart_thread([&] {
+    Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);
+    Dart_Handle args[] = {dart_type};
+
+    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("pathFromType"), 1, args),
+               "Failed to invoke resolver!");
+    if (!Dart_IsNull(value)) {
+      ret = create_godot_string(value);
+    }
+  });
+
+  return ret;
+}
+
+godot::Ref<DartScript> DartScriptLanguage::get_cached_script(const godot::String &path) {
+  auto script_itr = _script_cache.find(path);
+  if (script_itr == _script_cache.end()) {
+    return godot::Ref<DartScript>();
+  }
+  return script_itr->second;
+}
+
+void DartScriptLanguage::push_cached_script(const godot::String &path, godot::Ref<DartScript> script) {
+  _script_cache.insert({path, script});
+}
+
+godot::Ref<DartScript> DartScriptLanguage::find_script_for_type(Dart_Handle dart_type) {
+  godot::String script_path = get_script_for_type(dart_type);
+  // No idea what this type is....
+  if (script_path.is_empty()) {
+    return godot::Ref<DartScript>();
+  }
+
+  godot::Ref<DartScript> ret = get_cached_script(script_path);
+  if (ret.is_null()) {
+    ret = godot::ResourceLoader::get_singleton()->load(script_path);
+  }
+
   return ret;
 }

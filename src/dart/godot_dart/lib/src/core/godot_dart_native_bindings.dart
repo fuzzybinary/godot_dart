@@ -78,11 +78,8 @@ class GodotDartNativeBindings {
   @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotTypeInfo')
   external TypeInfo getGodotTypeInfo(Type type);
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotScriptInfo')
-  external ScriptInfo getGodotScriptInfo(Type type);
-
-  @pragma('vm:external-name', 'GodotDartNativeBindings::attachScriptResolver')
-  external void attachScriptResolver(ScriptResolver resolver);
+  @pragma('vm:external-name', 'GodotDartNativeBindings::attachTypeResolver')
+  external void attachTypeResolver(TypeResolver resolver);
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);

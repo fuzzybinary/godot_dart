@@ -24,10 +24,13 @@ enum Vector3Axis {
 class Vector3 extends BuiltinType {
   static const int _size = 12;
   static TypeInfo sTypeInfo = TypeInfo(
-      Vector3, StringName.fromString('Vector3'),
-      variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3,
-      size: _size,
-      bindingToken: null);
+    Vector3,
+    StringName.fromString('Vector3'),
+    StringName(),
+    variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3,
+    size: _size,
+    bindingToken: null,
+  );
 
   @override
   Pointer<Uint8> get nativePtr {

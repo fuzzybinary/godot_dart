@@ -287,18 +287,6 @@ void *GodotDartBindings::create_script_instance(Dart_Handle type, const DartScri
   return godot_script_instance;
 }
 
-Dart_Handle GodotDartBindings::get_godot_script_info(Dart_Handle dart_type) {
-  Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
-  Dart_Handle script_info = Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo"));
-
-  if (Dart_IsError(script_info)) {
-    GD_PRINT_ERROR(Dart_GetError(script_info));
-    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(script_info)));
-  }
-
-  return script_info;
-}
-
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                                     Dart_Handle args_list, MethodFlags method_flags) {
   MethodInfo *info = new MethodInfo();
@@ -672,22 +660,28 @@ void bind_class(Dart_NativeArguments args) {
 
   Dart_Handle type_arg = Dart_GetNativeArgument(args, 1);
 
-  DART_CHECK(type_info, Dart_GetField(type_arg, Dart_NewStringFromCString("sTypeInfo")),
-             "Missing sTypeInfo when trying to bind class!");
+  Dart_Handle dstr_s_type_info = Dart_NewStringFromCString("sTypeInfo");
+  Dart_Handle dstr_class_name = Dart_NewStringFromCString("className");
+  DART_CHECK(type_info, Dart_GetField(type_arg, dstr_s_type_info), "Missing sTypeInfo when trying to bind class!");
 
-  // Name and Parent are StringNames and we can get their opaque addresses
-  Dart_Handle name = Dart_GetField(type_info, Dart_NewStringFromCString("className"));
-  Dart_Handle parent = Dart_GetField(type_info, Dart_NewStringFromCString("parentClass"));
-  if (Dart_IsNull(parent)) {
-    Dart_ThrowException(Dart_NewStringFromCString("Passed null reference for parent in bindClass."));
-    return;
-  }
+  // className is a StringNames and we can get its opaque addresses
+  Dart_Handle name = Dart_GetField(type_info, dstr_class_name);
 
   void *sn_name = get_object_address(name);
   if (sn_name == nullptr) {
     return;
   }
-  void *sn_parent = get_object_address(parent);
+
+  Dart_Handle parent_type = Dart_GetField(type_info, Dart_NewStringFromCString("parentType"));
+  if (Dart_IsNull(parent_type)) {
+    Dart_ThrowException(Dart_NewStringFromCString("Passed null reference for parentType in bindClass."));
+    return;
+  }
+
+  DART_CHECK(parent_type_info, Dart_GetField(parent_type, dstr_s_type_info), "Failed getting parentType typeInfo");
+  DART_CHECK(parent_class_name, Dart_GetField(parent_type_info, dstr_class_name), "Failed getting parentType name");
+
+  void *sn_parent = get_object_address(parent_class_name);
   if (sn_parent == nullptr) {
     return;
   }
@@ -827,19 +821,7 @@ void get_godot_type_info(Dart_NativeArguments args) {
   Dart_SetReturnValue(args, type_info);
 }
 
-void get_godot_script_info(Dart_NativeArguments args) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (!bindings) {
-    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
-    return;
-  }
-
-  Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
-  Dart_Handle script_info = bindings->get_godot_script_info(dart_type);
-  Dart_SetReturnValue(args, script_info);
-}
-
-void attach_script_resolver(Dart_NativeArguments args) {
+void attach_type_resolver(Dart_NativeArguments args) {
   DartScriptLanguage *script_language = DartScriptLanguage::instance();
   if (!script_language) {
     Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
@@ -847,7 +829,7 @@ void attach_script_resolver(Dart_NativeArguments args) {
   }
 
   Dart_Handle resolver = Dart_GetNativeArgument(args, 1);
-  script_language->attach_script_resolver(resolver);
+  script_language->attach_type_resolver(resolver);
 }
 
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
@@ -878,11 +860,8 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotTypeInfo")) {
     *auto_setup_scope = true;
     ret = get_godot_type_info;
-  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotScriptInfo")) {
-    *auto_setup_scope = true;
-    ret = get_godot_script_info;
-  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::attachScriptResolver")) {
-    ret = attach_script_resolver;
+  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::attachTypeResolver")) {
+    ret = attach_type_resolver;
   }
 
   Dart_ExitScope();
@@ -903,16 +882,13 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   Dart_EnterScope();
 
   Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
-  Dart_Handle parent_class = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentClass"));
+  Dart_Handle parent_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentType"));
   Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
   Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
 
   type_info->type_name = get_object_address(class_name);
-  if (Dart_IsNull(parent_class)) {
-    type_info->parent_name = nullptr;
-  } else {
-    type_info->parent_name = get_object_address(parent_class);
-  }
+  type_info->parent_type = parent_type;
+  
   int64_t temp;
   Dart_IntegerToInt64(variant_type, &temp);
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);

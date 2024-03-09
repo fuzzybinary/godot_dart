@@ -83,8 +83,12 @@ class TypeInfo {
   /// The name of the class
   final StringName className;
 
+  /// The first class in the inheritance tree that is implemented
+  /// natively in Godot. Can be the class itself
+  final StringName nativeTypeName;
+
   /// The Parent Class of the class
-  final StringName? parentClass;
+  final Type? parentType;
 
   /// The Variant type of this class. This is set to
   /// [GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT] by default which
@@ -107,8 +111,9 @@ class TypeInfo {
 
   TypeInfo(
     this.type,
-    this.className, {
-    this.parentClass,
+    this.className,
+    this.nativeTypeName, {
+    this.parentType,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
     this.size = 0,
     Pointer<Void>? bindingToken,
@@ -130,30 +135,36 @@ class TypeInfo {
       null: TypeInfo(
         Pointer<void>, // Not sure if this is right.
         StringName.fromString('void'),
+        StringName(),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL,
       ),
       bool: TypeInfo(
         bool,
         StringName.fromString('bool'),
+        StringName(),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL,
       ),
       int: TypeInfo(
         int,
         StringName.fromString('int'),
+        StringName(),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT,
       ),
       double: TypeInfo(
         double,
         StringName.fromString('double'),
+        StringName(),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT,
       ),
       String: TypeInfo(
         String,
         StringName.fromString('String'),
+        StringName(),
         variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING,
       ),
       Variant: TypeInfo(
         Variant,
+        StringName.fromString('Variant'),
         StringName.fromString('Variant'),
         variantType:
             GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,

@@ -46,23 +46,17 @@ Future<void> generateEngineBindings(
       o.b('static TypeInfo sTypeInfo = TypeInfo(', () {
         o.p('${classInfo.dartName},');
         o.p("StringName.fromString('${classInfo.name}'),");
-        o.p("parentClass: StringName.fromString('${classInfo.inherits}'),");
+        o.p('StringName.fromString(nativeTypeName),');
+        o.p('parentType: $correctedInherits,');
         o.p('vTable: _getVTable(),');
       }, ');');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
-      // o.p('static Map<String, Pointer<GodotVirtualFunction>>? _vTable;');
-      // o.b('static Map<String, Pointer<GodotVirtualFunction>> get vTable {', () {
-      //   o.b('if (_vTable == null) {', () {
-      //     o.p('_initVTable();');
-      //   }, '}');
-      //   o.p('return _vTable!;');
-      // }, '}');
+      o.p("static const String nativeTypeName = '${classInfo.name}';");
       o.nl();
 
       o.p('@override');
       o.p('TypeInfo get typeInfo => sTypeInfo;');
-      o.p('@override');
-      o.p('StringName get nativeTypeName => sTypeInfo.className;');
+
       o.nl();
 
       //o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');

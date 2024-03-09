@@ -8,8 +8,6 @@
 
 using namespace godot;
 
-static std::map<godot::String, godot::Ref<DartScript>> _script_cache;
-
 // ResourceFormatLoader
 
 DartResourceFormatLoader::DartResourceFormatLoader() {
@@ -49,18 +47,17 @@ bool DartResourceFormatLoader::_exists(const godot::String &path) const {
 
 godot::Variant DartResourceFormatLoader::_load(const godot::String &path, const godot::String &original_path,
                                                bool use_sub_threads, int32_t cache_mode) const {
-  auto script_itr = _script_cache.find(path);
-  Ref<DartScript> script;
-  if (script_itr == _script_cache.end()) {
-    script = Ref<DartScript>(DartScriptLanguage::instance()->_create_script());
+  DartScriptLanguage *language = DartScriptLanguage::instance();
+  Ref<DartScript> script = language->get_cached_script(path);
+  if (script.is_null()) {
+    script = Ref<DartScript>(language->_create_script());
     if (script.is_null()) {
       return Variant();
     }
 
-    _script_cache.insert({path, script});
+    language->push_cached_script(path, script);
     script->load_from_disk(original_path);
   } else if (cache_mode == ResourceLoader::CACHE_MODE_IGNORE) {
-    script = script_itr->second;
     script->load_from_disk(original_path);
   }
   script->set_path(original_path);

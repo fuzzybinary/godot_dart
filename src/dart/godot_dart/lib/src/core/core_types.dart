@@ -54,12 +54,10 @@ abstract class ExtensionType implements Finalizable {
   GDExtensionObjectPtr get nativePtr => _owner;
 
   TypeInfo get typeInfo;
-  @protected
-  StringName get nativeTypeName;
 
   // Created from Dart
   ExtensionType() {
-    _owner = gde.constructObject(nativeTypeName);
+    _owner = gde.constructObject(typeInfo.nativeTypeName);
     _attachFinalizer();
     _tieDartToNative();
   }
@@ -83,8 +81,8 @@ abstract class ExtensionType implements Finalizable {
     // Script instance should take care of this. Should we assert that the
     // object has a script instance?
     if (typeInfo.scriptInfo == null) {
-      bool isGodotType =
-          nativeTypeName.toDartString() == typeInfo.className.toDartString();
+      bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
+          typeInfo.className.toDartString();
       gde.dartBindings
           .tieDartToNative(this, _owner, this is RefCounted, isGodotType);
     }

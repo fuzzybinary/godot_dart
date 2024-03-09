@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #include "dart_script.h"
 
 #include <godot_cpp/classes/resource_format_loader.hpp>

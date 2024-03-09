@@ -48,7 +48,6 @@ public:
 
   void* create_script_instance(Dart_Handle type, const DartScript* script, void *godot_object, bool is_placeholder,
                               bool is_refcounted);
-  Dart_Handle get_godot_script_info(Dart_Handle dart_type);
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);

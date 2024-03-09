@@ -7,7 +7,7 @@
 struct TypeInfo {
   GDExtensionStringNamePtr type_name = nullptr;
   // Can be null
-  GDExtensionStringNamePtr parent_name = nullptr;
+  Dart_Handle parent_type = nullptr;
   GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
   void *binding_token = nullptr;
   // Can be null

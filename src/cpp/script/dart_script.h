@@ -12,6 +12,7 @@ public:
   DartScript();
   ~DartScript();
 
+  virtual godot::Ref<Script> _get_base_script() const override;
   virtual godot::ScriptLanguage *_get_language() const override;
   virtual void _set_source_code(const godot::String& code);
   virtual godot::String _get_source_code() const override;
@@ -26,6 +27,13 @@ public:
   virtual godot::TypedArray<godot::Dictionary> _get_script_method_list() const override;
   virtual godot::TypedArray<godot::Dictionary> _get_script_property_list() const override;
   virtual godot::Error _reload(bool keep_state) override;
+  virtual bool _is_tool() const override;
+  virtual godot::StringName _get_instance_base_type() const override;
+  virtual godot::TypedArray<godot::Dictionary> _get_documentation() const override;
+  virtual bool _has_property_default_value(const godot::StringName &property) const override;
+  virtual godot::Variant _get_property_default_value(const godot::StringName &property) const override;
+  virtual godot::StringName _get_global_name() const override;
+
 
   void load_from_disk(const godot::String &path);
 
@@ -41,6 +49,7 @@ private:
   void refresh_type() const;
 
   godot::String _source_code;
+  mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;
   mutable Dart_PersistentHandle _script_info;
 };

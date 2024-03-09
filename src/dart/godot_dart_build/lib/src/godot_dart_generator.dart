@@ -31,7 +31,6 @@ class GodotDartBuilder extends Builder {
 
     await _generateScriptResolver(
         buildStep, packageName, assets, libraryBuilder);
-    _generateAttachMethod(libraryBuilder);
 
     final c.DartEmitter emitter = c.DartEmitter(useNullSafetySyntax: true);
     final DartFormatter formatter = DartFormatter();
@@ -53,13 +52,8 @@ class GodotDartBuilder extends Builder {
   Future<void> _generateScriptResolver(BuildStep buildStep, String packageName,
       List<AssetId> assets, c.LibraryBuilder libraryBuilder) async {
     final methodBuilder = c.MethodBuilder()
-      ..name = '_resolveScriptToType'
-      ..returns = c.refer('Type?')
-      ..requiredParameters.add(
-        c.Parameter((p) => p
-          ..type = c.refer('String')
-          ..name = 'scriptPath'),
-      );
+      ..name = 'attachScriptResolver'
+      ..returns = c.refer('void');
     final methodBody = StringBuffer();
     methodBody.writeln('final fileTypeMap = {');
 
@@ -92,19 +86,8 @@ class GodotDartBuilder extends Builder {
     }
 
     methodBody.writeln('};');
-    methodBody.writeln('return fileTypeMap[scriptPath];');
-
-    methodBuilder.body = c.Code(methodBody.toString());
-    libraryBuilder.body.add(methodBuilder.build());
-  }
-
-  void _generateAttachMethod(c.LibraryBuilder libraryBuilder) {
-    final methodBuilder = c.MethodBuilder()
-      ..name = 'attachScriptResolver'
-      ..returns = c.refer('void');
-    final methodBody = StringBuffer();
-    methodBody.writeln(
-        'gde.dartBindings.attachScriptResolver(_resolveScriptToType);');
+    methodBody.writeln('final resolver = TypeResolver(fileTypeMap);');
+    methodBody.writeln('gde.dartBindings.attachTypeResolver(resolver);');
 
     methodBuilder.body = c.Code(methodBody.toString());
     libraryBuilder.body.add(methodBuilder.build());

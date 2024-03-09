@@ -20,8 +20,9 @@ class SignalAwaiter extends GodotObject {
   static TypeInfo sTypeInfo = TypeInfo(
     SignalAwaiter,
     StringName.fromString('SignalAwaiter'),
-    parentClass: ScriptExtension.sTypeInfo.className,
-    vTable: ScriptExtension.sTypeInfo.vTable,
+    StringName.fromString(GodotObject.nativeTypeName),
+    parentType: GodotObject,
+    vTable: GodotObject.sTypeInfo.vTable,
   );
 
   @override

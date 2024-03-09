@@ -156,6 +156,7 @@ class Variant implements Finalizable {
   static final TypeInfo sTypeInfo = TypeInfo(
     Variant,
     StringName.fromString('Variant'),
+    StringName.fromString('Variant'),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
     size: _size,
   );

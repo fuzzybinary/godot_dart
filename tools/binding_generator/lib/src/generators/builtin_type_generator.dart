@@ -104,6 +104,7 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
     o.b('sTypeInfo = TypeInfo(', () {
       o.p('${builtin.dartName},');
       o.p("StringName.fromString('${builtin.name}'),");
+      o.p('StringName(),');
       o.p('variantType: $variantEnum,');
       o.p('size: _size,');
       o.p(

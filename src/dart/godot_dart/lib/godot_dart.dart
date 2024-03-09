@@ -11,6 +11,7 @@ export 'src/core/core_types.dart';
 export 'src/core/gdextension.dart';
 export 'src/core/property_info.dart';
 export 'src/core/type_info.dart';
+export 'src/core/type_resolver.dart';
 export 'src/gen/classes/engine_classes.dart';
 export 'src/gen/global_constants.dart';
 export 'src/gen/variant/builtins.dart';
