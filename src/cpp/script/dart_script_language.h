@@ -12,6 +12,8 @@ class DartScriptLanguage : public godot::ScriptLanguageExtension {
 public:
   DartScriptLanguage();
 
+  void shutdown();
+
   virtual void _thread_enter() override;
   virtual void _thread_exit() override;
   virtual void _init() override;

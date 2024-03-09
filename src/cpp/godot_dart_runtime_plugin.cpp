@@ -166,5 +166,8 @@ void GodotDartRuntimePlugin::shutdown_dart_bindings() {
   _resource_format_loader.unref();
   godot::ResourceSaver::get_singleton()->remove_resource_format_saver(_resource_format_saver);
   _resource_format_saver.unref();
-  godot::Engine::get_singleton()->unregister_script_language(DartScriptLanguage::instance());
+  DartScriptLanguage *language = DartScriptLanguage::instance();
+  godot::Engine::get_singleton()->unregister_script_language(language);
+  // This will cause the instance to delete itself
+  language->shutdown();
 }

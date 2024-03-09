@@ -18,6 +18,12 @@ DartScriptLanguage *DartScriptLanguage::instance() {
   return s_instance;
 }
 
+void DartScriptLanguage::shutdown() {
+  s_instance = nullptr;
+
+  memdelete(this);
+}
+
 DartScriptLanguage::DartScriptLanguage() : _type_resolver(nullptr) {
 }
 
