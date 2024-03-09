@@ -998,13 +998,6 @@ GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_in
   return dart_object;
 }
 
-GDE_EXPORT void perform_frame_maintenance() {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (bindings) {
-    bindings->perform_frame_maintanance();
-  }
-}
-
 GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
   Dart_EnterScope();
 
