@@ -5,7 +5,7 @@ const char *main_template = "import 'package:godot_dart/godot_dart.dart';\n"
                             "import 'godot_dart_scripts.g.dart';\n"
                             "\n"
                             "void main() {\n"
-                            "  attachScriptResolver(DartScriptLanguage.singleton);\n"
+                            "  attachScriptResolver();\n"
                             "}\n"
                             "\n";
 

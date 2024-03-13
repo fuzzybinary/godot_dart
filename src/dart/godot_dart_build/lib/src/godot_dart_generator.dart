@@ -55,7 +55,7 @@ class GodotDartBuilder extends Builder {
       ..name = 'attachScriptResolver'
       ..returns = c.refer('void');
     final methodBody = StringBuffer();
-    methodBody.writeln('final fileTypeMap = {');
+    methodBody.writeln('final Map<String, Type> fileTypeMap = {');
 
     for (var asset in assets) {
       if (!await buildStep.resolver.isLibrary(asset)) continue;

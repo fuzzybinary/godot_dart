@@ -28,11 +28,14 @@ public:
   }
 
   explicit GodotDartBindings()
-      : _is_stopping(false), _pending_messages(0), _isolate(nullptr) {
+      : _is_stopping(false), _fully_initialized(false), _pending_messages(0), _isolate(nullptr) {
   }
   ~GodotDartBindings();
 
   bool initialize(const char *script_path, const char *package_config);
+  bool is_fully_initialized() const {
+    return _fully_initialized;
+  }
   void shutdown();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -65,6 +68,7 @@ private:
   static GodotDartBindings *_instance;
 
 public:
+  bool _fully_initialized;
   bool _is_stopping;
   int32_t _pending_messages;
   std::mutex _work_lock;

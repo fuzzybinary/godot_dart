@@ -199,7 +199,7 @@ import 'godot_dart_scripts.g.dart';
 void main() {
   // ... other bindings
 
-  attachScriptResolver(DartScriptLanguage.singleton);
+  attachScriptResolver();
 }
 ```
 

@@ -46,13 +46,15 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   }
   DartDll_Initialize(config);
 
+  // Capture the current isolate before it even exists
+  _isolate_current_thread = std::this_thread::get_id();
   _isolate = DartDll_LoadScript(script_path, package_config);
   if (_isolate == nullptr) {
     GD_PRINT_ERROR("GodotDart: Initialization Error (Failed to load script)");
+    _isolate_current_thread = std::thread::id();
     return false;
   }
-
-  _isolate_current_thread = std::this_thread::get_id();
+  
   Dart_EnterIsolate(_isolate);
   {
     DartBlockScope scope;
@@ -167,6 +169,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   Dart_ExitIsolate();
   _isolate_current_thread = std::thread::id();
 
+  _fully_initialized = true;
+
   return true;
 }
 
@@ -224,6 +228,12 @@ Dart_Handle GodotDartBindings::new_dart_void_pointer(void *ptr) {
 }
 
 void GodotDartBindings::perform_frame_maintanance() {
+  if (!_fully_initialized) {
+    // This can happen in the early moments of initialization where the DartScriptLanguage is ready
+    // but the bindings aren't quite ready yet.
+    return;
+  }
+
   execute_on_dart_thread([&] {
     Dart_EnterScope();
 
