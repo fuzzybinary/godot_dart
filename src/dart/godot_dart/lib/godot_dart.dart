@@ -5,6 +5,7 @@ import 'dart:ffi';
 
 import 'godot_dart.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/reloader/hot_reloader.dart';
 
 export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
@@ -20,6 +21,13 @@ export 'src/variant/variant.dart' hide getToTypeConstructor;
 
 // ignore: unused_element
 late GodotDart _globalExtension;
+HotReloader? _reloader;
+
+@pragma('vm:entry-point')
+void _reloadCode() async {
+  var result = await _reloader?.reloadCode();
+  print('[Dart] Hotreload result: $result');
+}
 
 @pragma('vm:entry-point')
 void _registerGodot(int libraryAddress, int bindingCallbacks) {
@@ -38,11 +46,19 @@ void _registerGodot(int libraryAddress, int bindingCallbacks) {
 
   SignalAwaiter.bind();
 
+  if (Engine.singleton.isEditorHint()) {
+    Future.microtask(() async {
+      _reloader = await HotReloader.create();
+    });
+  }
+
   print('Everything loaded a-ok!');
 }
 
 @pragma('vm:entry-point')
-void _unregisterGodot() {}
+void _unregisterGodot() {
+  _reloader?.stop();
+}
 
 typedef PrintClosure = void Function(String line);
 @pragma('vm:entry-point')

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:code_builder/code_builder.dart' as c;
 import 'package:dart_style/dart_style.dart';
 import 'package:glob/glob.dart';
@@ -29,6 +30,8 @@ class GodotDartBuilder extends Builder {
     libraryBuilder.directives
         .add(c.Directive.import('package:godot_dart/godot_dart.dart'));
 
+    await _generateResolverClass(
+        buildStep, packageName, assets, libraryBuilder);
     await _generateScriptResolver(
         buildStep, packageName, assets, libraryBuilder);
 
@@ -49,13 +52,37 @@ class GodotDartBuilder extends Builder {
         r'$package$': ['godot_dart_scripts.g.dart'],
       };
 
-  Future<void> _generateScriptResolver(BuildStep buildStep, String packageName,
+  Future<void> _generateResolverClass(BuildStep buildStep, String packageName,
       List<AssetId> assets, c.LibraryBuilder libraryBuilder) async {
-    final methodBuilder = c.MethodBuilder()
-      ..name = 'attachScriptResolver'
-      ..returns = c.refer('void');
-    final methodBody = StringBuffer();
-    methodBody.writeln('final Map<String, Type> fileTypeMap = {');
+    final classBuilder = c.ClassBuilder()
+      ..name = 'TypeResolverImpl'
+      ..implements = ListBuilder([
+        c.refer('TypeResolver', 'package:godot_dart/godot.dart'),
+      ]);
+
+    final pathFromType = c.MethodBuilder()
+      ..name = 'pathFromType'
+      ..requiredParameters.add(c.Parameter((p) => p
+        ..type = c.refer('Type')
+        ..name = 'scriptType'))
+      ..returns = c.refer('String?')
+      ..annotations = ListBuilder([
+        c.CodeExpression(c.Code('override')),
+      ]);
+    final pathFromTypeBody = StringBuffer();
+    pathFromTypeBody.writeln('final Map<Type, String> typeFileMap = {');
+
+    final typeFromPath = c.MethodBuilder()
+      ..name = 'typeFromPath'
+      ..requiredParameters.add(c.Parameter((p) => p
+        ..type = c.refer('String')
+        ..name = 'scriptPath'))
+      ..returns = c.refer('Type?')
+      ..annotations = ListBuilder([
+        c.CodeExpression(c.Code('override')),
+      ]);
+    final typeFromPathBody = StringBuffer();
+    typeFromPathBody.writeln('final Map<String, Type> fileTypeMap = {');
 
     for (var asset in assets) {
       if (!await buildStep.resolver.isLibrary(asset)) continue;
@@ -81,12 +108,37 @@ class GodotDartBuilder extends Builder {
 
         log.log(Level.INFO, '$relativeName => ${element.name}');
 
-        methodBody.writeln("'$godotPrefix/$relativeName': ${element.name},");
+        typeFromPathBody
+            .writeln("'$godotPrefix/$relativeName': ${element.name},");
+        pathFromTypeBody
+            .writeln("${element.name}: '$godotPrefix/$relativeName',");
       }
     }
+    pathFromTypeBody.writeln('};');
+    pathFromTypeBody.writeln('return typeFileMap[scriptType];');
+    pathFromType.body = c.Code(pathFromTypeBody.toString());
 
-    methodBody.writeln('};');
-    methodBody.writeln('final resolver = TypeResolver(fileTypeMap);');
+    typeFromPathBody.writeln('};');
+    typeFromPathBody.writeln('return fileTypeMap[scriptPath];');
+    typeFromPath.body = c.Code(typeFromPathBody.toString());
+
+    classBuilder.methods.addAll([
+      pathFromType.build(),
+      typeFromPath.build(),
+    ]);
+
+    libraryBuilder.body.add(
+      classBuilder.build(),
+    );
+  }
+
+  Future<void> _generateScriptResolver(BuildStep buildStep, String packageName,
+      List<AssetId> assets, c.LibraryBuilder libraryBuilder) async {
+    final methodBuilder = c.MethodBuilder()
+      ..name = 'attachScriptResolver'
+      ..returns = c.refer('void');
+    final methodBody = StringBuffer();
+    methodBody.writeln('final TypeResolverImpl resolver = TypeResolverImpl();');
     methodBody.writeln('gde.dartBindings.attachTypeResolver(resolver);');
 
     methodBuilder.body = c.Code(methodBody.toString());

@@ -236,12 +236,11 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_property_list() con
 }
 
 godot::Error DartScript::_reload(bool keep_state) {
-  // Force a reload:
-  if (_dart_type != nullptr) {
-    Dart_DeletePersistentHandle(_dart_type);
-    _dart_type = nullptr;
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+
+  if (bindings != nullptr) {
+    bindings->reload_code();
   }
-  refresh_type();
 
   return godot::Error::OK;
 }

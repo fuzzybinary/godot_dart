@@ -47,7 +47,7 @@ class Player extends Area2D {
 
     final animatedSprite = getNodeT<AnimatedSprite2D>();
 
-    if (velocity.length() > 0) {
+    if (velocity.length > 0) {
       velocity = velocity.normalized();
       velocity.x *= speed;
       velocity.y *= speed;

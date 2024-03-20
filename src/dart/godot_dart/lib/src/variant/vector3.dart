@@ -35,7 +35,7 @@ class Vector3 extends BuiltinType {
   @override
   Pointer<Uint8> get nativePtr {
     _updateOpaque();
-    return _opaque;
+    return nativeDataPtr;
   }
 
   @override
@@ -48,7 +48,6 @@ class Vector3 extends BuiltinType {
   @override
   TypeInfo get typeInfo => sTypeInfo;
 
-  final Pointer<Uint8> _opaque = nullptr;
   final Float32List _data = Float32List(3);
 
   double get x => _data[0];
@@ -92,10 +91,10 @@ class Vector3 extends BuiltinType {
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
     if (c == null) return;
 
-    c(_opaque.cast(), variantPtr);
+    c(nativeDataPtr.cast(), variantPtr);
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, _opaque[i]);
+      byteData.setUint8(i, nativeDataPtr[i]);
     }
   }
 
@@ -426,7 +425,7 @@ class Vector3 extends BuiltinType {
   }
 
   static Vector3 octahedronDecode(Vector2 uv) {
-    Vector2 f = Vector2.fromXY(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0);
+    Vector2 f = Vector2(x: uv.x * 2.0 - 1.0, y: uv.y * 2.0 - 1.0);
     Vector3 n = Vector3(x: f.x, y: f.y, z: 1.0 - f.x.abs() - f.y.abs());
     double t = (-n.z).clamp(0.0, 1.0);
     n.x += n.x >= 0 ? -t : t;
@@ -472,17 +471,17 @@ class Vector3 extends BuiltinType {
   void updateFromOpaque() {
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, _opaque[i]);
+      byteData.setUint8(i, nativeDataPtr[i]);
     }
   }
 
   void _updateOpaque() {
-    if (_opaque == nullptr) {
+    if (nativeDataPtr == nullptr) {
       allocateOpaque(sTypeInfo.size, null);
     }
     final byteData = _data.buffer.asByteData();
     for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      _opaque[i] = byteData.getUint8(i);
+      nativeDataPtr[i] = byteData.getUint8(i);
     }
   }
 

@@ -38,6 +38,8 @@ public:
   }
   void shutdown();
 
+  void reload_code();
+
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                    Dart_Handle args_list, MethodFlags method_flags);
   void add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info);

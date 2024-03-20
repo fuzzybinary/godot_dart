@@ -174,6 +174,19 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   return true;
 }
 
+void GodotDartBindings::reload_code() {
+  execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
+    Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_reloadCode"), 0, nullptr);
+    if (Dart_IsError(result)) {
+      GD_PRINT_WARNING("GodotDart: Error performing Dart hot reload:");
+      GD_PRINT_WARNING(Dart_GetError(result));
+    }
+  });
+}
+
 void GodotDartBindings::shutdown() {
   Dart_EnterIsolate(_isolate);
   _isolate_current_thread = std::this_thread::get_id();

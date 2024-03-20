@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import '../../godot_dart.dart';
 import '../core/gdextension_ffi_bindings.dart';
 
+export 'vector2.dart';
 export 'vector3.dart';
 
 typedef GDExtensionVariantFromType = void Function(

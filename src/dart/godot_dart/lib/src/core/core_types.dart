@@ -14,7 +14,14 @@ abstract class BuiltinType implements Finalizable {
   Pointer<Uint8> _opaque = nullptr;
 
   TypeInfo get typeInfo;
+  // Overrideable
   Pointer<Uint8> get nativePtr {
+    return nativeDataPtr;
+  }
+
+  // DO NOT override
+  @protected
+  Pointer<Uint8> get nativeDataPtr {
     if (_opaque == nullptr) {
       return nullptr;
     }
@@ -31,10 +38,12 @@ abstract class BuiltinType implements Finalizable {
   BuiltinType.nonFinalized();
 
   @protected
-  void allocateOpaque(int size, GDExtensionPtrDestructor? destructor) {
+  Pointer<Uint8> allocateOpaque(
+      int size, GDExtensionPtrDestructor? destructor) {
     _opaque =
         gde.ffiBindings.gde_mem_alloc(GodotDart.destructorSize + size).cast();
     _opaque.cast<GDExtensionPtrDestructor>().value = destructor ?? nullptr;
+    return _opaque.elementAt(GodotDart.destructorSize);
   }
 
   /// This is used by the generators to call the FFI copy constructors for

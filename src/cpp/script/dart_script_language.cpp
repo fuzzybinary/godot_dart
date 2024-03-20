@@ -160,7 +160,7 @@ godot::Ref<godot::Script> DartScriptLanguage::_make_template(const godot::String
 
 godot::PackedStringArray DartScriptLanguage::_get_recognized_extensions() const {
   godot::PackedStringArray array;
-  array.append(".dart");
+  array.append("dart");
   return array;
 }
 

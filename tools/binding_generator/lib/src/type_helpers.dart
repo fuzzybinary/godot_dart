@@ -29,6 +29,7 @@ bool hasDartType(String typeName) {
 // and forth with Godot
 final customImplementedTypes = [
   'Vector3',
+  'Vector2',
 ];
 
 bool hasCustomImplementation(String typeName) {
