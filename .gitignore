@@ -2,3 +2,4 @@
 *.user
 src/cpp/.build
 build/
+**/.DS_Store

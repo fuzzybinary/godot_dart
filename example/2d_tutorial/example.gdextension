@@ -11,3 +11,5 @@ DartScript = "res://logo_dart.svg"
 
 windows.x86_64 =   "godot_dart.dll"
 linux.x86_64 = "libgodot_dart.so"
+macos.arm64 = "libgodot_dart.dylib"
+

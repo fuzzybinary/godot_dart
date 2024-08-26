@@ -3,15 +3,15 @@
 #include <functional>
 #include <mutex>
 #include <semaphore>
+#include <set>
 #include <thread>
 #include <vector>
-#include <set>
 
 #include <dart_api.h>
 #include <gdextension_interface.h>
 
-#include "gde_dart_converters.h"
 #include "dart_instance_binding.h"
+#include "gde_dart_converters.h"
 
 enum class MethodFlags : int32_t {
   None,
@@ -51,15 +51,15 @@ public:
   void remove_pending_ref_change(DartGodotInstanceBinding *bindings);
   void perform_pending_ref_changes();
 
-  void* create_script_instance(Dart_Handle type, const DartScript* script, void *godot_object, bool is_placeholder,
-                              bool is_refcounted);
+  void *create_script_instance(Dart_Handle type, const DartScript *script, void *godot_object, bool is_placeholder,
+                               bool is_refcounted);
 
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
   static void *get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name);
-  static void call_virtual_func(void* p_instance, GDExtensionConstStringNamePtr p_name,
-                                void *p_userdata, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
-  
+  static void call_virtual_func(void *p_instance, GDExtensionConstStringNamePtr p_name, void *p_userdata,
+                                const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
+
 private:
   static void bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,
                         const GDExtensionConstVariantPtr *args, GDExtensionInt argument_count,
@@ -79,7 +79,6 @@ public:
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;
-  Dart_PersistentHandle _core_types_library;
   Dart_PersistentHandle _native_library;
 
   // Some things we need often

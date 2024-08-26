@@ -54,7 +54,7 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     _isolate_current_thread = std::thread::id();
     return false;
   }
-  
+
   Dart_EnterIsolate(_isolate);
   {
     DartBlockScope scope;
@@ -75,24 +75,18 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     {
       Dart_Handle native_bindings_library_name =
           Dart_NewStringFromCString("package:godot_dart/src/core/godot_dart_native_bindings.dart");
-      Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
-      if (!Dart_IsError(library)) {
-        // Retrain for future calls to convert variants
-        _native_library = Dart_NewPersistentHandle(library);
-        Dart_SetNativeResolver(library, native_resolver, nullptr);
-      }
+      DART_CHECK_RET(library, Dart_LookupLibrary(native_bindings_library_name), false,
+                     "Error finding godot_dart_native_bindings.dart");
+      _native_library = Dart_NewPersistentHandle(library);
+      Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
 
     // Find the DartBindings "library" (just the file) and set us as the native callback handler
     {
       Dart_Handle native_bindings_library_name =
           Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
-      Dart_Handle library = Dart_LookupLibrary(native_bindings_library_name);
-      if (!Dart_IsError(library)) {
-        // Retrain for future calls to convert variants
-        _core_types_library = Dart_NewPersistentHandle(library);
-        Dart_SetNativeResolver(library, native_resolver, nullptr);
-      }
+      DART_CHECK_RET(library, Dart_LookupLibrary(native_bindings_library_name), false, "Error finding core_types.dart");
+      Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
 
     // Setup some types we need frequently
@@ -125,9 +119,13 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
                      Dart_GetNonNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args_2), false,
                      "Error getting Pointer<Pointer<Void> type");
       _void_pointer_pointer_type = Dart_NewPersistentHandle(pointer_to_pointer);
+    }
 
-      DART_CHECK_RET(variant,
-                     Dart_GetNonNullableType(_core_types_library, Dart_NewStringFromCString("Variant"), 0, nullptr),
+    {
+      DART_CHECK_RET(core_library,
+                     Dart_LookupLibrary(Dart_NewStringFromCString("package:godot_dart/src/variant/variant.dart")),
+                     false, "Error getting variant library");
+      DART_CHECK_RET(variant, Dart_GetNonNullableType(core_library, Dart_NewStringFromCString("Variant"), 0, nullptr),
                      false, "Error getting Variant type");
       _variant_type = Dart_NewPersistentHandle(variant);
     }
@@ -203,7 +201,6 @@ void GodotDartBindings::shutdown() {
   }
 
   Dart_DeletePersistentHandle(_godot_dart_library);
-  Dart_DeletePersistentHandle(_core_types_library);
   Dart_DeletePersistentHandle(_native_library);
 
   DartDll_DrainMicrotaskQueue();
@@ -911,7 +908,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
 
   type_info->type_name = get_object_address(class_name);
   type_info->parent_type = parent_type;
-  
+
   int64_t temp;
   Dart_IntegerToInt64(variant_type, &temp);
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);

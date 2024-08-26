@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 
+set(FLOAT_PRECISION "single")
 add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 
 add_library(godot_dart SHARED
@@ -61,7 +62,7 @@ find_library(DART_DLL_DEBUG
 
 find_library(DART_DLL_RELEASE
     NAMES "dart_dll"
-    HINTS "${DART_DIR}/bin/win64" "${DART_DIR}/bin/linux_x64"
+    HINTS "${DART_DIR}/bin/win64" "${DART_DIR}/bin/linux_x64" "${DART_DIR}/bin/mac_arm64"
 )
 
 if(WIN32)
@@ -112,7 +113,6 @@ target_link_libraries(godot_dart ${DART_DLL_RELEASE})
 
 # Copy dll to sample directories
 add_custom_command(TARGET godot_dart POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy -t "${EXAMPLE_DIR}/2d_tutorial" $<TARGET_FILE:godot_dart>
-  COMMAND ${CMAKE_COMMAND} -E copy -t "${EXAMPLE_DIR}/empty_test" $<TARGET_FILE:godot_dart>
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:godot_dart> "${EXAMPLE_DIR}/2d_tutorial"
   COMMAND_EXPAND_LISTS
 )

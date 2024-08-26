@@ -4,5 +4,6 @@
 # Ignore built libraries
 *.dll
 *.lib
+*.dylib
 *.pdb
 *.exp
