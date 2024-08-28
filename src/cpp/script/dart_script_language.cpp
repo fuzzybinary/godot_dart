@@ -33,6 +33,49 @@ void DartScriptLanguage::_thread_enter() {
 void DartScriptLanguage::_thread_exit() {
 }
 
+godot::String DartScriptLanguage::_debug_get_error() const {
+  return godot::String();
+}
+
+int32_t DartScriptLanguage::_debug_get_stack_level_count() const {
+  return 0;
+}
+
+int32_t DartScriptLanguage::_debug_get_stack_level_line(int32_t level) const {
+  return 0;
+}
+
+godot::String DartScriptLanguage::_debug_get_stack_level_function(int32_t level) const {
+  return godot::String();
+}
+
+godot::Dictionary DartScriptLanguage::_debug_get_stack_level_locals(int32_t level, int32_t max_subitems,
+                                                                    int32_t max_depth) {
+  return godot::Dictionary();
+}
+
+godot::Dictionary DartScriptLanguage::_debug_get_stack_level_members(int32_t level, int32_t max_subitems,
+                                                                     int32_t max_depth) {
+  return godot::Dictionary();
+}
+
+void *DartScriptLanguage::_debug_get_stack_level_instance(int32_t level) {
+  return nullptr;
+}
+
+godot::Dictionary DartScriptLanguage::_debug_get_globals(int32_t max_subitems, int32_t max_depth) {
+  return godot::Dictionary();
+}
+
+godot::String DartScriptLanguage::_debug_parse_stack_level_expression(int32_t level, const godot::String &expression,
+                                                                      int32_t max_subitems, int32_t max_depth) {
+  return godot::String();
+}
+
+godot::TypedArray<godot::Dictionary> DartScriptLanguage::_debug_get_current_stack_info() {
+  return godot::TypedArray<godot::Dictionary>();
+}
+
 void DartScriptLanguage::_bind_methods() {
 }
 

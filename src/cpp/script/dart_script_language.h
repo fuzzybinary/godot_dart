@@ -16,6 +16,21 @@ public:
 
   virtual void _thread_enter() override;
   virtual void _thread_exit() override;
+
+  virtual godot::String _debug_get_error() const override;
+  virtual int32_t _debug_get_stack_level_count() const override;
+  virtual int32_t _debug_get_stack_level_line(int32_t level) const override;
+  virtual godot::String _debug_get_stack_level_function(int32_t level) const override;
+  virtual godot::Dictionary _debug_get_stack_level_locals(int32_t level, int32_t max_subitems,
+                                                          int32_t max_depth) override;
+  virtual godot::Dictionary _debug_get_stack_level_members(int32_t level, int32_t max_subitems,
+                                                           int32_t max_depth) override;
+  virtual void *_debug_get_stack_level_instance(int32_t level) override;
+  virtual godot::Dictionary _debug_get_globals(int32_t max_subitems, int32_t max_depth) override;
+  virtual godot::String _debug_parse_stack_level_expression(int32_t level, const godot::String &expression,
+                                                            int32_t max_subitems, int32_t max_depth) override;
+  virtual godot::TypedArray<godot::Dictionary> _debug_get_current_stack_info();
+
   virtual void _init() override;
   virtual godot::String _get_name() const override;
   virtual godot::String _get_type() const override;
