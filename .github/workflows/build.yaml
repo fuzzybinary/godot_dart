@@ -1,0 +1,65 @@
+name: Build Godot Dart Extension
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact-name: windows-x64
+            artifact-path: godot_dart.dll
+          - os: ubuntu-latest
+            artifact-name: linux-x64
+            artifact-path: libgodot_dart.so
+          - os: macos-latest
+            artifact-name: macos
+            artifact-path: libgodot_dart.dylib
+    continue-on-error: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: dart pub get
+        working-directory: ./tools/binding_generator
+      - name: Build Shared Library
+        run: |
+          cmake . -B './build'
+          cmake --build build --config release
+        working-directory: ./src/cpp
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ./src/cpp/build/Release/${{ matrix.artifact-path }}
+  
+  assemble:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: "Create extension"
+        run: |
+          mkdir -p out/extension
+          cp -r src/assets/* out/extension
+          cp src/dart_dll/bin/release/dart_dll_win64.dll out/extension
+          cp src/dart_dll/bin/release/libdart_dll.so out/extension
+          cp src/dart_dll/bin/release/libdart_dll_mac.dylib out/extension
+          cp artifacts/windows-x64/godot_dart.dll out/extension
+          cp artifacts/linux-x64/libgodot_dart.so out/extension
+          cp artifacts/macos/libgodot_dart.dylib out/extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-extension
+          path: out/extension
+      
+

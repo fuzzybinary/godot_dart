@@ -1,0 +1,15 @@
+[configuration]
+
+entry_symbol = "godot_dart_init"
+compatibility_minimum = 4.2
+
+[icons]
+
+DartScript = "res://logo_dart.svg"
+
+[libraries]
+
+windows.x86_64 =   "godot_dart.dll"
+linux.x86_64 = "libgodot_dart.so"
+macos.arm64 = "libgodot_dart.dylib"
+
