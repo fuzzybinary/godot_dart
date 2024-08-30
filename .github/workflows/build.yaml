@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
           - os: windows-latest
             artifact-name: windows-x64
@@ -19,10 +19,11 @@ jobs:
           - os: macos-latest
             artifact-name: macos
             artifact-path: libgodot_dart.dylib
-    continue-on-error: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - uses: dart-lang/setup-dart@v1
       - uses: ilammy/msvc-dev-cmd@v1
       - run: dart pub get
