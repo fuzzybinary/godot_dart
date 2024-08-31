@@ -56,10 +56,9 @@ target_include_directories(godot_dart PUBLIC
     "${DART_DIR}/include"
 )
 
-set(DART_DLL_NAMES
+set(DART_DLL_NAMES 
     "dart_dll_win64"
     "dart_dll"
-    "dart_dll_mac"
 )
 
 find_library(DART_DLL_DEBUG
