@@ -12,7 +12,7 @@ jobs:
         include:
           - os: windows-latest
             artifact-name: windows-x64
-            artifact-path: godot_dart.dll
+            artifact-path: Release/godot_dart.dll
           - os: ubuntu-latest
             artifact-name: linux-x64
             artifact-path: libgodot_dart.so
@@ -30,14 +30,14 @@ jobs:
         working-directory: ./tools/binding_generator
       - name: Build Shared Library
         run: |
-          cmake . -B './build'
+          cmake -DCMAKE_BUILD_TYPE=Release . -B "build"
           cmake --build build --config release
         working-directory: ./src/cpp
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact-name }}
-          path: ./src/cpp/build/Release/${{ matrix.artifact-path }}
+          path: ./src/cpp/build/${{ matrix.artifact-path }}
   
   assemble:
     runs-on: ubuntu-latest
@@ -54,7 +54,7 @@ jobs:
           cp -r src/assets/* out/extension
           cp src/dart_dll/bin/release/dart_dll_win64.dll out/extension
           cp src/dart_dll/bin/release/libdart_dll.so out/extension
-          cp src/dart_dll/bin/release/libdart_dll_mac.dylib out/extension
+          cp src/dart_dll/bin/release/libdart_dll.dylib out/extension
           cp artifacts/windows-x64/godot_dart.dll out/extension
           cp artifacts/linux-x64/libgodot_dart.so out/extension
           cp artifacts/macos/libgodot_dart.dylib out/extension
