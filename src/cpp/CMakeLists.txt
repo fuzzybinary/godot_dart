@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
 project(godot_dart VERSION 0.1)
 
 set(DART_DIR "${PROJECT_SOURCE_DIR}/../dart_dll")
@@ -8,7 +9,6 @@ set(EXAMPLE_DIR "${PROJECT_SOURCE_DIR}/../../example")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_BUILD_TYPE Debug)
 
 set(FLOAT_PRECISION "single")
 add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
@@ -55,14 +55,19 @@ target_include_directories(godot_dart PUBLIC
     "${DART_DIR}/include"
 )
 
+set(DART_DLL_NAMES 
+    "dart_dll_win64"
+    "dart_dll"
+)
+
 find_library(DART_DLL_DEBUG
-    NAMES "dart_dll"
-    HINTS "${DART_DIR}/bin/win64_debug"
+    NAMES ${DART_DLL_NAMES}
+    HINTS "${DART_DIR}/bin/debug"
 )
 
 find_library(DART_DLL_RELEASE
-    NAMES "dart_dll"
-    HINTS "${DART_DIR}/bin/win64" "${DART_DIR}/bin/linux_x64" "${DART_DIR}/bin/mac_arm64"
+    NAMES ${DART_DLL_NAMES}
+    HINTS "${DART_DIR}/bin/release" 
 )
 
 if(WIN32)
@@ -100,10 +105,6 @@ elseif(LINUX)
         Threads::Threads
         ${CMAKE_DL_LIBS}
     )
-# elseif(APPLE)
-#     set(CMAKE_C_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang")
-#     set(CMAKE_CXX_COMPILER "${DART_DIR}/buildtools/mac-x64/clang/bin/clang++")
-#     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -nostdlib++ ${DART_DIR}/buildtools/mac-x64/clang/lib/libc++.a -framework Cocoa -framework QuartzCore -framework Security")
 endif()
 
 target_link_libraries(godot_dart godot-cpp)
