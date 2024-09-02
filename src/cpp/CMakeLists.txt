@@ -55,8 +55,7 @@ target_include_directories(godot_dart PUBLIC
     "${DART_DIR}/include"
 )
 
-set(DART_DLL_NAMES 
-    "dart_dll_win64"
+set(DART_DLL_NAMES    
     "dart_dll"
 )
 

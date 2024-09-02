@@ -1,0 +1,2 @@
+# Unignore generated files for pub
+!lib/src/gen/

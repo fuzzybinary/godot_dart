@@ -248,8 +248,10 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2024-09-02T03:13:27.234710Z",
+  "generated": "2024-09-02T03:41:32.854747Z",
   "generator": "pub",
   "generatorVersion": "3.5.0",
+  "flutterRoot": "file:///C:/Users/Jeff%20Ward/Projects/flutter",
+  "flutterVersion": "3.24.0",
   "pubCache": "file:///C:/Users/Jeff%20Ward/AppData/Local/Pub/Cache"
 }

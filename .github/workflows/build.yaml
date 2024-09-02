@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p out/extension
           cp -r src/assets/* out/extension
-          cp src/dart_dll/bin/release/dart_dll_win64.dll out/extension
+          cp src/dart_dll/bin/release/dart_dll.dll out/extension
           cp src/dart_dll/bin/release/libdart_dll.so out/extension
           cp src/dart_dll/bin/release/libdart_dll.dylib out/extension
           cp artifacts/windows-x64/godot_dart.dll out/extension
