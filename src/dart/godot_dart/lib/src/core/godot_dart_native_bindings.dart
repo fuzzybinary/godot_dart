@@ -88,7 +88,7 @@ List<Object?> _variantsToDart(
     Pointer<Pointer<Void>> variants, int count, List<dynamic> typeInfoList) {
   var result = <Object?>[];
   for (int i = 0; i < count; ++i) {
-    var variantPtr = variants.elementAt(i).value;
+    var variantPtr = (variants + i).value;
     dynamic info = typeInfoList[i];
     // TODO: this is a hack to get around two different ways of calling this. Please fix.
     if (info is PropertyInfo) {

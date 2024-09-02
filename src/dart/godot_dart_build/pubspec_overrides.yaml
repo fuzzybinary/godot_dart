@@ -1,0 +1,3 @@
+dependency_overrides:
+  godot_dart:
+    path: '../godot_dart'

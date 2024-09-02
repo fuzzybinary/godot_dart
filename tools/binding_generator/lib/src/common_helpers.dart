@@ -474,11 +474,11 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   final varName = escapeName(argument.name).toLowerCamelCase();
   var decl = 'final ${argument.dartType} $varName';
   if (argument.type == 'String') {
-    o.p('final GDString gd$varName = GDString.copyPtr(args.elementAt($index).value);');
+    o.p('final GDString gd$varName = GDString.copyPtr((args + $index).value);');
     o.p('$decl = gd$varName.toDartString();');
     return;
   } else if (argument.type == 'StringName') {
-    o.p('final StringName gd$varName = StringName.copyPtr(args.elementAt($index).value);');
+    o.p('final StringName gd$varName = StringName.copyPtr((args + $index).value);');
     o.p('$decl = GDString.fromStringName(gd$varName).toDartString();');
     return;
   }
@@ -486,45 +486,45 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       if (argument.isRefCounted) {
-        o.p('$decl = ${argument.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object(args.elementAt($index).value));');
+        o.p('$decl = ${argument.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object((args + $index).value));');
       } else {
-        o.p('$decl = ${argument.rawDartType}.fromOwner(args.elementAt($index).cast<Pointer<Pointer<Void>>>().value.value);');
+        o.p('$decl = ${argument.rawDartType}.fromOwner((args + $index).cast<Pointer<Pointer<Void>>>().value.value);');
       }
       break;
     case TypeCategory.builtinClass:
       if (argument.type == 'Variant') {
-        o.p('$decl = Variant.fromVariantPtr(args.elementAt($index).value);');
+        o.p('$decl = Variant.fromVariantPtr((args + $index).value);');
       } else {
-        o.p('$decl = ${argument.rawDartType}.copyPtr(args.elementAt($index).value);');
+        o.p('$decl = ${argument.rawDartType}.copyPtr((args + $index).value);');
       }
       break;
     case TypeCategory.primitive:
       final castType =
           argument.isPointer ? argument.dartType : getFFIType(argument);
-      o.p('$decl = args.elementAt($index).cast<Pointer<$castType>>().value.value;');
+      o.p('$decl = (args + $index).cast<Pointer<$castType>>().value.value;');
       break;
     case TypeCategory.nativeStructure:
       if (argument.isOptional) {
-        o.p('final ${argument.name}Ptr = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value;');
+        o.p('final ${argument.name}Ptr = (args + $index).cast<Pointer<${argument.dartType}>>().value;');
         o.p('$decl = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref;');
       } else if (argument.isPointer) {
-        o.p('$decl = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.value;');
+        o.p('$decl = (args + $index).cast<Pointer<${argument.dartType}>>().value.value;');
       } else {
-        o.p('$decl = args.elementAt($index).cast<Pointer<${argument.dartType}>>().value.ref;');
+        o.p('$decl = (args + $index).cast<Pointer<${argument.dartType}>>().value.ref;');
       }
       break;
     case TypeCategory.enumType:
-      o.p('$decl = ${argument.dartType}.fromValue(args.elementAt($index).cast<Pointer<Uint32>>().value.value);');
+      o.p('$decl = ${argument.dartType}.fromValue((args + $index).cast<Pointer<Uint32>>().value.value);');
       break;
     case TypeCategory.bitfieldType:
-      o.p('$decl = args.elementAt($index).cast<Pointer<Uint32>>().value.value;');
+      o.p('$decl = (args + $index).cast<Pointer<Uint32>>().value.value;');
       break;
     case TypeCategory.typedArray:
-      o.p('$decl = ${argument.dartType}.copyPtr(args.elementAt($index).value);');
+      o.p('$decl = ${argument.dartType}.copyPtr((args + $index).value);');
       break;
     case TypeCategory.voidType:
       if (argument.dartType.startsWith('Pointer')) {
-        o.p('$decl = args.elementAt($index).value;');
+        o.p('$decl = (args + $index).value;');
       }
       break;
   }

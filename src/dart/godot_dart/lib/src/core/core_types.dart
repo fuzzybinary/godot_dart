@@ -25,7 +25,7 @@ abstract class BuiltinType implements Finalizable {
     if (_opaque == nullptr) {
       return nullptr;
     }
-    return _opaque.elementAt(GodotDart.destructorSize);
+    return _opaque + GodotDart.destructorSize;
   }
 
   BuiltinType(int size, GDExtensionPtrDestructor? destructor) {
@@ -43,7 +43,7 @@ abstract class BuiltinType implements Finalizable {
     _opaque =
         gde.ffiBindings.gde_mem_alloc(GodotDart.destructorSize + size).cast();
     _opaque.cast<GDExtensionPtrDestructor>().value = destructor ?? nullptr;
-    return _opaque.elementAt(GodotDart.destructorSize);
+    return _opaque + GodotDart.destructorSize;
   }
 
   /// This is used by the generators to call the FFI copy constructors for

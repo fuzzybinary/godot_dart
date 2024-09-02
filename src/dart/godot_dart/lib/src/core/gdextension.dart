@@ -82,7 +82,7 @@ class GodotDart {
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
           sizeOf<GDExtensionConstTypePtr>() * args.length);
       for (int i = 0; i < args.length; ++i) {
-        argArray.elementAt(i).value = args[i];
+        (argArray + i).value = args[i];
       }
 
       ffiBindings.gde_object_method_bind_ptrcall(
@@ -102,7 +102,7 @@ class GodotDart {
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
           sizeOf<GDExtensionConstVariantPtr>() * args.length);
       for (int i = 0; i < args.length; ++i) {
-        argArray.elementAt(i).value = args[i].nativePtr.cast();
+        (argArray + i).value = args[i].nativePtr.cast();
       }
       ffiBindings.gde_object_method_bind_call(
         function,
@@ -130,7 +130,7 @@ class GodotDart {
       final argArray = arena.allocate<GDExtensionConstTypePtr>(
           sizeOf<GDExtensionConstVariantPtr>() * args.length);
       for (int i = 0; i < args.length; ++i) {
-        argArray.elementAt(i).value = args[i].nativePtr.cast();
+        (argArray + i).value = args[i].nativePtr.cast();
       }
       ffiBindings.gde_variant_call(
         self.nativePtr.cast(),
