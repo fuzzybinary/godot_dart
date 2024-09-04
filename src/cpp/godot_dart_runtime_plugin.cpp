@@ -157,8 +157,8 @@ void GodotDartRuntimePlugin::shutdown_dart_bindings() {
       auto str = obj.to_string().utf8();
 
       // TODO: Remove when we know we're not leaking
-      printf("Leaked binding instance at %lx\n: %s", itr.first, str.get_data());
-      printf("   binding at %lx\n", (intptr_t)&itr.second->_binding);
+      printf("Leaked binding instance at %llx\n: %s", static_cast<int64_t>(itr.first), str.get_data());
+      printf("   binding at %llx\n", (intptr_t)&itr.second->_binding);
     }
   }
 

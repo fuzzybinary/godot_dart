@@ -41,7 +41,7 @@ const char *git_ignore_template = "# Files and directories created by pub\n"
 
 const char *dart_script = "import 'dart:ffi';\n"
                           "\n"
-                          "import 'package: godot_dart/godot_dart.dart';\n"
+                          "import 'package:godot_dart/godot_dart.dart';\n"
                           "\n"
                           "part '__CLASS_NAME__.g.dart';\n"
                           "\n"
