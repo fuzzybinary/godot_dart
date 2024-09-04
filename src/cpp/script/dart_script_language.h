@@ -29,8 +29,9 @@ public:
   godot::Ref<godot::Script> _make_template(const godot::String &_template, const godot::String &class_name,
                                            const godot::String &base_class_name) const override;
   bool _is_using_templates() override {
-    return true;
+    return false;
   }
+  godot::TypedArray<godot::Dictionary> _get_built_in_templates(const godot::StringName &object) const override;
   godot::Dictionary _validate(const godot::String &script, const godot::String &path, bool validate_functions,
                               bool validate_errors, bool validate_warnings, bool validate_safe_lines) const override;
   godot::String _validate_path(const godot::String &path) const override;
@@ -39,6 +40,9 @@ public:
     return true;
   }
   bool _supports_builtin_mode() const override {
+    return false;
+  }
+  bool _can_inherit_from_file() const override {
     return false;
   }
   int _find_function(const godot::String &class_name, const godot::String &funciton_name) const override;

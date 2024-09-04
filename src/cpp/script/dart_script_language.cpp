@@ -110,9 +110,14 @@ godot::PackedStringArray DartScriptLanguage::_get_string_delimiters() const {
 godot::Ref<godot::Script> DartScriptLanguage::_make_template(const godot::String &_template,
                                                              const godot::String &class_name,
                                                              const godot::String &base_class_name) const {
+  static godot::String space(" ");
+
   godot::String source_template(dart_script);
-  godot::String source =
-      source_template.replace("__CLASS_NAME__", class_name).replace("__BASE_CLASS__", base_class_name);
+  godot::String actual_class_name = class_name.capitalize().replace(space, godot::String());
+
+  godot::String source = source_template.replace("__FILE_NAME__", class_name)
+                             .replace("__CLASS_NAME__", actual_class_name)
+                             .replace("__BASE_CLASS__", base_class_name);
 
   godot::Ref<DartScript> script;
   script.instantiate();
@@ -120,6 +125,12 @@ godot::Ref<godot::Script> DartScriptLanguage::_make_template(const godot::String
   script->set_name(class_name);
 
   return script;
+}
+
+godot::TypedArray<godot::Dictionary> DartScriptLanguage::_get_built_in_templates(
+    const godot::StringName &object) const {
+  // Won't be called for now because _is_using_templates returns false, but look into maybe supporting them?
+  return godot::TypedArray<godot::Dictionary>();
 }
 
 godot::Dictionary DartScriptLanguage::_validate(const godot::String &script, const godot::String &path,

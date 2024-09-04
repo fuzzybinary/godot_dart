@@ -17,3 +17,7 @@ dev_dependencies:
   build_runner: ^2.3.3
   godot_dart_build:
     path: ../../../src/dart/godot_dart_build
+
+dependency_overrides: 
+  godot_dart:
+    path: ../../../src/dart/godot_dart

@@ -199,7 +199,7 @@ packages:
       path: "../../../src/dart/godot_dart"
       relative: true
     source: path
-    version: "0.1.0"
+    version: "0.1.1"
   godot_dart_build:
     dependency: "direct dev"
     description:
