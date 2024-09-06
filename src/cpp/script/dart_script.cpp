@@ -364,7 +364,7 @@ void DartScript::refresh_type() const {
     String path = get_path();
     
     Dart_Handle dart_type = language->get_type_for_script(path);
-    if (dart_type != nullptr) {
+    if (!Dart_IsNull(dart_type)) {
       _dart_type = Dart_NewPersistentHandle(dart_type);
       DART_CHECK(type_info, Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo")),
                  "Failed getting type info");

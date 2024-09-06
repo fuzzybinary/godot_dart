@@ -124,6 +124,8 @@ godot::Ref<godot::Script> DartScriptLanguage::_make_template(const godot::String
   script->set_source_code(source);
   script->set_name(class_name);
 
+  GodotDartBindings::instance()->reload_code();
+
   return script;
 }
 
