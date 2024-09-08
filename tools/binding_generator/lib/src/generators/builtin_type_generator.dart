@@ -155,7 +155,6 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     o.p('  : $superConstructor {');
     o.p('final c = getToTypeConstructor(GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()});');
     o.p('c!(nativePtr.cast(), ptr);');
-    //o.p('gde.dartBindings.variantCopyFromNative(this, ptr);');
   }, '}');
   o.nl();
 
@@ -373,8 +372,7 @@ void _generatePtrcallMethod(CodeSink o, BuiltinClassMethod method) {
       writeReturnAllocation(returnInfo, o);
     }
 
-    final selfPtr =
-        method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()';
+    final selfPtr = method.isStatic ? 'nullptr.cast()' : 'nativePtr.cast()';
     final returnPtr = hasReturn ? 'retPtr.cast()' : 'nullptr.cast()';
 
     o.p('void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>,');

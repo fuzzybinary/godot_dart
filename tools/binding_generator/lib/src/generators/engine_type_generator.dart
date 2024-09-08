@@ -205,7 +205,7 @@ void _generatePtrcallMethod(CodeSink o, ClassMethod method) {
     }
 
     o.p('gde.ffiBindings.gde_object_method_bind_ptrcall(');
-    o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()'}, $argumentsVar, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
+    o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'nativePtr.cast()'}, $argumentsVar, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
 
     if (hasReturn) {
       writeReturnRead(returnInfo, o);
