@@ -84,6 +84,8 @@ class GodotDart {
       for (int i = 0; i < args.length; ++i) {
         (argArray + i).value = args[i];
       }
+      int o = 5;
+      (argArray + 1).value = o as GDExtensionConstTypePtr;
 
       ffiBindings.gde_object_method_bind_ptrcall(
           function, instance?.nativePtr ?? nullptr, argArray, ret);

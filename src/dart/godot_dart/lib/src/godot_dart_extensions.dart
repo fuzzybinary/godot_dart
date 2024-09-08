@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:ffi';
+
+import 'package:ffi/ffi.dart';
 
 import '../godot_dart.dart';
+import 'core/gdextension_ffi_bindings.dart';
 
 extension TNode on Node {
   T? getNodeT<T>([String? path]) {
@@ -57,4 +61,17 @@ class SignalAwaiter extends GodotObject {
 Future<void> toSignal(GodotObject source, String signal) {
   final awaiter = SignalAwaiter(source: source, signalName: signal);
   return awaiter.completer.future;
+}
+
+extension StringExtensions on String {
+  static String fromGodotStringPtr(GDExtensionTypePtr ptr) {
+    return using((arena) {
+      int length =
+          gde.ffiBindings.gde_string_to_utf16_chars(ptr.cast(), nullptr, 0);
+      final chars = arena.allocate<Uint16>(sizeOf<Uint16>() * length);
+      gde.ffiBindings
+          .gde_string_to_utf16_chars(ptr.cast(), chars.cast(), length);
+      return chars.cast<Utf16>().toDartString(length: length);
+    });
+  }
 }

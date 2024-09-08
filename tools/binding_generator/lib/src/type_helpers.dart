@@ -66,12 +66,32 @@ final metaTypeToFFIType = {
   ArgumentMeta.uint64: 'Uint64',
 };
 
-String? getFFIType(ArgumentProxy arg) {
+String? getFFIType(ArgumentProxy arg, {bool forPtrCall = false}) {
+  String? ret;
   if (arg.meta != null) {
     final metaType = metaTypeToFFIType[arg.meta];
-    if (metaType != null) return metaType;
+    if (metaType != null) {
+      ret = metaType;
+    }
+  } else if (arg.typeCategory == TypeCategory.enumType ||
+      arg.typeCategory == TypeCategory.bitfieldType) {
+    ret = 'Uint64';
+  } else {
+    ret = typeToFFIType[arg.type];
   }
-  return typeToFFIType[arg.type];
+
+  // For Ptrcalls, all integers are expected to be int64_t, and
+  // all floats are expected to be Doubles
+  if (forPtrCall && ret != null) {
+    if (ret.startsWith('Int') || ret.startsWith('Uint')) {
+      if (ret != 'UInt64') {
+        ret = 'Int64';
+      }
+    } else if (ret == 'Float') {
+      ret = 'Double';
+    }
+  }
+  return ret;
 }
 
 String? getFFITypeFromString(String type) {

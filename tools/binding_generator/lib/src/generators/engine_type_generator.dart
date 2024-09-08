@@ -128,7 +128,6 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     // TODO: Don't generate toString yet
     if (method.name == 'to_string') continue;
 
-    final methodName = escapeMethodName(method.name);
     final returnInfo = method.returnValue?.proxy;
     final hasReturn =
         returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
@@ -142,49 +141,119 @@ void _writeMethods(CodeSink o, GodotExtensionApiJsonClass classInfo) {
         return;
       }
 
-      final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
-
-      // TODO: Research if we can do ptrCalls
-      o.p('var methodBind = _bindings.method${methodName.toUpperCamelCase()};');
-      o.b('if (methodBind == null) {', () {
-        o.p('_bindings.method${methodName.toUpperCamelCase()} = gde.classDbGetMethodBind(');
-        o.p("    sTypeInfo.className, StringName.fromString('${method.name}'), ${method.hash});");
-        o.p('methodBind = _bindings.method${methodName.toUpperCamelCase()};');
-      }, '}');
-      o.nl();
-
-      assignMethodDefaults(method.arguments ?? [], o);
-
-      o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(methodBind!, ${method.isStatic ? 'null' : 'this'}, [',
-          () {
-        for (final argument in arguments) {
-          if (argument.typeCategory == TypeCategory.enumType) {
-            o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
-          } else if (argument.dartType == 'Variant') {
-            o.p('${escapeName(argument.name).toLowerCamelCase()},');
-          } else {
-            o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
-          }
-        }
-      }, ']);');
-
-      if (hasReturn) {
-        var typeInfo = 'null';
-        if (returnInfo.typeCategory == TypeCategory.engineClass) {
-          typeInfo = '${returnInfo.rawDartType}.sTypeInfo';
-        }
-
-        if (returnInfo.typeCategory == TypeCategory.enumType) {
-          o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, null) as int);');
-        } else if (returnInfo.dartType == 'Variant') {
-          o.p('return ret;');
-        } else {
-          o.p('return convertFromVariant(ret, $typeInfo) as ${returnInfo.dartType};');
-        }
+      if (method.isVararg) {
+        _generateVarargMethod(o, method);
+        return;
       }
+
+      _generatePtrcallMethod(o, method);
     }, '}');
     o.nl();
   }
+}
+
+void _generateVarargMethod(CodeSink o, ClassMethod method) {
+  final methodName = escapeMethodName(method.name);
+  final returnInfo = method.returnValue?.proxy;
+  final hasReturn =
+      returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
+  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+
+  o.b('${hasReturn ? 'final ret = ' : ''}gde.callNativeMethodBind(_bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'null' : 'this'}, [',
+      () {
+    for (final argument in arguments) {
+      if (argument.typeCategory == TypeCategory.enumType) {
+        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
+      } else if (argument.dartType == 'Variant') {
+        o.p('${escapeName(argument.name).toLowerCamelCase()},');
+      } else {
+        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
+      }
+    }
+    o.p('...vargs,');
+  }, ']);');
+
+  if (hasReturn) {
+    var typeInfo = 'null';
+    if (returnInfo.typeCategory == TypeCategory.engineClass) {
+      typeInfo = '${returnInfo.rawDartType}.sTypeInfo';
+    }
+
+    if (returnInfo.typeCategory == TypeCategory.enumType) {
+      o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, null) as int);');
+    } else if (returnInfo.dartType == 'Variant') {
+      o.p('return ret;');
+    } else {
+      o.p('return convertFromVariant(ret, $typeInfo) as ${returnInfo.dartType};');
+    }
+  }
+}
+
+void _generatePtrcallMethod(CodeSink o, ClassMethod method) {
+  final methodName = escapeMethodName(method.name);
+  final returnInfo = method.returnValue?.proxy;
+  final hasReturn =
+      returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
+  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+  final retString = hasReturn ? 'return ' : '';
+
+  o.b('${retString}using((arena) {', () {
+    if (arguments.length != 0) {
+      assignMethodDefaults(method.arguments ?? [], o);
+      //writeArgumentAllocations(arguments, o);
+      o.p('final ptrArgArray = arena.allocate<GDExtensionConstTypePtr>(sizeOf<GDExtensionConstTypePtr>() * ${arguments.length});');
+      arguments.forEachIndexed((i, argument) {
+        converDartToPtrArgument('(ptrArgArray + $i)', argument, o);
+      });
+    } else {
+      o.p('Pointer<Pointer<Void>> ptrArgArray = nullptr;');
+    }
+
+    if (hasReturn) {
+      var returnTypeName = 'GDExtensionTypePtr';
+      var sizeofString = 'sizeOf<GDExtensionTypePtr>()';
+      if (returnInfo.needsAllocation) {
+        returnTypeName = getFFIType(returnInfo, forPtrCall: true)!;
+        sizeofString = 'sizeOf<$returnTypeName>()';
+      } else if (returnInfo.type == 'String') {
+        sizeofString = 'GDString.sTypeInfo.size';
+      } else if (returnInfo.type == 'StringName') {
+        sizeofString = 'StringName.sTypeInfo.size';
+      } else if (returnInfo.typeCategory == TypeCategory.builtinClass) {
+        sizeofString = '${returnInfo.rawDartType}.sTypeInfo.size';
+      } else if (returnInfo.typeCategory == TypeCategory.typedArray) {
+        sizeofString = 'TypedArray.sTypeInfo.size';
+      } else if (returnInfo.typeCategory == TypeCategory.nativeStructure) {
+        returnTypeName = returnInfo.rawDartType;
+        sizeofString = 'sizeOf<${returnInfo.rawDartType}>()';
+      }
+      o.p('final retPtr = arena.allocate<$returnTypeName>($sizeofString);');
+    }
+
+    o.p('gde.ffiBindings.gde_object_method_bind_ptrcall(');
+    o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()'}, ptrArgArray, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
+
+    if (hasReturn) {
+      if (returnInfo.typeCategory == TypeCategory.primitive) {
+        o.p('return retPtr.value;');
+      } else if (returnInfo.typeCategory == TypeCategory.enumType) {
+        o.p('return ${returnInfo.rawDartType}.fromValue(retPtr.value);');
+      } else if (returnInfo.typeCategory == TypeCategory.bitfieldType) {
+        o.p('return retPtr.value;');
+      } else if (returnInfo.type == 'String') {
+        o.p('return StringExtensions.fromGodotStringPtr(retPtr.cast());');
+      } else if (returnInfo.type == 'StringName') {
+        o.p('return StringName.copyPtr(retPtr.cast()).toDartString();');
+      } else if (returnInfo.type == 'Variant') {
+        o.p('return Variant.fromVariantPtr(retPtr.cast());');
+      } else if (returnInfo.typeCategory == TypeCategory.builtinClass ||
+          returnInfo.typeCategory == TypeCategory.typedArray) {
+        o.p('return ${returnInfo.rawDartType}.copyPtr(retPtr.cast());');
+      } else {
+        o.p('return ${returnInfo.rawDartType}.fromOwner(retPtr.value);');
+      }
+    }
+  }, '});');
 }
 
 void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
@@ -219,7 +288,7 @@ void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
         () {
       o.p('final self = gde.dartBindings.objectFromInstanceBinding(instance) as ${classInfo.dartName};');
       arguments.forEachIndexed((i, e) {
-        convertPtrArgument(i, e, o);
+        convertPtrArgumentToDart('(args + $i)', e, o);
       });
       o.p("${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => escapeName(e.name).toLowerCamelCase()).join(',')});");
       if (hasReturn) {
@@ -239,7 +308,12 @@ void _writeBindingsClass(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       }
 
       final methodName = escapeMethodName(method.name).toUpperCamelCase();
-      o.p('GDExtensionMethodBindPtr? method$methodName;');
+      o.p('GDExtensionMethodBindPtr? _method$methodName;');
+      o.b('GDExtensionMethodBindPtr get method$methodName {', () {
+        o.p('_method$methodName ??= gde.classDbGetMethodBind(${classInfo.dartName}.sTypeInfo.className,');
+        o.p("    StringName.fromString('${method.name}'), ${method.hash});");
+        o.p('return _method$methodName!;');
+      }, '}');
     }
   }, '}');
 }

@@ -318,6 +318,7 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
                Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
     if (Dart_IsNull(method_info)) {
+      r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
       return;
     }
 
@@ -364,14 +365,13 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
         gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
       }
     }
+
+    r_error->error = GDEXTENSION_CALL_OK;
   });
 
   if (dart_args != nullptr) {
     delete[] dart_args;
   }
-
-  // TODO: How do we throw exceptions in Godot?
-  r_error->error = GDEXTENSION_CALL_OK;
 }
 
 void DartScriptInstance::notification(int32_t p_what, bool p_reversed) {

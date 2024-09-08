@@ -38,6 +38,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
+import '../../godot_dart_extensions.dart';
 import '../../core/core_types.dart';
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
@@ -75,9 +76,14 @@ import '../../variant/variant.dart';
 
 String? argumentAllocation(ArgumentProxy arg) {
   if (arg.needsAllocation) {
-    var ffiType = getFFIType(arg);
+    var ffiType = getFFIType(arg, forPtrCall: true);
     final argName = escapeName(arg.name).toLowerCamelCase();
-    return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName;';
+    final bang = arg.defaultArgumentValue != null ? '!' : '';
+    final value = arg.typeCategory == TypeCategory.enumType ||
+            arg.typeCategory == TypeCategory.bitfieldType
+        ? '.value'
+        : '';
+    return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName$bang$value;';
   } else if (arg.typeCategory == TypeCategory.engineClass) {
     final argName = escapeName(arg.name).toLowerCamelCase();
     return 'final ${argName}Ptr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>())..value = ($argName?.nativePtr ?? nullptr);';
@@ -469,16 +475,17 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   return usedTypes.toList();
 }
 
-void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
+void convertPtrArgumentToDart(
+    String argumentName, ArgumentProxy argument, CodeSink o) {
   // Special case, converting to Dart strings from GDString or StringName
   final varName = escapeName(argument.name).toLowerCamelCase();
   var decl = 'final ${argument.dartType} $varName';
   if (argument.type == 'String') {
-    o.p('final GDString gd$varName = GDString.copyPtr((args + $index).value);');
+    o.p('final GDString gd$varName = GDString.copyPtr(${argumentName}.value);');
     o.p('$decl = gd$varName.toDartString();');
     return;
   } else if (argument.type == 'StringName') {
-    o.p('final StringName gd$varName = StringName.copyPtr((args + $index).value);');
+    o.p('final StringName gd$varName = StringName.copyPtr(${argumentName}.value);');
     o.p('$decl = GDString.fromStringName(gd$varName).toDartString();');
     return;
   }
@@ -486,45 +493,111 @@ void convertPtrArgument(int index, ArgumentProxy argument, CodeSink o) {
   switch (argument.typeCategory) {
     case TypeCategory.engineClass:
       if (argument.isRefCounted) {
-        o.p('$decl = ${argument.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object((args + $index).value));');
+        o.p('$decl = ${argument.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object(${argumentName}.value));');
       } else {
-        o.p('$decl = ${argument.rawDartType}.fromOwner((args + $index).cast<Pointer<Pointer<Void>>>().value.value);');
+        o.p('$decl = ${argument.rawDartType}.fromOwner(${argumentName}.cast<Pointer<Pointer<Void>>>().value.value);');
       }
       break;
     case TypeCategory.builtinClass:
       if (argument.type == 'Variant') {
-        o.p('$decl = Variant.fromVariantPtr((args + $index).value);');
+        o.p('$decl = Variant.fromVariantPtr(${argumentName}.value);');
       } else {
-        o.p('$decl = ${argument.rawDartType}.copyPtr((args + $index).value);');
+        o.p('$decl = ${argument.rawDartType}.copyPtr(${argumentName}.value);');
       }
       break;
     case TypeCategory.primitive:
       final castType =
           argument.isPointer ? argument.dartType : getFFIType(argument);
-      o.p('$decl = (args + $index).cast<Pointer<$castType>>().value.value;');
+      o.p('$decl = ${argumentName}.cast<Pointer<$castType>>().value.value;');
       break;
     case TypeCategory.nativeStructure:
       if (argument.isOptional) {
-        o.p('final ${argument.name}Ptr = (args + $index).cast<Pointer<${argument.dartType}>>().value;');
+        o.p('final ${argument.name}Ptr = ${argumentName}.cast<Pointer<${argument.dartType}>>().value;');
         o.p('$decl = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref;');
       } else if (argument.isPointer) {
-        o.p('$decl = (args + $index).cast<Pointer<${argument.dartType}>>().value.value;');
+        o.p('$decl = ${argumentName}.cast<Pointer<${argument.dartType}>>().value.value;');
       } else {
-        o.p('$decl = (args + $index).cast<Pointer<${argument.dartType}>>().value.ref;');
+        o.p('$decl = ${argumentName}.cast<Pointer<${argument.dartType}>>().value.ref;');
       }
       break;
     case TypeCategory.enumType:
-      o.p('$decl = ${argument.dartType}.fromValue((args + $index).cast<Pointer<Uint32>>().value.value);');
+      o.p('$decl = ${argument.dartType}.fromValue(${argumentName}.cast<Pointer<Uint32>>().value.value);');
       break;
     case TypeCategory.bitfieldType:
-      o.p('$decl = (args + $index).cast<Pointer<Uint32>>().value.value;');
+      o.p('$decl = ${argumentName}.cast<Pointer<Uint32>>().value.value;');
       break;
     case TypeCategory.typedArray:
-      o.p('$decl = ${argument.dartType}.copyPtr((args + $index).value);');
+      o.p('$decl = ${argument.dartType}.copyPtr(${argumentName}.value);');
       break;
     case TypeCategory.voidType:
       if (argument.dartType.startsWith('Pointer')) {
-        o.p('$decl = (args + $index).value;');
+        o.p('$decl = ${argumentName}.value;');
+      }
+      break;
+  }
+}
+
+void converDartToPtrArgument(
+    String argumentName, ArgumentProxy argument, CodeSink o) {
+  // Special case, converting to Dart strings from GDString or StringName
+  final varName = escapeName(argument.name).toLowerCamelCase();
+  if (argument.type == 'String') {
+    o.p('final gd$varName = GDString.fromString($varName);');
+    o.p('$argumentName.value = gd$varName.nativePtr.cast();');
+    return;
+  } else if (argument.type == 'StringName') {
+    o.p('final gd$varName = StringName.fromString($varName);');
+    o.p('$argumentName.value = gd$varName.nativePtr.cast();');
+    return;
+  }
+
+  switch (argument.typeCategory) {
+    case TypeCategory.voidType:
+      throw Exception('Invalid voidType as argument!');
+    case TypeCategory.primitive:
+      var ffiType = getFFIType(argument, forPtrCall: true);
+      if (ffiType == null && argument.isPointer) {
+        ffiType = 'Pointer<Void>';
+      }
+      o.p('final ${varName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $varName;');
+      o.p('$argumentName.value = ${varName}Ptr.cast();');
+      break;
+    case TypeCategory.engineClass:
+      final value = argument.isOptional
+          ? '$varName?.nativePtr ?? nullptr'
+          : '$varName.nativePtr';
+      o.p('final ${varName}Ptr = arena.allocate<GDExtensionConstTypePtr>(sizeOf<GDExtensionObjectPtr>())..value = $value;');
+      o.p('$argumentName.value = ${varName}Ptr.cast();');
+      break;
+    case TypeCategory.builtinClass:
+      final bang = argument.defaultArgumentValue != null ? '!' : '';
+      //final optional = argument.isOptional ? ' ?? nullptr' : '';
+      o.p('$argumentName.value = $varName$bang.nativePtr.cast();');
+      break;
+    case TypeCategory.nativeStructure:
+      if (argument.isPointer) {
+        o.p('final ${varName}Ptr = arena.allocate<GDExtensionPtr>(sizeOf<GDExtensionConstTypePtr>())..value = $varName.nativerPtr;');
+        o.p('$argumentName.value = ${varName}Ptr;');
+      } else {
+        final optional = argument.isOptional ? ' ?? nullptr' : '';
+        o.p('$argumentName.value = ${varName}.nativePtr$optional;');
+      }
+      break;
+    case TypeCategory.enumType:
+      final bang = argument.defaultArgumentValue != null ? '!' : '';
+      o.p('final ${varName}Ptr = arena.allocate<Uint32>(sizeOf<Uint32>())..value = $varName$bang.value;');
+      o.p('$argumentName.value = ${varName}Ptr.cast();');
+      break;
+    case TypeCategory.bitfieldType:
+      o.p('final ${varName}Ptr = arena.allocate<Uint32>(sizeOf<Uint32>())..value = $varName;');
+      o.p('$argumentName.value = ${varName}Ptr.cast();');
+      break;
+    case TypeCategory.typedArray:
+      if (argument.isOptional) {
+        o.p('$argumentName.value = ${varName}?.nativePtr?.cast() ?? nullptr;');
+      } else {
+        final bang = argument.defaultArgumentValue != null ? '!' : '';
+        o.p('$argumentName.value = $varName$bang.nativePtr.cast();');
       }
       break;
   }

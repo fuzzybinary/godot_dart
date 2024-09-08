@@ -74,7 +74,9 @@ class GodotApiInfo {
     if (godotType == null) return TypeCategory.voidType;
 
     final strippedType = _getStrippedType(godotType);
-    if (hasDartType(strippedType.item1)) {
+    if (godotType.toLowerCase() == 'void' && strippedType.item2 == 0) {
+      return TypeCategory.voidType;
+    } else if (hasDartType(strippedType.item1)) {
       return TypeCategory.primitive;
     } else if (builtinClasses.containsKey(strippedType.item1)) {
       return TypeCategory.builtinClass;
@@ -82,8 +84,6 @@ class GodotApiInfo {
       return TypeCategory.engineClass;
     } else if (nativeStructures.containsKey(strippedType.item1)) {
       return TypeCategory.nativeStructure;
-    } else if (godotType == 'Void' && strippedType.item2 == 0) {
-      return TypeCategory.voidType;
     } else if (godotType.startsWith('typedarray::')) {
       return TypeCategory.typedArray;
     } else if (godotType.startsWith('enum')) {
@@ -160,7 +160,6 @@ class ArgumentProxy {
   final String rawDartType;
   final String dartType;
 
-  final bool needsAllocation;
   final bool isOptional;
   final bool isPointer;
   final bool isRefCounted;
@@ -177,7 +176,6 @@ class ArgumentProxy {
     required this.type,
     required this.rawDartType,
     required this.dartType,
-    required this.needsAllocation,
     required this.isOptional,
     required this.isPointer,
     required this.isRefCounted,
@@ -193,7 +191,6 @@ class ArgumentProxy {
         type: type,
         rawDartType: rawDartType,
         dartType: dartType,
-        needsAllocation: needsAllocation,
         isOptional: isOptional,
         isPointer: isPointer,
         isRefCounted: isRefCounted,
@@ -217,7 +214,6 @@ class ArgumentProxy {
       type: singleton.type,
       rawDartType: godotTypeToRawDartType(singleton.type),
       dartType: dartType,
-      needsAllocation: dartTypes.contains(singleton.type),
       isOptional: isOptional,
       isPointer: isPointer,
       isRefCounted: isRefCounted,
@@ -242,7 +238,6 @@ class ArgumentProxy {
       type: argument.type,
       rawDartType: godotTypeToRawDartType(argument.type),
       dartType: dartType,
-      needsAllocation: dartTypes.contains(argument.type),
       isOptional: isOptional,
       isPointer: isPointer,
       isRefCounted: isRefCounted,
@@ -264,11 +259,10 @@ class ArgumentProxy {
         GodotApiInfo.instance().isRefCounted(returnValue.type);
     final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
     return ArgumentProxy._(
-      name: '',
+      name: 'ret',
       type: returnValue.type,
       rawDartType: godotTypeToRawDartType(returnValue.type),
       dartType: dartType,
-      needsAllocation: dartTypes.contains(returnValue.type),
       isOptional: isOptional,
       isPointer: isPointer,
       isRefCounted: isRefCounted,
@@ -298,6 +292,13 @@ class ArgumentProxy {
     } else {
       return '$myDartType()';
     }
+  }
+
+  bool get needsAllocation {
+    return typeCategory == TypeCategory.primitive ||
+        typeCategory == TypeCategory.bitfieldType ||
+        typeCategory == TypeCategory.enumType ||
+        typeCategory == TypeCategory.nativeStructure;
   }
 }
 
