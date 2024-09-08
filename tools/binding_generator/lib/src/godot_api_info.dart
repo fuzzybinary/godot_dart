@@ -274,6 +274,32 @@ class ArgumentProxy {
     );
   }
 
+  factory ArgumentProxy.fromTypeName(String? typeName) {
+    final dartType = godotTypeToDartType(typeName);
+    final isPointer = typeName?.endsWith('*') ?? false;
+    final typeCategory = GodotApiInfo.instance().getTypeCategory(typeName);
+    final isRefCounted = typeName != null &&
+        !isPointer &&
+        typeCategory == TypeCategory.engineClass &&
+        GodotApiInfo.instance().isRefCounted(typeName);
+    final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
+    return ArgumentProxy._(
+      name: 'ret',
+      type: typeName ?? '',
+      rawDartType: godotTypeToRawDartType(typeName),
+      dartType: dartType,
+      isOptional: isOptional,
+      isPointer: isPointer,
+      isRefCounted: isRefCounted,
+      typeCategory: typeCategory,
+      meta: null,
+      defaultArgumentValue: null,
+      defaultReturnValue: typeName != null
+          ? _getDefaultReturnValue(typeName, dartType, isOptional)
+          : '',
+    );
+  }
+
   static String _getDefaultReturnValue(
       String godotType, String dartType, bool isOptional) {
     final myDartType = dartType;

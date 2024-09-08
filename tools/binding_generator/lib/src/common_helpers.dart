@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import 'code_sink.dart';
 import 'godot_api_info.dart';
 import 'godot_extension_api_json.dart';
@@ -91,20 +93,78 @@ String? argumentAllocation(ArgumentProxy arg) {
   return null;
 }
 
-bool writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
-  if (returnType.typeCategory == TypeCategory.engineClass) {
-    // Need a pointer to a pointer
-    o.p('final retPtr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>());');
-    return true;
-  } else {
-    final nativeType = getFFIType(returnType);
-    if (nativeType == null) {
+void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
+  var returnTypeName = 'GDExtensionTypePtr';
+  var sizeofString = 'sizeOf<GDExtensionTypePtr>()';
+
+  switch (returnType.typeCategory) {
+    case TypeCategory.voidType:
+      throw Exception('Attempt to write return allocaiton for void.');
+    case TypeCategory.primitive:
+    case TypeCategory.enumType:
+    case TypeCategory.bitfieldType:
+      returnTypeName = getFFIType(returnType, forPtrCall: true)!;
+      sizeofString = 'sizeOf<$returnTypeName>()';
+      break;
+    case TypeCategory.engineClass:
+      // Otherwise use the default
+      break;
+    case TypeCategory.builtinClass:
+      // Create the variant to write into. The return ptr is the memory
+      // already allocated by the Variant
+      final retType =
+          returnType.type == 'String' ? 'GDString' : returnType.type;
+      o.p('final retVal = ${retType}();');
       o.p('final retPtr = retVal.nativePtr;');
-      return false;
-    } else {
-      o.p('final retPtr = arena.allocate<$nativeType>(sizeOf<$nativeType>());');
-      return true;
-    }
+      return;
+    case TypeCategory.nativeStructure:
+      returnTypeName = returnType.rawDartType;
+      sizeofString = 'sizeOf<${returnType.rawDartType}>()';
+      break;
+    case TypeCategory.typedArray:
+      sizeofString = 'TypedArray.sTypeInfo.size';
+      break;
+  }
+
+  o.p('final retPtr = arena.allocate<$returnTypeName>($sizeofString);');
+}
+
+void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
+  switch (returnType.typeCategory) {
+    case TypeCategory.voidType:
+      throw Exception('Attempt to write return read for void.');
+    case TypeCategory.primitive:
+    case TypeCategory.bitfieldType:
+    case TypeCategory.nativeStructure:
+      o.p('return retPtr.value;');
+      break;
+    case TypeCategory.engineClass:
+      if (returnType.isRefCounted) {
+        o.p('final retVal = ${returnType.rawDartType}.fromOwner(gde.ffiBindings.gde_ref_get_object(retPtr.cast()));');
+        // Need to unreference the Ref<T> as its destructor is never called
+        final question = returnType.isOptional ? '?' : '';
+        o.p('retVal$question.unreference();');
+        o.p('return retVal;');
+      } else {
+        o.p('return ${returnType.rawDartType}.fromOwner(retPtr.value);');
+      }
+      break;
+    case TypeCategory.builtinClass:
+      if (returnType.type == 'String' || returnType.type == 'StringName') {
+        o.p('return retVal.toDartString();');
+      } else {
+        if (hasCustomImplementation(returnType.type)) {
+          o.p('retVal.updateFromOpaque();');
+        }
+        o.p('return retVal;');
+      }
+      break;
+    case TypeCategory.enumType:
+      o.p('return ${returnType.rawDartType}.fromValue(retPtr.value);');
+      break;
+    case TypeCategory.typedArray:
+      o.p('return ${returnType.rawDartType}.copyPtr(retPtr.cast());');
+      break;
   }
 }
 
@@ -124,7 +184,10 @@ void withAllocationBlock(
   var needsArena = retInfo?.typeCategory != TypeCategory.voidType ||
       arguments.any((arg) => arg.needsAllocation);
   if (needsArena) {
-    out.b('using((arena) {', () {
+    final hasReturn =
+        retInfo != null && retInfo.typeCategory != TypeCategory.voidType;
+    final retString = hasReturn ? 'return ' : '';
+    out.b('${retString}using((arena) {', () {
       writeBlock();
     }, '});');
   } else {
@@ -168,10 +231,10 @@ String getDartMethodName(String name, bool isVirtual) {
   return name;
 }
 
-String getArgumentDefaultValue(Argument arg, String defaultValue) {
-  if (arg.proxy.typeCategory == TypeCategory.enumType) {
+String getArgumentDefaultValue(ArgumentProxy arg, String defaultValue) {
+  if (arg.typeCategory == TypeCategory.enumType) {
     return GodotApiInfo.instance()
-        .findEnumValue(arg.proxy.dartType, arg.defaultValue!);
+        .findEnumValue(arg.dartType, arg.defaultArgumentValue!);
   }
 
   final argumentCapture = RegExp(r'.+\((?<args>.+)\)');
@@ -257,25 +320,27 @@ String getArgumentDefaultValue(Argument arg, String defaultValue) {
     final typedArrayArgumentCapture =
         RegExp(r'Array\[(?<type>.+)\]\((?<arg>.+)\)');
     final arrayArguments =
-        typedArrayArgumentCapture.firstMatch(arg.defaultValue!);
-    if (arrayArguments?.namedGroup('arg') == '[]' || arg.defaultValue == '[]') {
-      return '${arg.proxy.dartType}()';
+        typedArrayArgumentCapture.firstMatch(arg.defaultArgumentValue!);
+    if (arrayArguments?.namedGroup('arg') == '[]' ||
+        arg.defaultArgumentValue == '[]') {
+      return '${arg.dartType}()';
     }
   }
 
   return defaultValue;
 }
 
-void assignMethodDefaults(List<Argument> arguments, CodeSink o) {
-  bool needsDefaultAssignment(Argument a) {
-    return a.defaultValue != null &&
-        !isPrimitiveType(a.proxy.dartType) &&
-        !a.proxy.isOptional;
+void assignMethodDefaults(List<ArgumentProxy> arguments, CodeSink o) {
+  bool needsDefaultAssignment(ArgumentProxy a) {
+    return a.defaultArgumentValue != null &&
+        !isPrimitiveType(a.dartType) &&
+        !a.isOptional;
   }
 
   for (final arg in arguments.where((a) => needsDefaultAssignment(a))) {
     final argName = escapeName(arg.name).toLowerCamelCase();
-    final defaultValue = getArgumentDefaultValue(arg, arg.defaultValue!);
+    final defaultValue =
+        getArgumentDefaultValue(arg, arg.defaultArgumentValue!);
     o.p('$argName ??= $defaultValue;');
   }
 }
@@ -342,7 +407,7 @@ String makeSignature(dynamic functionData, {bool useGodotStringTypes = false}) {
         } else {
           if (isPrimitiveType(parameter.proxy.dartType)) {
             namedParamSignature.add(
-                '$type ${escapeName(parameter.name).toLowerCamelCase()} = ${getArgumentDefaultValue(parameter, parameter.defaultValue!)}');
+                '$type ${escapeName(parameter.name).toLowerCamelCase()} = ${getArgumentDefaultValue(parameter.proxy, parameter.defaultValue!)}');
           } else {
             namedParamSignature
                 .add('$type? ${escapeName(parameter.name).toLowerCamelCase()}');
@@ -537,7 +602,23 @@ void convertPtrArgumentToDart(
   }
 }
 
-void converDartToPtrArgument(
+String createPtrcallArguments(CodeSink o, List<ArgumentProxy>? arguments) {
+  final variableName = 'ptrArgArray';
+  if (arguments == null || arguments.length == 0) {
+    o.p('Pointer<Pointer<Void>> $variableName = nullptr;');
+    return variableName;
+  }
+
+  assignMethodDefaults(arguments, o);
+  o.p('final $variableName = arena.allocate<GDExtensionConstTypePtr>(sizeOf<GDExtensionConstTypePtr>() * ${arguments.length});');
+  arguments.forEachIndexed((i, argument) {
+    convertDartToPtrArgument('(ptrArgArray + $i)', argument, o);
+  });
+
+  return variableName;
+}
+
+void convertDartToPtrArgument(
     String argumentName, ArgumentProxy argument, CodeSink o) {
   // Special case, converting to Dart strings from GDString or StringName
   final varName = escapeName(argument.name).toLowerCamelCase();
@@ -563,6 +644,10 @@ void converDartToPtrArgument(
       o.p('$argumentName.value = ${varName}Ptr.cast();');
       break;
     case TypeCategory.engineClass:
+      // NB: -- We don't do anything with Ref for RefCounted objects because, by
+      // 'chance' a Ref only contains a pointer to the member, so passing in the
+      // object pointer without using Ref as a wrapper works, but might fail
+      // sometime in the future if we're not careful.
       final value = argument.isOptional
           ? '$varName?.nativePtr ?? nullptr'
           : '$varName.nativePtr';

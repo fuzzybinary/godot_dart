@@ -223,33 +223,11 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     o.b('', () {
       o.p('  : $superConstructor {');
       withAllocationBlock(arguments, null, o, () {
-        writeArgumentAllocations(arguments, o);
+        final argumentsVar = createPtrcallArguments(o, arguments);
 
-        var stringArguments = arguments
-            .where((e) => e.type == 'String' || e.type == 'StringName');
-        for (final strArg in stringArguments) {
-          final type = strArg.name == 'String' ? 'GDString' : 'StringName';
-          final escapedName = escapeName(strArg.name).toLowerCamelCase();
-          o.p('final $type gd$escapedName = $type.fromString($escapedName);');
-        }
-        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
-            () {
-          for (final argument in arguments) {
-            final escapedName = escapeName(argument.name).toLowerCamelCase();
-            if (argument.needsAllocation) {
-              o.p('${escapedName}Ptr.cast(),');
-            } else if (argument.typeCategory == TypeCategory.engineClass) {
-              o.p('${escapedName}Ptr.cast(),');
-            } else if (argument.isOptional) {
-              o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
-            } else if (argument.type == 'String' ||
-                argument.type == 'StringName') {
-              o.p('gd$escapedName.nativePtr.cast(),');
-            } else {
-              o.p('$escapedName.nativePtr.cast(),');
-            }
-          }
-        }, ']);');
+        o.p('final void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>) ctor =');
+        o.p('    _bindings.constructor_${constructor.index}!.asFunction();');
+        o.p('ctor(nativePtr.cast(), $argumentsVar);');
       });
     }, '}');
     o.nl();
@@ -269,32 +247,13 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
   for (final member in members) {
     final memberProxy = member.proxy;
     o.b('${memberProxy.dartType} get ${member.name} {', () {
-      if (member.type == 'String') {
-        o.p('GDString retVal = GDString();');
-      } else {
-        o.p('${memberProxy.dartType} retVal = ${memberProxy.defaultReturnValue};');
-      }
-      withAllocationBlock([], memberProxy, o, () {
-        bool extractReturnValue = writeReturnAllocation(memberProxy, o);
+      o.b('return using((arena) {', () {
+        writeReturnAllocation(memberProxy, o);
         o.p('final f = _bindings.member${member.name.toUpperCamelCase()}Getter!.asFunction<void Function(GDExtensionConstTypePtr, GDExtensionTypePtr)>(isLeaf: true);');
         o.p('f(nativePtr.cast(), retPtr.cast());');
-        if (extractReturnValue) {
-          if (memberProxy.typeCategory == TypeCategory.engineClass) {
-            o.p('retVal = retPtr == nullptr ? null : ${memberProxy.rawDartType}.fromOwner(retPtr.value);');
-          } else {
-            o.p('retVal = retPtr.value;');
-          }
-        }
-      });
 
-      if (member.type == 'String') {
-        o.p('return retVal.toDartString();');
-      } else if (hasCustomImplementation(member.type)) {
-        o.p('retVal.updateFromOpaque();');
-        o.p('return retVal;');
-      } else {
-        o.p('return retVal;');
-      }
+        writeReturnRead(memberProxy, o);
+      }, '});');
     }, '}');
     o.nl();
 
@@ -323,111 +282,13 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
 void _writeMethods(CodeSink o, BuiltinClass builtin) {
   final methods = builtin.methods ?? [];
   for (final method in methods) {
-    var methodName = escapeMethodName(method.name);
     o.b('${makeSignature(method)} {', () {
-      final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
-
       if (method.isVararg) {
-        // Special case.. use `variantCall` instead
-        final retValStr = method.returnType != null ? 'Variant retVal = ' : '';
-        o.p('final self = Variant.fromObject(this);');
-        if (method.arguments != null && method.arguments!.isNotEmpty) {
-          o.b('final allArgs = <Variant>[', () {
-            for (final arg in arguments) {
-              o.p('Variant.fromObject(${escapeName(arg.name).toLowerCamelCase()}),');
-            }
-            o.p('...vargs,');
-          }, '];');
-          o.p("${retValStr}gde.variantCall(self, '${method.name}', allArgs);");
-        } else {
-          o.p("${retValStr}gde.variantCall(self, '${method.name}', vargs);");
-        }
-        if (method.returnType != null) {
-          if (method.returnType == 'Variant') {
-            o.p('return retVal;');
-          } else {
-            o.p('return convertFromVariant(retVal, null) as ${method.returnType};');
-          }
-        }
+        _generateVarargMethod(o, method);
         return;
       }
 
-      final retArg = argumentFromType(method.returnType).proxy;
-
-      if (retArg.typeCategory != TypeCategory.voidType) {
-        if (method.returnType == 'String') {
-          o.p('GDString retVal = GDString();');
-        } else if (method.returnType == 'StringName') {
-          o.p('StringName retVal = StringName();');
-        } else if (retArg.isOptional) {
-          o.p('${retArg.dartType} retVal;');
-        } else {
-          o.p('${retArg.dartType} retVal = ${retArg.defaultReturnValue};');
-        }
-      }
-
-      final stringArguments = method.arguments
-              ?.where((e) => e.type == 'String' || e.type == 'StringName') ??
-          [];
-      withAllocationBlock(arguments, retArg, o, () {
-        assignMethodDefaults(method.arguments ?? [], o);
-        writeArgumentAllocations(arguments, o);
-        bool extractReturnValue = false;
-        if (retArg.typeCategory != TypeCategory.voidType) {
-          extractReturnValue = writeReturnAllocation(retArg, o);
-        }
-        for (final strParam in stringArguments) {
-          final type = strParam.type == 'String' ? 'GDString' : 'StringName';
-          final escapedName = escapeName(strParam.name).toLowerCamelCase();
-          o.p('final $type gd$escapedName = $type.fromString($escapedName);');
-        }
-        final retParam = retArg.typeCategory == TypeCategory.voidType
-            ? 'nullptr'
-            : 'retPtr.cast()';
-        final thisParam =
-            method.isStatic == true ? 'nullptr' : 'nativePtr.cast()';
-        o.b('gde.callBuiltinMethodPtr(_bindings.method${methodName.toUpperCamelCase()}, $thisParam, $retParam, [',
-            () {
-          for (final argument in arguments) {
-            final escapedName = escapeName(argument.name).toLowerCamelCase();
-            if (argument.needsAllocation) {
-              o.p('${escapedName}Ptr.cast(),');
-            } else if (argument.typeCategory == TypeCategory.engineClass) {
-              o.p('${escapedName}Ptr.cast(),');
-            } else if (argument.isOptional) {
-              o.p('$escapedName?.nativePtr.cast() ?? nullptr,');
-            } else if (argument.type == 'String' ||
-                argument.type == 'StringName') {
-              o.p('gd$escapedName.nativePtr.cast(),');
-            } else if (argument.defaultArgumentValue != null) {
-              // Should be able to assume non-null at this point
-              o.p('$escapedName!.nativePtr.cast(),');
-            } else {
-              o.p('$escapedName.nativePtr.cast(),');
-            }
-          }
-        }, ']);');
-
-        if (retArg.typeCategory != TypeCategory.voidType &&
-            extractReturnValue) {
-          if (retArg.typeCategory == TypeCategory.engineClass) {
-            o.p('retVal = retPtr == nullptr ? null : ${retArg.rawDartType}.fromOwner(retPtr.value);');
-          } else {
-            o.p('retVal = retPtr.value;');
-          }
-        }
-      });
-
-      if (retArg.typeCategory != TypeCategory.voidType) {
-        if (retArg.type == 'String' || retArg.type == 'StringName') {
-          o.p('return retVal.toDartString();');
-        } else if (hasCustomImplementation(retArg.type)) {
-          o.p('retVal.updateFromOpaque();');
-          o.p('return retVal;');
-        } else {
-          o.p('return retVal;');
-        }
-      }
+      _generatePtrcallMethod(o, method);
     }, '}');
     o.nl();
   }
@@ -468,6 +329,62 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
     }, '}');
     o.nl();
   }
+}
+
+void _generateVarargMethod(CodeSink o, BuiltinClassMethod method) {
+  final hasReturn = method.returnType != null;
+  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+
+  o.p('final self = Variant.fromObject(this);');
+  o.b("${hasReturn ? 'final retVal = ' : ''}gde.variantCall(self, '${method.name}', [",
+      () {
+    for (final argument in arguments) {
+      if (argument.typeCategory == TypeCategory.enumType) {
+        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
+      } else if (argument.dartType == 'Variant') {
+        o.p('${escapeName(argument.name).toLowerCamelCase()},');
+      } else {
+        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
+      }
+    }
+    o.p('...vargs,');
+  }, ']);');
+
+  if (hasReturn) {
+    if (method.returnType == 'Variant') {
+      o.p('return retVal;');
+    } else {
+      o.p('return convertFromVariant(retVal, null) as ${method.returnType};');
+    }
+  }
+}
+
+void _generatePtrcallMethod(CodeSink o, BuiltinClassMethod method) {
+  final methodName = escapeMethodName(method.name);
+  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
+  final returnInfo = ArgumentProxy.fromTypeName(method.returnType);
+  final hasReturn = returnInfo.typeCategory != TypeCategory.voidType;
+  final retString = hasReturn ? 'return ' : '';
+
+  o.b('${retString}using((arena) {', () {
+    final argumentsVar = createPtrcallArguments(o, arguments);
+
+    if (hasReturn) {
+      writeReturnAllocation(returnInfo, o);
+    }
+
+    final selfPtr =
+        method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()';
+    final returnPtr = hasReturn ? 'retPtr.cast()' : 'nullptr.cast()';
+
+    o.p('void Function(GDExtensionTypePtr, Pointer<GDExtensionConstTypePtr>,');
+    o.p('    GDExtensionTypePtr, int) m = _bindings.method${methodName.toUpperCamelCase()}!.asFunction();');
+    o.p('m($selfPtr, $argumentsVar, $returnPtr, ${method.arguments?.length ?? 0});');
+
+    if (hasReturn) {
+      writeReturnRead(returnInfo, o);
+    }
+  }, '});');
 }
 
 void _writeBindingClass(CodeSink o, BuiltinClass builtin) {

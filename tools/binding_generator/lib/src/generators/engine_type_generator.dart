@@ -191,67 +191,24 @@ void _generateVarargMethod(CodeSink o, ClassMethod method) {
 
 void _generatePtrcallMethod(CodeSink o, ClassMethod method) {
   final methodName = escapeMethodName(method.name);
+  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
   final returnInfo = method.returnValue?.proxy;
   final hasReturn =
       returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
-  final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
   final retString = hasReturn ? 'return ' : '';
 
   o.b('${retString}using((arena) {', () {
-    if (arguments.length != 0) {
-      assignMethodDefaults(method.arguments ?? [], o);
-      //writeArgumentAllocations(arguments, o);
-      o.p('final ptrArgArray = arena.allocate<GDExtensionConstTypePtr>(sizeOf<GDExtensionConstTypePtr>() * ${arguments.length});');
-      arguments.forEachIndexed((i, argument) {
-        converDartToPtrArgument('(ptrArgArray + $i)', argument, o);
-      });
-    } else {
-      o.p('Pointer<Pointer<Void>> ptrArgArray = nullptr;');
-    }
+    final argumentsVar = createPtrcallArguments(o, arguments);
 
     if (hasReturn) {
-      var returnTypeName = 'GDExtensionTypePtr';
-      var sizeofString = 'sizeOf<GDExtensionTypePtr>()';
-      if (returnInfo.needsAllocation) {
-        returnTypeName = getFFIType(returnInfo, forPtrCall: true)!;
-        sizeofString = 'sizeOf<$returnTypeName>()';
-      } else if (returnInfo.type == 'String') {
-        sizeofString = 'GDString.sTypeInfo.size';
-      } else if (returnInfo.type == 'StringName') {
-        sizeofString = 'StringName.sTypeInfo.size';
-      } else if (returnInfo.typeCategory == TypeCategory.builtinClass) {
-        sizeofString = '${returnInfo.rawDartType}.sTypeInfo.size';
-      } else if (returnInfo.typeCategory == TypeCategory.typedArray) {
-        sizeofString = 'TypedArray.sTypeInfo.size';
-      } else if (returnInfo.typeCategory == TypeCategory.nativeStructure) {
-        returnTypeName = returnInfo.rawDartType;
-        sizeofString = 'sizeOf<${returnInfo.rawDartType}>()';
-      }
-      o.p('final retPtr = arena.allocate<$returnTypeName>($sizeofString);');
+      writeReturnAllocation(returnInfo, o);
     }
 
     o.p('gde.ffiBindings.gde_object_method_bind_ptrcall(');
-    o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()'}, ptrArgArray, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
+    o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'this.nativePtr.cast()'}, $argumentsVar, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
 
     if (hasReturn) {
-      if (returnInfo.typeCategory == TypeCategory.primitive) {
-        o.p('return retPtr.value;');
-      } else if (returnInfo.typeCategory == TypeCategory.enumType) {
-        o.p('return ${returnInfo.rawDartType}.fromValue(retPtr.value);');
-      } else if (returnInfo.typeCategory == TypeCategory.bitfieldType) {
-        o.p('return retPtr.value;');
-      } else if (returnInfo.type == 'String') {
-        o.p('return StringExtensions.fromGodotStringPtr(retPtr.cast());');
-      } else if (returnInfo.type == 'StringName') {
-        o.p('return StringName.copyPtr(retPtr.cast()).toDartString();');
-      } else if (returnInfo.type == 'Variant') {
-        o.p('return Variant.fromVariantPtr(retPtr.cast());');
-      } else if (returnInfo.typeCategory == TypeCategory.builtinClass ||
-          returnInfo.typeCategory == TypeCategory.typedArray) {
-        o.p('return ${returnInfo.rawDartType}.copyPtr(retPtr.cast());');
-      } else {
-        o.p('return ${returnInfo.rawDartType}.fromOwner(retPtr.value);');
-      }
+      writeReturnRead(returnInfo, o);
     }
   }, '});');
 }
