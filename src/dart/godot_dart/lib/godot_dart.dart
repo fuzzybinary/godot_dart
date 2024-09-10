@@ -22,11 +22,15 @@ export 'src/variant/variant.dart' hide getToTypeConstructor;
 // ignore: unused_element
 late GodotDart _globalExtension;
 HotReloader? _reloader;
+// ignore: unused_element
+bool _isReloading = false;
 
 @pragma('vm:entry-point')
 void _reloadCode() async {
+  _isReloading = true;
   var result = await _reloader?.reloadCode();
   print('[Dart] Hotreload result: $result');
+  _isReloading = false;
 }
 
 @pragma('vm:entry-point')

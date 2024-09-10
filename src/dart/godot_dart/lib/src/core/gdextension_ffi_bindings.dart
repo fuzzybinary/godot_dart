@@ -19,6 +19,163 @@ class GDExtensionFFI {
           lookup)
       : _lookup = lookup;
 
+  void __va_start(
+    ffi.Pointer<va_list> arg0,
+  ) {
+    return ___va_start(
+      arg0,
+    );
+  }
+
+  late final ___va_startPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<va_list>)>>(
+          '__va_start');
+  late final ___va_start =
+      ___va_startPtr.asFunction<void Function(ffi.Pointer<va_list>)>();
+
+  void __security_init_cookie() {
+    return ___security_init_cookie();
+  }
+
+  late final ___security_init_cookiePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          '__security_init_cookie');
+  late final ___security_init_cookie =
+      ___security_init_cookiePtr.asFunction<void Function()>();
+
+  void __security_check_cookie(
+    int _StackCookie,
+  ) {
+    return ___security_check_cookie(
+      _StackCookie,
+    );
+  }
+
+  late final ___security_check_cookiePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.UintPtr)>>(
+          '__security_check_cookie');
+  late final ___security_check_cookie =
+      ___security_check_cookiePtr.asFunction<void Function(int)>();
+
+  void __report_gsfailure(
+    int _StackCookie,
+  ) {
+    return ___report_gsfailure(
+      _StackCookie,
+    );
+  }
+
+  late final ___report_gsfailurePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.UintPtr)>>(
+          '__report_gsfailure');
+  late final ___report_gsfailure =
+      ___report_gsfailurePtr.asFunction<void Function(int)>();
+
+  late final ffi.Pointer<ffi.UintPtr> ___security_cookie =
+      _lookup<ffi.UintPtr>('__security_cookie');
+
+  int get __security_cookie => ___security_cookie.value;
+
+  set __security_cookie(int value) => ___security_cookie.value = value;
+
+  void _invalid_parameter_noinfo() {
+    return __invalid_parameter_noinfo();
+  }
+
+  late final __invalid_parameter_noinfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          '_invalid_parameter_noinfo');
+  late final __invalid_parameter_noinfo =
+      __invalid_parameter_noinfoPtr.asFunction<void Function()>();
+
+  void _invalid_parameter_noinfo_noreturn() {
+    return __invalid_parameter_noinfo_noreturn();
+  }
+
+  late final __invalid_parameter_noinfo_noreturnPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          '_invalid_parameter_noinfo_noreturn');
+  late final __invalid_parameter_noinfo_noreturn =
+      __invalid_parameter_noinfo_noreturnPtr.asFunction<void Function()>();
+
+  void _invoke_watson(
+    ffi.Pointer<ffi.WChar> _Expression,
+    ffi.Pointer<ffi.WChar> _FunctionName,
+    ffi.Pointer<ffi.WChar> _FileName,
+    int _LineNo,
+    int _Reserved,
+  ) {
+    return __invoke_watson(
+      _Expression,
+      _FunctionName,
+      _FileName,
+      _LineNo,
+      _Reserved,
+    );
+  }
+
+  late final __invoke_watsonPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<ffi.WChar>,
+              ffi.Pointer<ffi.WChar>,
+              ffi.Pointer<ffi.WChar>,
+              ffi.UnsignedInt,
+              ffi.UintPtr)>>('_invoke_watson');
+  late final __invoke_watson = __invoke_watsonPtr.asFunction<
+      void Function(ffi.Pointer<ffi.WChar>, ffi.Pointer<ffi.WChar>,
+          ffi.Pointer<ffi.WChar>, int, int)>();
+
+  ffi.Pointer<ffi.Int> _errno() {
+    return __errno();
+  }
+
+  late final __errnoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int> Function()>>('_errno');
+  late final __errno = __errnoPtr.asFunction<ffi.Pointer<ffi.Int> Function()>();
+
+  int _set_errno(
+    int _Value,
+  ) {
+    return __set_errno(
+      _Value,
+    );
+  }
+
+  late final __set_errnoPtr =
+      _lookup<ffi.NativeFunction<errno_t Function(ffi.Int)>>('_set_errno');
+  late final __set_errno = __set_errnoPtr.asFunction<int Function(int)>();
+
+  int _get_errno(
+    ffi.Pointer<ffi.Int> _Value,
+  ) {
+    return __get_errno(
+      _Value,
+    );
+  }
+
+  late final __get_errnoPtr =
+      _lookup<ffi.NativeFunction<errno_t Function(ffi.Pointer<ffi.Int>)>>(
+          '_get_errno');
+  late final __get_errno =
+      __get_errnoPtr.asFunction<int Function(ffi.Pointer<ffi.Int>)>();
+
+  int __threadid() {
+    return ___threadid();
+  }
+
+  late final ___threadidPtr =
+      _lookup<ffi.NativeFunction<ffi.UnsignedLong Function()>>('__threadid');
+  late final ___threadid = ___threadidPtr.asFunction<int Function()>();
+
+  int __threadhandle() {
+    return ___threadhandle();
+  }
+
+  late final ___threadhandlePtr =
+      _lookup<ffi.NativeFunction<ffi.UintPtr Function()>>('__threadhandle');
+  late final ___threadhandle = ___threadhandlePtr.asFunction<int Function()>();
+
   void gde_init_c_interface(
     GDExtensionInterfaceGetProcAddress p_get_proc_address,
   ) {
@@ -965,97 +1122,41 @@ class GDExtensionFFI {
               GDExtensionConstObjectPtr, GDExtensionObjectPtr)>();
 }
 
-final class __mbstate_t extends ffi.Union {
-  @ffi.Array.multi([128])
-  external ffi.Array<ffi.Char> __mbstate8;
+typedef va_list = ffi.Pointer<ffi.Char>;
 
-  @ffi.LongLong()
-  external int _mbstateL;
+final class __crt_locale_data_public extends ffi.Struct {
+  external ffi.Pointer<ffi.UnsignedShort> _locale_pctype;
+
+  @ffi.Int()
+  external int _locale_mb_cur_max;
+
+  @ffi.UnsignedInt()
+  external int _locale_lc_codepage;
 }
 
-final class __darwin_pthread_handler_rec extends ffi.Struct {
-  external ffi
-      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      __routine;
+final class __crt_locale_pointers extends ffi.Struct {
+  external ffi.Pointer<__crt_locale_data> locinfo;
 
-  external ffi.Pointer<ffi.Void> __arg;
-
-  external ffi.Pointer<__darwin_pthread_handler_rec> __next;
+  external ffi.Pointer<__crt_multibyte_data> mbcinfo;
 }
 
-final class _opaque_pthread_attr_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
+final class __crt_locale_data extends ffi.Opaque {}
 
-  @ffi.Array.multi([56])
-  external ffi.Array<ffi.Char> __opaque;
+final class __crt_multibyte_data extends ffi.Opaque {}
+
+final class _Mbstatet extends ffi.Struct {
+  @ffi.UnsignedLong()
+  external int _Wchar;
+
+  @ffi.UnsignedShort()
+  external int _Byte;
+
+  @ffi.UnsignedShort()
+  external int _State;
 }
 
-final class _opaque_pthread_cond_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([40])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_condattr_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([8])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_mutex_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([56])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_mutexattr_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([8])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_once_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([8])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_rwlock_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([192])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_rwlockattr_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  @ffi.Array.multi([16])
-  external ffi.Array<ffi.Char> __opaque;
-}
-
-final class _opaque_pthread_t extends ffi.Struct {
-  @ffi.Long()
-  external int __sig;
-
-  external ffi.Pointer<__darwin_pthread_handler_rec> __cleanup_stack;
-
-  @ffi.Array.multi([8176])
-  external ffi.Array<ffi.Char> __opaque;
-}
+typedef errno_t = ffi.Int;
+typedef Darterrno_t = int;
 
 abstract class GDExtensionVariantType {
   static const int GDEXTENSION_VARIANT_TYPE_NIL = 0;
@@ -1096,7 +1197,8 @@ abstract class GDExtensionVariantType {
   static const int GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR2_ARRAY = 35;
   static const int GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR3_ARRAY = 36;
   static const int GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY = 37;
-  static const int GDEXTENSION_VARIANT_TYPE_VARIANT_MAX = 38;
+  static const int GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR4_ARRAY = 38;
+  static const int GDEXTENSION_VARIANT_TYPE_VARIANT_MAX = 39;
 }
 
 abstract class GDExtensionVariantOperator {
@@ -1476,6 +1578,69 @@ typedef DartGDExtensionClassCallVirtualWithDataFunction = void Function(
     ffi.Pointer<GDExtensionConstTypePtr> p_args,
     GDExtensionTypePtr r_ret);
 
+final class GDExtensionClassCreationInfo3 extends ffi.Struct {
+  @GDExtensionBool()
+  external int is_virtual;
+
+  @GDExtensionBool()
+  external int is_abstract;
+
+  @GDExtensionBool()
+  external int is_exposed;
+
+  @GDExtensionBool()
+  external int is_runtime;
+
+  external GDExtensionClassSet set_func;
+
+  external GDExtensionClassGet get_func;
+
+  external GDExtensionClassGetPropertyList get_property_list_func;
+
+  external GDExtensionClassFreePropertyList2 free_property_list_func;
+
+  external GDExtensionClassPropertyCanRevert property_can_revert_func;
+
+  external GDExtensionClassPropertyGetRevert property_get_revert_func;
+
+  external GDExtensionClassValidateProperty validate_property_func;
+
+  external GDExtensionClassNotification2 notification_func;
+
+  external GDExtensionClassToString to_string_func;
+
+  external GDExtensionClassReference reference_func;
+
+  external GDExtensionClassUnreference unreference_func;
+
+  external GDExtensionClassCreateInstance create_instance_func;
+
+  external GDExtensionClassFreeInstance free_instance_func;
+
+  external GDExtensionClassRecreateInstance recreate_instance_func;
+
+  external GDExtensionClassGetVirtual get_virtual_func;
+
+  external GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
+
+  external GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
+
+  external GDExtensionClassGetRID get_rid_func;
+
+  external ffi.Pointer<ffi.Void> class_userdata;
+}
+
+typedef GDExtensionClassFreePropertyList2 = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionClassFreePropertyList2Function>>;
+typedef GDExtensionClassFreePropertyList2Function = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list,
+    ffi.Uint32 p_count);
+typedef DartGDExtensionClassFreePropertyList2Function = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list,
+    int p_count);
+
 abstract class GDExtensionClassMethodFlags {
   static const int GDEXTENSION_METHOD_FLAG_NORMAL = 1;
   static const int GDEXTENSION_METHOD_FLAG_EDITOR = 2;
@@ -1564,6 +1729,25 @@ typedef DartGDExtensionClassMethodPtrCallFunction = void Function(
     ffi.Pointer<GDExtensionConstTypePtr> p_args,
     GDExtensionTypePtr r_ret);
 
+final class GDExtensionClassVirtualMethodInfo extends ffi.Struct {
+  external GDExtensionStringNamePtr name;
+
+  @ffi.Uint32()
+  external int method_flags;
+
+  external GDExtensionPropertyInfo return_value;
+
+  @ffi.Int32()
+  external int return_value_metadata;
+
+  @ffi.Uint32()
+  external int argument_count;
+
+  external ffi.Pointer<GDExtensionPropertyInfo> arguments;
+
+  external ffi.Pointer<ffi.Int32> arguments_metadata;
+}
+
 final class GDExtensionCallableCustomInfo extends ffi.Struct {
   external ffi.Pointer<ffi.Void> callable_userdata;
 
@@ -1647,6 +1831,40 @@ typedef DartGDExtensionCallableCustomToStringFunction = void Function(
     ffi.Pointer<ffi.Void> callable_userdata,
     ffi.Pointer<GDExtensionBool> r_is_valid,
     GDExtensionStringPtr r_out);
+
+final class GDExtensionCallableCustomInfo2 extends ffi.Struct {
+  external ffi.Pointer<ffi.Void> callable_userdata;
+
+  external ffi.Pointer<ffi.Void> token;
+
+  @GDObjectInstanceID()
+  external int object_id;
+
+  external GDExtensionCallableCustomCall call_func;
+
+  external GDExtensionCallableCustomIsValid is_valid_func;
+
+  external GDExtensionCallableCustomFree free_func;
+
+  external GDExtensionCallableCustomHash hash_func;
+
+  external GDExtensionCallableCustomEqual equal_func;
+
+  external GDExtensionCallableCustomLessThan less_than_func;
+
+  external GDExtensionCallableCustomToString to_string_func;
+
+  external GDExtensionCallableCustomGetArgumentCount get_argument_count_func;
+}
+
+typedef GDExtensionCallableCustomGetArgumentCount = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionCallableCustomGetArgumentCountFunction>>;
+typedef GDExtensionCallableCustomGetArgumentCountFunction
+    = GDExtensionInt Function(ffi.Pointer<ffi.Void> callable_userdata,
+        ffi.Pointer<GDExtensionBool> r_is_valid);
+typedef DartGDExtensionCallableCustomGetArgumentCountFunction
+    = DartGDExtensionInt Function(ffi.Pointer<ffi.Void> callable_userdata,
+        ffi.Pointer<GDExtensionBool> r_is_valid);
 
 final class GDExtensionScriptInstanceInfo extends ffi.Struct {
   external GDExtensionScriptInstanceSet set_func;
@@ -1953,6 +2171,97 @@ typedef DartGDExtensionScriptInstanceNotification2Function = void Function(
     int p_what,
     DartGDExtensionBool p_reversed);
 
+final class GDExtensionScriptInstanceInfo3 extends ffi.Struct {
+  external GDExtensionScriptInstanceSet set_func;
+
+  external GDExtensionScriptInstanceGet get_func;
+
+  external GDExtensionScriptInstanceGetPropertyList get_property_list_func;
+
+  external GDExtensionScriptInstanceFreePropertyList2 free_property_list_func;
+
+  external GDExtensionScriptInstanceGetClassCategory get_class_category_func;
+
+  external GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
+
+  external GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
+
+  external GDExtensionScriptInstanceGetOwner get_owner_func;
+
+  external GDExtensionScriptInstanceGetPropertyState get_property_state_func;
+
+  external GDExtensionScriptInstanceGetMethodList get_method_list_func;
+
+  external GDExtensionScriptInstanceFreeMethodList2 free_method_list_func;
+
+  external GDExtensionScriptInstanceGetPropertyType get_property_type_func;
+
+  external GDExtensionScriptInstanceValidateProperty validate_property_func;
+
+  external GDExtensionScriptInstanceHasMethod has_method_func;
+
+  external GDExtensionScriptInstanceGetMethodArgumentCount
+      get_method_argument_count_func;
+
+  external GDExtensionScriptInstanceCall call_func;
+
+  external GDExtensionScriptInstanceNotification2 notification_func;
+
+  external GDExtensionScriptInstanceToString to_string_func;
+
+  external GDExtensionScriptInstanceRefCountIncremented
+      refcount_incremented_func;
+
+  external GDExtensionScriptInstanceRefCountDecremented
+      refcount_decremented_func;
+
+  external GDExtensionScriptInstanceGetScript get_script_func;
+
+  external GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
+
+  external GDExtensionScriptInstanceSet set_fallback_func;
+
+  external GDExtensionScriptInstanceGet get_fallback_func;
+
+  external GDExtensionScriptInstanceGetLanguage get_language_func;
+
+  external GDExtensionScriptInstanceFree free_func;
+}
+
+typedef GDExtensionScriptInstanceFreePropertyList2 = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceFreePropertyList2Function>>;
+typedef GDExtensionScriptInstanceFreePropertyList2Function = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list,
+    ffi.Uint32 p_count);
+typedef DartGDExtensionScriptInstanceFreePropertyList2Function = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list,
+    int p_count);
+typedef GDExtensionScriptInstanceFreeMethodList2 = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceFreeMethodList2Function>>;
+typedef GDExtensionScriptInstanceFreeMethodList2Function = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionMethodInfo> p_list,
+    ffi.Uint32 p_count);
+typedef DartGDExtensionScriptInstanceFreeMethodList2Function = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionMethodInfo> p_list,
+    int p_count);
+typedef GDExtensionScriptInstanceGetMethodArgumentCount = ffi.Pointer<
+    ffi
+    .NativeFunction<GDExtensionScriptInstanceGetMethodArgumentCountFunction>>;
+typedef GDExtensionScriptInstanceGetMethodArgumentCountFunction
+    = GDExtensionInt Function(
+        GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name,
+        ffi.Pointer<GDExtensionBool> r_is_valid);
+typedef DartGDExtensionScriptInstanceGetMethodArgumentCountFunction
+    = DartGDExtensionInt Function(
+        GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name,
+        ffi.Pointer<GDExtensionBool> r_is_valid);
+
 abstract class GDExtensionInitializationLevel {
   static const int GDEXTENSION_INITIALIZATION_CORE = 0;
   static const int GDEXTENSION_INITIALIZATION_SERVERS = 1;
@@ -2109,87 +2418,75 @@ typedef GDExtensionConstRefPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionRefPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionScriptInstancePtr = ffi.Pointer<ffi.Void>;
 
-const int __has_safe_buffers = 1;
+const int _VCRT_COMPILER_PREPROCESSOR = 1;
 
-const int __DARWIN_ONLY_64_BIT_INO_T = 1;
+const int _SAL_VERSION = 20;
 
-const int __DARWIN_ONLY_UNIX_CONFORMANCE = 1;
+const int __SAL_H_VERSION = 180000000;
 
-const int __DARWIN_ONLY_VERS_1050 = 1;
+const int _USE_DECLSPECS_FOR_SAL = 0;
 
-const int __DARWIN_UNIX03 = 1;
+const int _USE_ATTRIBUTES_FOR_SAL = 0;
 
-const int __DARWIN_64_BIT_INO_T = 1;
+const int _CRT_PACKING = 8;
 
-const int __DARWIN_VERS_1050 = 1;
+const int _VCRUNTIME_DISABLED_WARNINGS = 4514;
 
-const int __DARWIN_NON_CANCELABLE = 0;
+const int _HAS_EXCEPTIONS = 1;
 
-const String __DARWIN_SUF_EXTSN = '\$DARWIN_EXTSN';
-
-const int __DARWIN_C_ANSI = 4096;
-
-const int __DARWIN_C_FULL = 900000;
-
-const int __DARWIN_C_LEVEL = 900000;
-
-const int __STDC_WANT_LIB_EXT1__ = 1;
-
-const int __DARWIN_NO_LONG_LONG = 0;
-
-const int _DARWIN_FEATURE_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_VERS_1050 = 1;
-
-const int _DARWIN_FEATURE_ONLY_UNIX_CONFORMANCE = 1;
-
-const int _DARWIN_FEATURE_UNIX_CONFORMANCE = 3;
-
-const int __has_ptrcheck = 0;
-
-const int __DARWIN_NULL = 0;
-
-const int __PTHREAD_SIZE__ = 8176;
-
-const int __PTHREAD_ATTR_SIZE__ = 56;
-
-const int __PTHREAD_MUTEXATTR_SIZE__ = 8;
-
-const int __PTHREAD_MUTEX_SIZE__ = 56;
-
-const int __PTHREAD_CONDATTR_SIZE__ = 8;
-
-const int __PTHREAD_COND_SIZE__ = 40;
-
-const int __PTHREAD_ONCE_SIZE__ = 8;
-
-const int __PTHREAD_RWLOCK_SIZE__ = 192;
-
-const int __PTHREAD_RWLOCKATTR_SIZE__ = 16;
-
-const int __DARWIN_WCHAR_MAX = 2147483647;
-
-const int __DARWIN_WCHAR_MIN = -2147483648;
-
-const int __DARWIN_WEOF = -1;
-
-const int _FORTIFY_SOURCE = 2;
+const int _WCHAR_T_DEFINED = 1;
 
 const int NULL = 0;
 
-const int USER_ADDR_NULL = 0;
+const int _HAS_CXX17 = 0;
 
-const int __WORDSIZE = 64;
+const int _HAS_CXX20 = 0;
 
-const int INT8_MAX = 127;
+const int _HAS_CXX23 = 0;
 
-const int INT16_MAX = 32767;
+const int _HAS_NODISCARD = 1;
 
-const int INT32_MAX = 2147483647;
+const int _ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE = 1;
 
-const int INT64_MAX = 9223372036854775807;
+const int _CRT_BUILD_DESKTOP_APP = 1;
+
+const int _UCRT_DISABLED_WARNINGS = 4324;
+
+const int _ARGMAX = 100;
+
+const int _TRUNCATE = -1;
+
+const int _CRT_INT_MAX = 2147483647;
+
+const int _CRT_SIZE_MAX = -1;
+
+const String __FILEW__ = 'C';
+
+const int _CRT_FUNCTIONS_REQUIRED = 1;
+
+const int _CRT_HAS_CXX17 = 0;
+
+const int _CRT_HAS_C11 = 0;
+
+const int _CRT_INTERNAL_NONSTDC_NAMES = 1;
+
+const int __STDC_SECURE_LIB__ = 200411;
+
+const int __GOT_SECURE_LIB__ = 200411;
+
+const int __STDC_WANT_SECURE_LIB__ = 1;
+
+const int _SECURECRT_FILL_BUFFER_PATTERN = 254;
+
+const int _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES = 0;
+
+const int _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT = 0;
+
+const int _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES = 1;
+
+const int _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_MEMORY = 0;
+
+const int _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES_MEMORY = 0;
 
 const int INT8_MIN = -128;
 
@@ -2198,6 +2495,14 @@ const int INT16_MIN = -32768;
 const int INT32_MIN = -2147483648;
 
 const int INT64_MIN = -9223372036854775808;
+
+const int INT8_MAX = 127;
+
+const int INT16_MAX = 32767;
+
+const int INT32_MAX = 2147483647;
+
+const int INT64_MAX = 9223372036854775807;
 
 const int UINT8_MAX = 255;
 
@@ -2233,7 +2538,7 @@ const int UINT_LEAST64_MAX = -1;
 
 const int INT_FAST8_MIN = -128;
 
-const int INT_FAST16_MIN = -32768;
+const int INT_FAST16_MIN = -2147483648;
 
 const int INT_FAST32_MIN = -2147483648;
 
@@ -2241,7 +2546,7 @@ const int INT_FAST64_MIN = -9223372036854775808;
 
 const int INT_FAST8_MAX = 127;
 
-const int INT_FAST16_MAX = 32767;
+const int INT_FAST16_MAX = 2147483647;
 
 const int INT_FAST32_MAX = 2147483647;
 
@@ -2249,23 +2554,23 @@ const int INT_FAST64_MAX = 9223372036854775807;
 
 const int UINT_FAST8_MAX = 255;
 
-const int UINT_FAST16_MAX = 65535;
+const int UINT_FAST16_MAX = 4294967295;
 
 const int UINT_FAST32_MAX = 4294967295;
 
 const int UINT_FAST64_MAX = -1;
 
-const int INTPTR_MAX = 9223372036854775807;
-
 const int INTPTR_MIN = -9223372036854775808;
 
+const int INTPTR_MAX = 9223372036854775807;
+
 const int UINTPTR_MAX = -1;
+
+const int INTMAX_MIN = -9223372036854775808;
 
 const int INTMAX_MAX = 9223372036854775807;
 
 const int UINTMAX_MAX = -1;
-
-const int INTMAX_MIN = -9223372036854775808;
 
 const int PTRDIFF_MIN = -9223372036854775808;
 
@@ -2273,16 +2578,14 @@ const int PTRDIFF_MAX = 9223372036854775807;
 
 const int SIZE_MAX = -1;
 
-const int RSIZE_MAX = 9223372036854775807;
-
-const int WCHAR_MAX = 2147483647;
-
-const int WCHAR_MIN = -2147483648;
-
-const int WINT_MIN = -2147483648;
-
-const int WINT_MAX = 2147483647;
-
 const int SIG_ATOMIC_MIN = -2147483648;
 
 const int SIG_ATOMIC_MAX = 2147483647;
+
+const int WCHAR_MIN = 0;
+
+const int WCHAR_MAX = 65535;
+
+const int WINT_MIN = 0;
+
+const int WINT_MAX = 65535;

@@ -34,11 +34,11 @@ bool DartResourceFormatLoader::_recognize_path(const godot::String &path, const 
 godot::String DartResourceFormatLoader::_get_resource_type(const godot::String &path) const {
   String extension = path.get_extension();
 
-  return extension == String(".dart") ? String("DartScript") : String();
+  return extension == String("dart") ? String("DartScript") : String();
 }
 
 godot::String DartResourceFormatLoader::_get_resource_script_class(const godot::String &path) const {
-  return String("DartScript");
+  return path.get_extension().to_lower() == "dart" ? godot::String("DartScript") : "";  
 }
 
 bool DartResourceFormatLoader::_exists(const godot::String &path) const {

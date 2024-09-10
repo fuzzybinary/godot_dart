@@ -87,6 +87,10 @@ class TypeInfo {
   /// natively in Godot. Can be the class itself
   final StringName nativeTypeName;
 
+  /// Whether this class is a "global" class and should appear in the
+  /// node creation list.
+  final bool isGlobalClass;
+
   /// The Parent Class of the class
   final Type? parentType;
 
@@ -113,6 +117,7 @@ class TypeInfo {
     this.type,
     this.className,
     this.nativeTypeName, {
+    this.isGlobalClass = false,
     this.parentType,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
     this.size = 0,

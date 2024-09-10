@@ -12,6 +12,9 @@
 #include <gdextension_interface.h>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+
 
 #include "dart_helpers.h"
 #include "dart_instance_binding.h"
@@ -172,7 +175,27 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   return true;
 }
 
+void GodotDartBindings::add_pending_reload(const godot::String &path) {
+  _pending_reloads.insert(path);
+  reload_code();
+}
+
+void GodotDartBindings::perform_pending_reloads() {
+  for (const auto &str : _pending_reloads) {
+    auto editor_interface = godot::EditorInterface::get_singleton();
+    if (editor_interface) {
+      editor_interface->get_resource_filesystem()->update_file(str);
+    }
+  }
+  _pending_reloads.clear();
+}
+
 void GodotDartBindings::reload_code() {
+  if (_is_reloading) {
+    return;
+  }
+
+  _is_reloading = true;
   execute_on_dart_thread([&] {
     DartBlockScope scope;
 
@@ -256,6 +279,16 @@ void GodotDartBindings::perform_frame_maintanance() {
     // Back with a current isolate, let's take care of any pending ref count changes,
     // which we couldn't do while the finalizer was running.
     perform_pending_ref_changes();
+
+    // If we're reloading, check to see if we're done.
+    if (_is_reloading) {
+      Dart_Handle root_library = Dart_HandleFromPersistent(_godot_dart_library);
+      DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")), "Failed to get _isReloading");
+      Dart_BooleanValue(dart_is_reloading, &_is_reloading);
+      if (!_is_reloading) {
+5        perform_pending_reloads();
+      }
+    }
 
     uint64_t currentTime = Dart_TimelineGetMicros();
     Dart_NotifyIdle(currentTime + 1000); // Idle for 1 ms... maybe more

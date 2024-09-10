@@ -9,6 +9,7 @@
 
 #include <dart_api.h>
 #include <gdextension_interface.h>
+#include <godot_cpp/variant/string.hpp>
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
@@ -28,7 +29,7 @@ public:
   }
 
   explicit GodotDartBindings()
-      : _is_stopping(false), _fully_initialized(false), _pending_messages(0), _isolate(nullptr) {
+      : _is_stopping(false), _fully_initialized(false), _is_reloading(false), _pending_messages(0), _isolate(nullptr) {
   }
   ~GodotDartBindings();
 
@@ -38,6 +39,7 @@ public:
   }
   void shutdown();
 
+  void add_pending_reload(const godot::String& path);
   void reload_code();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -61,6 +63,8 @@ public:
                                 const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
 
 private:
+  void perform_pending_reloads();
+
   static void bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,
                         const GDExtensionConstVariantPtr *args, GDExtensionInt argument_count,
                         GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
@@ -70,12 +74,14 @@ private:
   static GodotDartBindings *_instance;
 
 public:
-  bool _fully_initialized;
+  bool _fully_initialized;  
   bool _is_stopping;
+  bool _is_reloading;
   int32_t _pending_messages;
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
+  std::set<godot::String> _pending_reloads;
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;

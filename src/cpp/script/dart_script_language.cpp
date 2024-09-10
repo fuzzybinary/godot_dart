@@ -260,7 +260,76 @@ bool DartScriptLanguage::_handles_global_class_type(const godot::String &type) c
 }
 
 godot::Dictionary DartScriptLanguage::_get_global_class_name(const godot::String &path) const {
-  return godot::Dictionary();
+  godot::Dictionary ret{};
+
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (bindings == nullptr) {
+    return ret;
+  }
+
+  bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    Dart_Handle dart_type = get_type_for_script(path);
+    if (Dart_IsNull(dart_type)) {
+      return;
+    }
+
+    // Some strings we're going to need a bunch during this call
+    Dart_Handle s_type_info_str = Dart_NewStringFromCString("sTypeInfo");
+    Dart_Handle is_global_class_str = Dart_NewStringFromCString("isGlobalClass");
+    Dart_Handle class_name_str = Dart_NewStringFromCString("className");
+
+    Dart_Handle args[] = {dart_type};
+    DART_CHECK(type_info, Dart_GetField(dart_type, s_type_info_str), "Failed getting type info");
+    DART_CHECK(value, Dart_GetField(type_info, is_global_class_str), "Failed to get global class value");
+    bool is_global = false;
+    Dart_BooleanValue(value, &is_global);
+    if (is_global) {
+
+      DART_CHECK(class_name, Dart_GetField(type_info, class_name_str), "Failed getting class name from type info");
+      godot::StringName gd_class_name = *(godot::StringName *)get_object_address(class_name);
+      ret["name"] = godot::String(gd_class_name);
+
+      DART_CHECK(native_type_name, Dart_GetField(type_info, Dart_NewStringFromCString("nativeTypeName")),
+                 "Failed getting class name from type info");
+      godot::StringName gd_native_type_name = *(godot::StringName *)get_object_address(native_type_name);
+
+      // More overly used strings
+      Dart_Handle parent_type_str = Dart_NewStringFromCString("parentType");
+
+      Dart_Handle current_type_info = type_info;
+      
+      bool found_base_type = false;
+
+      while (!found_base_type) {
+        DART_CHECK(parent_type, Dart_GetField(current_type_info, parent_type_str), "Failed getting parent type");
+        if (Dart_IsNull(parent_type)) {
+          break;
+        }
+        DART_CHECK(parent_type_info, Dart_GetField(parent_type, s_type_info_str), "Failed to get parent type info!");
+        DART_CHECK(value, Dart_GetField(parent_type_info, is_global_class_str), "Failed to get isGlobalClass from typeInfo!");
+        bool is_global = false;
+        Dart_BooleanValue(value, &is_global);
+
+        DART_CHECK(class_name, Dart_GetField(parent_type_info, class_name_str),
+                   "Failed getting class name from type info");
+        godot::StringName gd_class_name = *(godot::StringName *)get_object_address(class_name);
+        if (gd_class_name == gd_native_type_name || is_global) {
+          found_base_type = true;
+          ret["base_type"] = godot::String(gd_class_name);
+          break;
+        }
+        current_type_info = parent_type_info;
+      }
+
+      if (!found_base_type) {
+        ret["base_type"] = godot::String(gd_native_type_name);
+      }
+    }
+  });
+
+  return ret;
 }
 
 void DartScriptLanguage::attach_type_resolver(Dart_Handle resolver) {

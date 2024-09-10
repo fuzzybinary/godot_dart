@@ -52,6 +52,8 @@ private:
   void refresh_type() const;
 
   godot::String _source_code;
+  godot::String _path;
+  mutable bool _needs_refresh;
   mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;
   mutable Dart_PersistentHandle _script_info;

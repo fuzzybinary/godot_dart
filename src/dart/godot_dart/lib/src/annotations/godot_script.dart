@@ -4,7 +4,12 @@ import 'package:meta/meta.dart';
 /// script.
 @immutable
 class GodotScript {
-  const GodotScript();
+  /// Whether this class is a Godot Global class instead of a script. See
+  /// https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_global_classes.html
+  /// for more information about Godot global classes
+  final bool isGlobal;
+
+  const GodotScript({this.isGlobal = false});
 }
 
 /// Export this method to Godot

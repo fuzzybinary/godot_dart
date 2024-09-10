@@ -307,7 +307,7 @@ String getArgumentDefaultValue(ArgumentProxy arg, String defaultValue) {
     case 'String':
     case 'StringName':
       if (defaultValue == '&""') return "''";
-      return defaultValue.replaceAll('"', "'");
+      return defaultValue.replaceAll('"', "'").replaceAll('&', '');
     case 'Array':
       if (defaultValue == '[]') return 'Array()';
       break;

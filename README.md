@@ -9,7 +9,7 @@ And I want to use it in Godot.
 # Current State
 
 > [!NOTE]  
-> This extension is compatible with Godot 4.2+
+> This extension is compatible with Godot 4.2+. Global Classes require Godot 4.3
 
 
 Here's a list of planned features and work still to be done ( ✅ - Seems to be

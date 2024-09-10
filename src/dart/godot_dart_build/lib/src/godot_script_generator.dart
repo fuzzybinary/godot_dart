@@ -23,10 +23,10 @@ class GodotScriptAnnotationGenerator
     }
 
     log.info('Trying to write output for ${element.name}');
-    yield _createTypeInfo(element);
+    yield _createTypeInfo(element, annotation);
   }
 
-  String _createTypeInfo(ClassElement element) {
+  String _createTypeInfo(ClassElement element, ConstantReader annotation) {
     final buffer = StringBuffer();
 
     // Find the first superclass that has nativeTypeName defined
@@ -48,11 +48,15 @@ class GodotScriptAnnotationGenerator
       log.warning('Could not determine nativeTypeName of ${element.name}');
     }
 
+    final isGlobalClassReader = annotation.read('isGlobal');
+
     buffer.writeln('TypeInfo _\$${element.name}TypeInfo() => TypeInfo(');
     buffer.writeln('  ${element.name},');
     buffer.writeln('  StringName.fromString(\'${element.name}\'),');
     buffer.writeln(
         '  StringName.fromString(${nativeType?.name}.nativeTypeName),');
+    buffer.writeln(
+        '  isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
     buffer.writeln('  parentType: ${element.supertype},');
     buffer.writeln('  vTable: ${element.supertype}.sTypeInfo.vTable,');
     buffer.writeln('  scriptInfo: ScriptInfo(');

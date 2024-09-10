@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Add support for Godot Global Classes
+
 ## 0.2.0
 
 - Replace variant call with "ptr" calls, which are faster
