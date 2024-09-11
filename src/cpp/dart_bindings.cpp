@@ -286,7 +286,7 @@ void GodotDartBindings::perform_frame_maintanance() {
       DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")), "Failed to get _isReloading");
       Dart_BooleanValue(dart_is_reloading, &_is_reloading);
       if (!_is_reloading) {
-5        perform_pending_reloads();
+        perform_pending_reloads();
       }
     }
 
