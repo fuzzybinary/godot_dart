@@ -9,7 +9,7 @@ import 'package:path/path.dart' as path;
 
 final destDir = Directory('src/dart_dll');
 final destBinDir = Directory(path.join(destDir.path, 'bin/release'));
-final destIncludeDir = Directory(path.join(destDir.path, 'bin/release'));
+final destIncludeDir = Directory(path.join(destDir.path, 'include'));
 
 ArgParser buildParser() {
   return ArgParser()
@@ -138,7 +138,11 @@ void _fetchLocal(String localPath, Logger l) async {
 }
 
 void _fetchFromGithub(String? version, Logger l) async {
-  final github = GitHub();
+  final authToken = Platform.environment['GITHUB_TOKEN'];
+  final auth = authToken == null
+      ? Authentication.anonymous()
+      : Authentication.withToken(authToken);
+  final github = GitHub(auth: auth);
   final repoSlug = RepositorySlug('fuzzybinary', 'dart_shared_library');
 
   final Release downloadRelease;

@@ -33,6 +33,8 @@ jobs:
       - name: Fetch latest dart_shared_library
         run: |
           dart ./tools/fetch_dart/bin/fetch_dart.dart --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Shared Library
         run: |
           cmake -DCMAKE_BUILD_TYPE=Release . -B "build"
@@ -50,9 +52,17 @@ jobs:
     continue-on-error: false
     steps:
       - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
       - uses: actions/download-artifact@v3
         with:
           path: artifacts
+      - run: dart pub get
+        working-directory: ./tools/fetch_dart
+      - name: Fetch latest dart_shared_library
+        run: |
+          dart ./tools/fetch_dart/bin/fetch_dart.dart --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Create extension"
         run: |
           mkdir -p out/extension
