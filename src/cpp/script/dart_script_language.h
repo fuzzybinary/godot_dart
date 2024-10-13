@@ -49,11 +49,17 @@ public:
   bool _overrides_external_editor() override {
     return false;
   }
+
+  godot::Dictionary _lookup_code(const godot::String &code, const godot::String &symbol,
+                                 const godot::String &path, godot::Object *owner) const override;
   godot::String _make_function(const godot::String &class_name, const godot::String &name,
                                const godot::PackedStringArray &args) const override;
   godot::String _auto_indent_code(const godot::String &code, int32_t fromLine, int32_t toLine) const override;
   void _add_global_constant(const godot::StringName &p_variable, const godot::Variant &value) override{
     // TODO:
+  }
+  bool _supports_documentation() const override {
+    return false;
   }
 
   /* Thread Functions */

@@ -28,6 +28,11 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - run: dart pub get
         working-directory: ./tools/binding_generator
+      - run: dart pub get
+        working-directory: ./tools/fetch_dart
+      - name: Fetch latest dart_shared_library
+        run: |
+          dart ./tools/fetch_dart/bin/fetch_dart.dart --verbose
       - name: Build Shared Library
         run: |
           cmake -DCMAKE_BUILD_TYPE=Release . -B "build"

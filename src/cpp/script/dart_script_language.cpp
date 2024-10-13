@@ -154,6 +154,11 @@ int DartScriptLanguage::_find_function(const godot::String &class_name, const go
   return 0;
 }
 
+godot::Dictionary DartScriptLanguage::_lookup_code(const godot::String &code, const godot::String &symbol,
+                                                   const godot::String &path, godot::Object *owner) const {
+  return godot::Dictionary();
+}
+
 godot::String DartScriptLanguage::_make_function(const godot::String &class_name, const godot::String &name,
                                                  const godot::PackedStringArray &args) const {
   // The make_function() API does not work for Dart for the same reason it doesn't work for C#.
@@ -308,7 +313,8 @@ godot::Dictionary DartScriptLanguage::_get_global_class_name(const godot::String
           break;
         }
         DART_CHECK(parent_type_info, Dart_GetField(parent_type, s_type_info_str), "Failed to get parent type info!");
-        DART_CHECK(value, Dart_GetField(parent_type_info, is_global_class_str), "Failed to get isGlobalClass from typeInfo!");
+        DART_CHECK(value, Dart_GetField(parent_type_info, is_global_class_str),
+                   "Failed to get isGlobalClass from typeInfo!");
         bool is_global = false;
         Dart_BooleanValue(value, &is_global);
 

@@ -35,6 +35,7 @@ public:
   godot::TypedArray<godot::Dictionary> _get_documentation() const override;
   bool _has_property_default_value(const godot::StringName &property) const override;
   godot::Variant _get_property_default_value(const godot::StringName &property) const override;
+  void _update_exports() override;
   godot::StringName _get_global_name() const override;
 
 
