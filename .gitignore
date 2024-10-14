@@ -4,3 +4,6 @@ src/cpp/.build
 build/
 **/.DS_Store
 src/dart/godot_dart_build/.dart_tool
+*.TMP
+src/dart_dll/bin/*
+src/dart_dll/include/*

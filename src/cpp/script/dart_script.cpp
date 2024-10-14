@@ -286,6 +286,15 @@ godot::Variant DartScript::_get_property_default_value(const godot::StringName &
   return godot::Variant();
 }
 
+void DartScript::_update_exports() {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+
+  if (bindings != nullptr) {
+    bindings->add_pending_reload(_path);
+    _needs_refresh = true;
+  }
+}
+
 godot::StringName DartScript::_get_global_name() const {
   WITH_SCRIPT_INFO(godot::StringName());
 

@@ -35,7 +35,6 @@ class Hud extends CanvasLayer {
     showMessage('Game Over');
 
     var messageTimer = getNodeT<Timer>('MessageTimer');
-    // TODO: Generate constants for object signals
     await toSignal(messageTimer!, 'timeout');
 
     var message = getNodeT<Label>('Message');

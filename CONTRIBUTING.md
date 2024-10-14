@@ -10,11 +10,18 @@ The rest of this document helps me / you understand how to build the extension.
 
 ### Updating the Dart SDK
 
-Currently, the Dart SDK dynamic libraries are included in the repo, currently using Dart 3.5. You can
-update this by building the
+The Dart SDK dynamic libraries must be downloaded before you can work with this repo. There is a Dart
+script to do this in `tools/fetch_dart`.
+
+```bash
+# From the root of the repo:
+dart ./tools/fetch_dart/bin/fetch_dart.dart
+```
+
+You can manually update the version of dart by building the
 [dart_shared_library](https://github.com/fuzzybinary/dart_shared_library) repo
-and copying files to `src/dart_skk/bin` directory.  Alternately, you can get the artifacts compiled
-from the Github action on each release.
+and adding the `--local` parameter to the script. Note this will only copy the
+current platform's dynamic library to the destination.
 
 ### Updating FFI Bindings
 
