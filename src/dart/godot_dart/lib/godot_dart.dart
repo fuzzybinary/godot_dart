@@ -29,7 +29,7 @@ bool _isReloading = false;
 void _reloadCode() async {
   _isReloading = true;
   var result = await _reloader?.reloadCode();
-  print('[Dart] Hotreload result: $result');
+  print('[godot_dart] Hot reload result: $result');
   _isReloading = false;
 }
 
@@ -56,7 +56,7 @@ void _registerGodot(int libraryAddress, int bindingCallbacks) {
     });
   }
 
-  print('Everything loaded a-ok!');
+  print('[godot_dart] Everything loaded a-ok!');
 }
 
 @pragma('vm:entry-point')

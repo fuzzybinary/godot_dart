@@ -1,9 +1,13 @@
 #pragma once
 
+#include <unordered_set>
+
 #include <dart_api.h>
 
 #include <godot_cpp/classes/script_extension.hpp>
 #include <godot_cpp/classes/script_language.hpp>
+
+class DartScriptInstance;
 
 class DartScript : public godot::ScriptExtension {
   GDCLASS(DartScript, ScriptExtension);
@@ -38,11 +42,15 @@ public:
   void _update_exports() override;
   godot::StringName _get_global_name() const override;
 
-
   void load_from_disk(const godot::String &path);
+  void did_hot_reload();
 
   void *_instance_create(Object *for_object) const override;
   void *_placeholder_instance_create(Object *for_object) const override;
+  
+  // ScriptInstances in extensions are never of the type that calls
+  // _placeholder_erased, so we handle this manually on instance free
+  void dart_placeholder_erased(DartScriptInstance *p_placeholder);
 	
 
 protected:
@@ -51,9 +59,11 @@ protected:
 private:
   // Not actually const
   void refresh_type() const;
+  void *create_script_instance_internal(Object *for_object, bool is_placeholder) const;
 
   godot::String _source_code;
   godot::String _path;
+  mutable std::unordered_set<DartScriptInstance *> _placeholders;
   mutable bool _needs_refresh;
   mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;

@@ -39,9 +39,7 @@ private:
   void show_pub_get_dialog();
   void confirm_pub_get();
 
-  // Reload dialog
-  void show_reload_dialog();
-  void confirm_reload();
+  void hot_reload();  
 
   void run_work();
 
@@ -49,4 +47,5 @@ private:
 
   DartProgressDialog *_progress_dialog;
   godot::Ref<godot::Thread> _plugin_work_thread;
+  godot::Button* _reload_button;
 };

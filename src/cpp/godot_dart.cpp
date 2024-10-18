@@ -10,8 +10,8 @@
 #include "godot_dart_runtime_plugin.h"
 
 #include "dart_instance_binding.h"
-#include "dart_script_instance.h"
 #include "ref_counted_wrapper.h"
+#include "script/dart_script_instance.h"
 
 #include "editor/godot_dart_editor_plugin.h"
 #include "editor/dart_progress_dialog.h"

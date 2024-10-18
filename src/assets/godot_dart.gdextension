@@ -5,7 +5,8 @@ compatibility_minimum = 4.2
 
 [icons]
 
-DartScript = "res://logo_dart.svg"
+DartScript = "res://godot_dart/logo_dart.svg"
+DartHotReload = "res://godot_dart/hot_reload.svg"
 
 [libraries]
 

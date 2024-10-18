@@ -9,7 +9,8 @@
 
 #include "../dart_helpers.h"
 #include "../godot_string_wrappers.h"
-#include "dart_script_language.h"
+#include "script/dart_script_language.h"
+#include "script/dart_script_instance.h"
 
 using namespace godot;
 
@@ -241,9 +242,11 @@ godot::Error DartScript::_reload(bool keep_state) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
 
   if (bindings != nullptr) {
-    bindings->add_pending_reload(_path);
+    bindings->reload_code();
     _needs_refresh = true;
   }
+
+  // Don't set _last_modified_time here, as it will be set by did_hot_reload();
 
   return godot::Error::OK;
 }
@@ -287,11 +290,8 @@ godot::Variant DartScript::_get_property_default_value(const godot::StringName &
 }
 
 void DartScript::_update_exports() {
-  GodotDartBindings *bindings = GodotDartBindings::instance();
-
-  if (bindings != nullptr) {
-    bindings->add_pending_reload(_path);
-    _needs_refresh = true;
+  for (const auto &script_instance : _placeholders) {
+    script_instance->notify_property_list_changed();
   }
 }
 
@@ -319,13 +319,21 @@ godot::StringName DartScript::_get_global_name() const {
   return ret;
 }
 
-void DartScript::load_from_disk(const godot::String &path) {
+void DartScript::load_from_disk(const godot::String &path) {  
   Ref<FileAccess> file = FileAccess::open(path, FileAccess::READ);
   if (!file.is_null()) {
     String text = file->get_as_text();
     set_source_code(text);
     file->close();   
     _path = path;
+  }
+}
+
+void DartScript::did_hot_reload() {
+  _update_exports();
+  auto editor_interface = godot::EditorInterface::get_singleton();
+  if (editor_interface) {    
+    editor_interface->get_resource_filesystem()->update_file(_path);
   }
 }
 
@@ -344,9 +352,7 @@ void *DartScript::_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  RefCounted *rc = Object::cast_to<RefCounted>(for_object);
-  // Don't take the godot_cpp version of the object, use the version from the engine
-  return bindings->create_script_instance(_dart_type, this, for_object->_owner, false, rc != nullptr);
+  return create_script_instance_internal(for_object, false);
 }
 
 void *DartScript::_placeholder_instance_create(Object *for_object) const {
@@ -364,8 +370,40 @@ void *DartScript::_placeholder_instance_create(Object *for_object) const {
     return nullptr;
   }
 
+  return create_script_instance_internal(for_object, true);
+}
+
+void *DartScript::create_script_instance_internal(Object* for_object, bool is_placeholder) const {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  GDExtensionScriptInstancePtr godot_script_instance = nullptr;
+
   RefCounted *rc = Object::cast_to<RefCounted>(for_object);
-  return bindings->create_script_instance(_dart_type, this, for_object->_owner, true, rc != nullptr);
+  
+  bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+  
+    Dart_Handle dart_pointer = bindings->new_dart_void_pointer(for_object->_owner);
+    Dart_Handle args[1] = {dart_pointer};
+    DART_CHECK(dart_object, Dart_New(_dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
+                "Error creating bindings");
+  
+    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, const_cast<DartScript *>(this),
+                                                                  for_object, is_placeholder, rc != nullptr);
+  
+    godot_script_instance =
+        gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
+                                    reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
+    
+    if (is_placeholder) {
+      _placeholders.insert(script_instance);
+    }
+  });
+  
+  return godot_script_instance;
+}
+
+void DartScript::dart_placeholder_erased(DartScriptInstance *p_placeholder) {
+  _placeholders.erase(p_placeholder);
 }
 
 void DartScript::refresh_type() const {

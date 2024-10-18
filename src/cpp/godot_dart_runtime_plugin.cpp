@@ -10,11 +10,11 @@
 #include <godot_cpp/classes/object.hpp>
 
 #include "dart_helpers.h"
-#include "dart_script_instance.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 #include "ref_counted_wrapper.h"
 
+#include "script/dart_script_instance.h"
 #include "script/dart_script_language.h"
 #include "script/dart_resource_format.h"
 

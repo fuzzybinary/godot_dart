@@ -10,18 +10,17 @@
 #include <dart_tools_api.h>
 
 #include <gdextension_interface.h>
-#include <godot_cpp/variant/string.hpp>
-#include <godot_cpp/variant/string_name.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
-
+#include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/string_name.hpp>
 
 #include "dart_helpers.h"
 #include "dart_instance_binding.h"
-#include "dart_script_instance.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "ref_counted_wrapper.h"
+#include "script/dart_script_instance.h"
 #include "script/dart_script_language.h"
 
 // Forward declarations for Dart callbacks and helpers
@@ -143,8 +142,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
       Dart_Handle print = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_getPrintClosure"), 0, NULL);
       Dart_Handle result = Dart_SetField(internal_lib, Dart_NewStringFromCString("_printClosure"), print);
       if (Dart_IsError(result)) {
-        GD_PRINT_WARNING("GodotDart: Error setting print closure");
-        GD_PRINT_WARNING(Dart_GetError(result));
+        GD_PRINT_ERROR("GodotDart: Error setting print closure");
+        GD_PRINT_ERROR(Dart_GetError(result));
       }
     }
 
@@ -173,21 +172,6 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
   _fully_initialized = true;
 
   return true;
-}
-
-void GodotDartBindings::add_pending_reload(const godot::String &path) {
-  _pending_reloads.insert(path);
-  reload_code();
-}
-
-void GodotDartBindings::perform_pending_reloads() {
-  for (const auto &str : _pending_reloads) {
-    auto editor_interface = godot::EditorInterface::get_singleton();
-    if (editor_interface) {
-      editor_interface->get_resource_filesystem()->update_file(str);
-    }
-  }
-  _pending_reloads.clear();
 }
 
 void GodotDartBindings::reload_code() {
@@ -283,10 +267,11 @@ void GodotDartBindings::perform_frame_maintanance() {
     // If we're reloading, check to see if we're done.
     if (_is_reloading) {
       Dart_Handle root_library = Dart_HandleFromPersistent(_godot_dart_library);
-      DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")), "Failed to get _isReloading");
+      DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")),
+                 "Failed to get _isReloading");
       Dart_BooleanValue(dart_is_reloading, &_is_reloading);
       if (!_is_reloading) {
-        perform_pending_reloads();
+        DartScriptLanguage::instance()->did_finish_hot_reload();
       }
     }
 
@@ -316,28 +301,6 @@ void GodotDartBindings::perform_pending_ref_changes() {
     }
   }
   _pending_ref_changes.clear();
-}
-
-void *GodotDartBindings::create_script_instance(Dart_Handle type, const DartScript *script, void *godot_object,
-                                                bool is_placeholder, bool is_refcounted) {
-  GDExtensionScriptInstancePtr godot_script_instance = nullptr;
-
-  execute_on_dart_thread([&] {
-    DartBlockScope scope;
-
-    Dart_Handle dart_pointer = new_dart_void_pointer(godot_object);
-    Dart_Handle args[1] = {dart_pointer};
-    DART_CHECK_RET(dart_object, Dart_New(type, Dart_NewStringFromCString("withNonNullOwner"), 1, args), nullptr,
-                   "Error creating bindings");
-
-    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, const_cast<DartScript *>(script),
-                                                                 godot_object, is_placeholder, is_refcounted);
-    godot_script_instance =
-        gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
-                                    reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-  });
-
-  return godot_script_instance;
 }
 
 void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -700,8 +663,7 @@ void dart_print(Dart_NativeArguments args) {
   Dart_Handle arg = Dart_GetNativeArgument(args, 1);
   DART_CHECK(result, Dart_StringToCString(arg, &cstring), "Error getting printable string.");
 
-  // TODO - Find a nice way to log
-  GD_PRINT_WARNING(cstring);
+  __print_verbose(cstring);
 }
 
 void bind_class(Dart_NativeArguments args) {

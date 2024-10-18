@@ -122,6 +122,8 @@ public:
   void push_cached_script(const godot::String &path, godot::Ref<DartScript> script);
   godot::Ref<DartScript> find_script_for_type(Dart_Handle dart_type);
 
+  void did_finish_hot_reload();
+
   static DartScriptLanguage *instance();
 
 protected:

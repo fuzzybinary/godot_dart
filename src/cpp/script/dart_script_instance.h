@@ -11,7 +11,7 @@ class DartScript;
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, GDExtensionObjectPtr owner, bool is_placeholder,
+  DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object* owner, bool is_placeholder,
                      bool is_refcounted);
   ~DartScriptInstance();
 
@@ -47,10 +47,16 @@ public:
   GDExtensionObjectPtr get_script();
   GDExtensionBool is_placeholder();
 
+  DartScript *get_dart_script() {
+    return _dart_script.ptr();
+  }
+
   bool set_fallback(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value);
   bool get_fallback(const godot::StringName &p_name, GDExtensionVariantPtr r_ret);
 
   GDExtensionScriptLanguagePtr get_language();
+
+  void notify_property_list_changed();
 
   Dart_Handle get_dart_object() {
     return _binding.get_dart_object();
@@ -66,7 +72,7 @@ private:
   bool _is_placeholder;
 
   godot::Ref<DartScript> _dart_script;
-  GDExtensionObjectPtr _godot_script_obj;
+  godot::Object *_godot_object;
 
   static GDExtensionScriptInstanceInfo2 script_instance_info;
 };

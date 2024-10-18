@@ -84,6 +84,15 @@ class GodotDartBuilder extends Builder {
     final typeFromPathBody = StringBuffer();
     typeFromPathBody.writeln('final Map<String, Type> fileTypeMap = {');
 
+    final getGlobalClasses = c.MethodBuilder()
+      ..name = 'getGlobalClassPaths'
+      ..returns = c.refer('List<String>')
+      ..annotations = ListBuilder([
+        c.CodeExpression(c.Code('override')),
+      ]);
+    final getGlobalClassesBody = StringBuffer();
+    getGlobalClassesBody.writeln('return [');
+
     for (var asset in assets) {
       if (!await buildStep.resolver.isLibrary(asset)) continue;
 
@@ -112,6 +121,11 @@ class GodotDartBuilder extends Builder {
             .writeln("'$godotPrefix/$relativeName': ${element.name},");
         pathFromTypeBody
             .writeln("${element.name}: '$godotPrefix/$relativeName',");
+
+        final isGlobalReader = annotatedElement.annotation.read('isGlobal');
+        if (isGlobalReader.isBool && isGlobalReader.boolValue) {
+          getGlobalClassesBody.writeln("'$godotPrefix/$relativeName',");
+        }
       }
     }
     pathFromTypeBody.writeln('};');
@@ -122,9 +136,13 @@ class GodotDartBuilder extends Builder {
     typeFromPathBody.writeln('return fileTypeMap[scriptPath];');
     typeFromPath.body = c.Code(typeFromPathBody.toString());
 
+    getGlobalClassesBody.writeln('];');
+    getGlobalClasses.body = c.Code(getGlobalClassesBody.toString());
+
     classBuilder.methods.addAll([
       pathFromType.build(),
       typeFromPath.build(),
+      getGlobalClasses.build(),
     ]);
 
     libraryBuilder.body.add(

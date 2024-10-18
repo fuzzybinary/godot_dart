@@ -2,17 +2,20 @@
 
 #include <dart_api.h>
 
-#include "script/dart_script_language.h"
+#include <godot_cpp/classes/object.hpp>
+
 #include "dart_bindings.h"
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
 #include "ref_counted_wrapper.h"
 
+#include "script/dart_script_language.h"
+
 std::map<intptr_t, DartScriptInstance*> DartScriptInstance::s_instanceMap;
 
-DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, GDExtensionObjectPtr owner,
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object* owner,
                                        bool is_placeholder, bool is_refcounted)
-    : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_script_obj(nullptr) {
+    : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_object(owner) {
   
   s_instanceMap[(intptr_t)this] = this;
   _binding.initialize(for_object, is_refcounted);
@@ -427,6 +430,12 @@ GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
   return ptr->_owner;
 }
 
+void DartScriptInstance::notify_property_list_changed() {
+  if (_godot_object && _is_placeholder) {    
+    _godot_object->notify_property_list_changed();
+  }
+}
+
 // * Static Callback Functions for Godot */
 
 GDExtensionBool script_instance_set(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name,
@@ -587,6 +596,9 @@ void script_instance_free(GDExtensionScriptInstanceDataPtr p_instance) {
 
   gde->execute_on_dart_thread([&] {
     DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
+    if (instance->is_placeholder()) {
+      instance->get_dart_script()->dart_placeholder_erased(instance);
+    }    
     delete instance;
   });
 }

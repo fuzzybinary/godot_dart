@@ -46,6 +46,8 @@ class HotReloader {
   Future<HotReloadResult> reloadCode() async {
     final reloadReports = <vms.IsolateRef, vms.ReloadReport>{};
     final failedReloadReports = <vms.IsolateRef, vms.ReloadReport>{};
+    final stopwatch = Stopwatch();
+    stopwatch.start();
     for (final isolateRef
         in (await _vmService.getVM()).isolates ?? <vms.IsolateRef>[]) {
       if (isolateRef.id == null) {
@@ -71,6 +73,9 @@ class HotReloader {
         //     'Failed to reload code of isolate [${isolateRef.name}]: $ex');
       }
     }
+    stopwatch.stop();
+    print(
+        '[godot_dart] Hot reload complete in ${stopwatch.elapsedMilliseconds}ms');
 
     if (reloadReports.isEmpty) {
       return HotReloadResult.skipped;

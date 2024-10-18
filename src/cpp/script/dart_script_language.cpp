@@ -1,6 +1,8 @@
 #include "dart_script_language.h"
 
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
 
 #include "../dart_bindings.h"
 #include "../dart_helpers.h"
@@ -424,6 +426,41 @@ godot::Ref<DartScript> DartScriptLanguage::find_script_for_type(Dart_Handle dart
   }
 
   return ret;
+}
+
+void DartScriptLanguage::did_finish_hot_reload() {
+  for (const auto itr : _script_cache) {
+    itr.second->did_hot_reload();
+  }
+
+  auto editor_interface = godot::EditorInterface::get_singleton();
+  // Don't bother with the rest if there's not editor interface
+  if (!editor_interface) return;
+
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  if (bindings == nullptr) {
+    return;
+  }
+
+  bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
+    // Update files that are global classes (and weren't part of the prveious reload)
+    Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);  
+
+    DART_CHECK(global_classes, Dart_Invoke(resolver, Dart_NewStringFromCString("getGlobalClassPaths"), 0, nullptr),
+               "Failed to invoke resolver!");
+    intptr_t list_length = 0;
+    DART_CHECK(result, Dart_ListLength(global_classes, &list_length),
+                                    "Failed to get global class length");
+    for (intptr_t i = 0; i < list_length; ++i) {
+      DART_CHECK(global_class_path, Dart_ListGetAt(global_classes, i), "Failed to get global class path");
+      godot::String godot_path = create_godot_string(global_class_path);
+      if (_script_cache.find(godot_path) == _script_cache.end()) {
+        editor_interface->get_resource_filesystem()->update_file(godot_path);
+      }
+    }
+  });
 }
 
 void DartScriptLanguage::_bind_methods() {

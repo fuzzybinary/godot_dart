@@ -2,12 +2,15 @@
 
 #include <sstream>
 
+#include <godot_cpp/classes/button.hpp>
 #include <godot_cpp/classes/confirmation_dialog.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/popup.hpp>
 #include <godot_cpp/classes/thread.hpp>
+#include <godot_cpp/classes/theme.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 #include "../dart_helpers.h"
@@ -18,7 +21,7 @@
 
 using namespace godot;
 
-GodotDartEditorPlugin::GodotDartEditorPlugin() {
+GodotDartEditorPlugin::GodotDartEditorPlugin() : _reload_button(nullptr) {
   _progress_dialog = memnew(DartProgressDialog);
   add_child(_progress_dialog);
 }
@@ -27,16 +30,16 @@ GodotDartEditorPlugin::~GodotDartEditorPlugin() {
 }
 
 void GodotDartEditorPlugin::_bind_methods() {
-
   ClassDB::bind_method(godot::D_METHOD("confirm_create_project"), &GodotDartEditorPlugin::confirm_create_project);
   ClassDB::bind_method(godot::D_METHOD("confirm_pub_get"), &GodotDartEditorPlugin::confirm_pub_get);
   ClassDB::bind_method(godot::D_METHOD("run_work"), &GodotDartEditorPlugin::run_work);
+  ClassDB::bind_method(godot::D_METHOD("dart_hot_reload"), &GodotDartEditorPlugin::hot_reload);
 }
 
 void GodotDartEditorPlugin::_enter_tree() {
   GodotDartRuntimePlugin *runtime_plugin = GodotDartRuntimePlugin::get_instance();
   if (!runtime_plugin) {
-    GD_PRINT_ERROR("godot_dart was loaded bug didn't initialize!")
+    GD_PRINT_ERROR("godot_dart was loaded but didn't initialize!")
     return;
   }
 
@@ -45,9 +48,27 @@ void GodotDartEditorPlugin::_enter_tree() {
   } else if (!runtime_plugin->has_package_config()) {
     show_pub_get_dialog();
   }
+
+  _reload_button = memnew(Button);
+  _reload_button->set_flat(false);
+  auto icon =
+      EditorInterface::get_singleton()->get_editor_theme()->get_icon(StringName("Reload"), StringName("EditorIcons"));
+  _reload_button->set_button_icon(icon);
+  _reload_button->set_focus_mode(Control::FOCUS_NONE);
+  _reload_button->set_theme_type_variation(StringName("RunBarButton"));
+  _reload_button->set_tooltip_text(String("Perform a Dart Hot Reload"));
+
+  
+  _reload_button->connect(StringName("pressed"), Callable(this, StringName("dart_hot_reload")));
+  add_control_to_container(EditorPlugin::CONTAINER_TOOLBAR, _reload_button);
+  auto parent = _reload_button->get_parent();
+  int num_buttons = parent->get_child_count();
+  // Move over next to run buttons
+  _reload_button->get_parent()->move_child(_reload_button, num_buttons - 2);
 }
 
 void GodotDartEditorPlugin::_exit_tree() {
+
 }
 
 void GodotDartEditorPlugin::show_create_project_dialog() {
@@ -211,6 +232,10 @@ bool GodotDartEditorPlugin::run_pub_get() {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   return true;
+}
+
+void GodotDartEditorPlugin::hot_reload() {
+  GodotDartBindings::instance()->reload_code();
 }
 
 bool GodotDartEditorPlugin::run_build_runner() {

@@ -19,8 +19,8 @@ add_library(godot_dart SHARED
     dart_instance_binding.cpp
     dart_instance_binding.h
     dart_helpers.h
-    dart_script_instance.cpp
-    dart_script_instance.h
+    "script/dart_script_instance.cpp"
+    "script/dart_script_instance.h"
     gde_c_interface.cpp
     gde_c_interface.h
     gde_dart_converters.cpp
@@ -46,13 +46,14 @@ add_library(godot_dart SHARED
     script/dart_script.cpp
     script/dart_resource_format.h
     script/dart_resource_format.cpp
-)
+ )
 
 target_include_directories(godot_dart PUBLIC
     "${GODOT_CPP_DIR}/include"
     "${GODOT_CPP_DIR}/gen/include"
     "${GODOT_CPP_DIR}/gdextension"
     "${DART_DIR}/include"
+    "${PROJECT_SOURCE_DIR}"
 )
 
 set(DART_DLL_NAMES    

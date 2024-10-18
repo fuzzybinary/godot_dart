@@ -9,18 +9,19 @@
 
 #include <dart_api.h>
 #include <gdextension_interface.h>
+#include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/classes/wrapped.hpp>
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
+#include "script/dart_script.h"
 
 enum class MethodFlags : int32_t {
   None,
   PropertyGetter,
   PropertySetter,
 };
-
-class DartScript;
 
 class GodotDartBindings {
 public:
@@ -38,8 +39,7 @@ public:
     return _fully_initialized;
   }
   void shutdown();
-
-  void add_pending_reload(const godot::String& path);
+  
   void reload_code();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -53,9 +53,6 @@ public:
   void remove_pending_ref_change(DartGodotInstanceBinding *bindings);
   void perform_pending_ref_changes();
 
-  void *create_script_instance(Dart_Handle type, const DartScript *script, void *godot_object, bool is_placeholder,
-                               bool is_refcounted);
-
   static GDExtensionObjectPtr class_create_instance(void *p_userdata);
   static void class_free_instance(void *p_userdata, GDExtensionClassInstancePtr p_instance);
   static void *get_virtual_call_data(void *p_userdata, GDExtensionConstStringNamePtr p_name);
@@ -63,7 +60,7 @@ public:
                                 const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
 
 private:
-  void perform_pending_reloads();
+  void did_finish_hot_reload();
 
   static void bind_call(void *method_userdata, GDExtensionClassInstancePtr instance,
                         const GDExtensionConstVariantPtr *args, GDExtensionInt argument_count,
@@ -74,14 +71,14 @@ private:
   static GodotDartBindings *_instance;
 
 public:
-  bool _fully_initialized;  
+  bool _fully_initialized;
   bool _is_stopping;
   bool _is_reloading;
   int32_t _pending_messages;
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
-  std::set<godot::String> _pending_reloads;
+  std::set<godot::Ref<DartScript>> _pending_reloads;
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;
