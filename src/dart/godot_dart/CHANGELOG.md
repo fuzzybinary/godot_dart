@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Improve Global Class hot reload by having the generator create a list of available global classes.
+
 ## 0.3.0
 
 - Add support for Godot Global Classes
