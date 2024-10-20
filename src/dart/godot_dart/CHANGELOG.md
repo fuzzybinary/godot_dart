@@ -1,3 +1,7 @@
+## 0.5.1
+
+- Bind `CallbackAwaiter` during initialization.
+
 ## 0.5.0
 
 - Variant can now be constructed from an Object without using `fromObject`

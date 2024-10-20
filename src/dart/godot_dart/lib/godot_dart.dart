@@ -50,6 +50,7 @@ void _registerGodot(int libraryAddress, int bindingCallbacks) {
   TypeInfo.initTypeMappings();
 
   SignalAwaiter.bind();
+  CallbackAwaiter.bind();
 
   if (Engine.singleton.isEditorHint()) {
     Future.microtask(() async {
