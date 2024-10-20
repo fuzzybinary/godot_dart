@@ -530,7 +530,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
       // the logic and type checking is easier in Dart.
       Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
       Dart_Handle args[] = {result};
-      Dart_Handle variant_result = Dart_New(variant_type, Dart_NewStringFromCString("fromObject"), 1, args);
+      Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);
       if (Dart_IsError(variant_result)) {
         GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
         GD_PRINT_ERROR(Dart_GetError(variant_result));
