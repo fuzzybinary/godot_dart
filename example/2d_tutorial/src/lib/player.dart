@@ -81,7 +81,6 @@ class Player extends Area2D {
   void onBodyEntered(Node2D body) {
     _hit.emit();
     hide();
-    getNodeT<CollisionShape2D>()
-        ?.setDeferred('disabled', Variant.fromObject(true));
+    getNodeT<CollisionShape2D>()?.setDeferred('disabled', Variant(true));
   }
 }

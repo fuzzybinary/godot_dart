@@ -17,17 +17,6 @@ void gdStringFromString(CodeSink o) {
   o.nl();
 }
 
-void stringNameFromString(CodeSink o) {
-  o.b('StringName.fromString(String string)', () {
-    o.p('  : super(_size, _bindings.destructor) {');
-    o.p('final gdString = GDString.fromString(string);');
-    o.p('gde.callBuiltinConstructor(_bindings.constructor_2!, nativePtr.cast(), [');
-    o.p('  gdString.nativePtr.cast(),');
-    o.p(']);');
-  }, '}');
-  o.nl();
-}
-
 void gdStringToDartString(CodeSink o) {
   o.b('String toDartString() {', () {
     o.p('return gde.dartBindings.gdStringToString(this);');

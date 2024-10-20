@@ -168,13 +168,12 @@ class Variant implements Finalizable {
 
   Pointer<Uint8> get nativePtr => _opaque;
 
-  Variant() {
-    gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
-    _attachFinalizer();
-  }
-
-  Variant.fromObject(Object? obj) {
-    _initFromObject(obj);
+  Variant([Object? obj]) {
+    if (obj == null) {
+      gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
+    } else {
+      _initFromObject(obj);
+    }
     _attachFinalizer();
   }
 

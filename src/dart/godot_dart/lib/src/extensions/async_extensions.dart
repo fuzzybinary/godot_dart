@@ -1,24 +1,6 @@
 import 'dart:async';
-import 'dart:ffi';
 
-import 'package:ffi/ffi.dart';
-
-import '../godot_dart.dart';
-import 'core/gdextension_ffi_bindings.dart';
-
-extension TNode on Node {
-  T? getNodeT<T>([String? path]) {
-    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final GDString name;
-    if (path != null) {
-      name = GDString.fromString(path);
-    } else {
-      name = GDString.fromStringName(typeInfo.className);
-    }
-    var node = getNode(NodePath.fromGDString(name));
-    return node?.cast<T>();
-  }
-}
+import '../../godot_dart.dart';
 
 class SignalAwaiter extends GodotObject {
   static TypeInfo sTypeInfo = TypeInfo(
@@ -58,20 +40,40 @@ class SignalAwaiter extends GodotObject {
   }
 }
 
-Future<void> toSignal(GodotObject source, String signal) {
-  final awaiter = SignalAwaiter(source: source, signalName: signal);
-  return awaiter.completer.future;
+class CallbackAwaiter extends GodotObject {
+  static TypeInfo sTypeInfo = TypeInfo(
+    CallbackAwaiter,
+    StringName.fromString('CallbackAwaiter'),
+    StringName.fromString(GodotObject.nativeTypeName),
+    parentType: GodotObject,
+    vTable: GodotObject.sTypeInfo.vTable,
+  );
+
+  @override
+  TypeInfo get typeInfo => sTypeInfo;
+
+  static void bind() {
+    gde.dartBindings.bindClass(CallbackAwaiter);
+    gde.dartBindings.bindMethod(
+        CallbackAwaiter.sTypeInfo, 'didCallback', TypeInfo.forType(null)!, []);
+  }
+
+  Callable? _callable;
+  final Completer<void> _completer = Completer<void>();
+
+  Future<void> get future => _completer.future;
+  Callable get callable => _callable!;
+
+  void didCallback() {
+    _completer.complete();
+  }
+
+  CallbackAwaiter() : super() {
+    _callable = Callable.fromObjectMethod(this, 'didCallback');
+  }
 }
 
-extension StringExtensions on String {
-  static String fromGodotStringPtr(GDExtensionTypePtr ptr) {
-    return using((arena) {
-      int length =
-          gde.ffiBindings.gde_string_to_utf16_chars(ptr.cast(), nullptr, 0);
-      final chars = arena.allocate<Uint16>(sizeOf<Uint16>() * length);
-      gde.ffiBindings
-          .gde_string_to_utf16_chars(ptr.cast(), chars.cast(), length);
-      return chars.cast<Utf16>().toDartString(length: length);
-    });
-  }
+Future<void> futureSignal(GodotObject source, String signal) {
+  final awaiter = SignalAwaiter(source: source, signalName: signal);
+  return awaiter.completer.future;
 }

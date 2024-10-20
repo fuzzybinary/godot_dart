@@ -163,11 +163,11 @@ void _generateVarargMethod(CodeSink o, ClassMethod method) {
       () {
     for (final argument in arguments) {
       if (argument.typeCategory == TypeCategory.enumType) {
-        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
+        o.p('Variant(${escapeName(argument.name).toLowerCamelCase()}.value),');
       } else if (argument.dartType == 'Variant') {
         o.p('${escapeName(argument.name).toLowerCamelCase()},');
       } else {
-        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
+        o.p('Variant(${escapeName(argument.name).toLowerCamelCase()}),');
       }
     }
     o.p('...vargs,');

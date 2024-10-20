@@ -196,12 +196,24 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
       continue;
     }
 
-    if (constructorName == '.fromGDString' ||
-        constructorName == '.fromStringName') {
-      final fromArgument = constructor.arguments!.first;
-      final dartType =
-          fromArgument.type == 'String' ? 'GDString' : 'StringName';
-      o.b('${builtin.dartName}$constructorName(final $dartType from)', () {
+    if (constructorName == '.fromGDString') {
+      o.b('${builtin.dartName}$constructorName(final GDString from)', () {
+        o.p('  : $superConstructor {');
+        o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
+            () {
+          o.p('from.nativePtr.cast(),');
+        }, ']);');
+      }, '}');
+      o.nl();
+
+      // Allow anything with .fromGDString to also have .fromString (except GDString and Color)
+      if (builtin.dartName != 'GDString' && builtin.dartName != 'Color') {
+        o.p('${builtin.dartName}.fromString(final String from) : this.fromGDString(GDString.fromString(from));');
+        o.nl();
+      }
+      continue;
+    } else if (constructorName == '.fromStringName') {
+      o.b('${builtin.dartName}$constructorName(final StringName from)', () {
         o.p('  : $superConstructor {');
         o.b('gde.callBuiltinConstructor(_bindings.constructor_${constructor.index}!, nativePtr.cast(), [',
             () {
@@ -236,7 +248,6 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
     gdStringFromString(o);
     gdStringToDartString(o);
   } else if (builtin.name == 'StringName') {
-    stringNameFromString(o);
     stringNameToDartString(o);
   }
 }
@@ -297,14 +308,14 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
     var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
     o.b('$dartReturnType operator [](int index) {', () {
-      o.p('final self = Variant.fromObject(this);');
+      o.p('final self = Variant(this);');
       o.p('final ret = gde.variantGetIndexed(self, index);');
       o.p('return convertFromVariant(ret, null) as $dartReturnType;');
     }, '}');
     o.nl();
     o.b('void operator []=(int index, $dartReturnType value) {', () {
-      o.p('final self = Variant.fromObject(this);');
-      o.p('final variantValue = Variant.fromObject(value);');
+      o.p('final self = Variant(this);');
+      o.p('final variantValue = Variant(value);');
       o.p('gde.variantSetIndexed(self, index, variantValue);');
     }, '}');
     o.nl();
@@ -334,16 +345,16 @@ void _generateVarargMethod(CodeSink o, BuiltinClassMethod method) {
   final hasReturn = method.returnType != null;
   final arguments = method.arguments?.map((e) => e.proxy).toList() ?? [];
 
-  o.p('final self = Variant.fromObject(this);');
+  o.p('final self = Variant(this);');
   o.b("${hasReturn ? 'final retVal = ' : ''}gde.variantCall(self, '${method.name}', [",
       () {
     for (final argument in arguments) {
       if (argument.typeCategory == TypeCategory.enumType) {
-        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}.value),');
+        o.p('Variant(${escapeName(argument.name).toLowerCamelCase()}.value),');
       } else if (argument.dartType == 'Variant') {
         o.p('${escapeName(argument.name).toLowerCamelCase()},');
       } else {
-        o.p('Variant.fromObject(${escapeName(argument.name).toLowerCamelCase()}),');
+        o.p('Variant(${escapeName(argument.name).toLowerCamelCase()}),');
       }
     }
     o.p('...vargs,');

@@ -40,11 +40,11 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
-import '../../godot_dart_extensions.dart';
 import '../../core/core_types.dart';
 import '../../core/gdextension_ffi_bindings.dart';
 import '../../core/gdextension.dart';
 import '../../core/type_info.dart';
+export '../../extensions/core_extensions.dart';
 import '${forVariant ? '' : '../variant/'}string.dart';
 import '${forVariant ? '' : '../variant/'}string_name.dart';
 import '../../variant/variant.dart';
@@ -241,7 +241,7 @@ String getArgumentDefaultValue(ArgumentProxy arg, String defaultValue) {
   switch (arg.type) {
     case 'Variant':
       if (defaultValue == 'null') return 'Variant()';
-      if (defaultValue == '0') return 'Variant.fromObject(0)';
+      if (defaultValue == '0') return 'Variant(0)';
       break;
     case 'Vector2':
     case 'Vector2i':

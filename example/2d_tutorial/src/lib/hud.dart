@@ -35,14 +35,14 @@ class Hud extends CanvasLayer {
     showMessage('Game Over');
 
     var messageTimer = getNodeT<Timer>('MessageTimer');
-    await toSignal(messageTimer!, 'timeout');
+    await futureSignal(messageTimer!, 'timeout');
 
     var message = getNodeT<Label>('Message');
     message?.setText('Dodge the \nCreeps!');
     message?.show();
 
     final timer = getTree()!.createTimer(1.0);
-    await toSignal(timer!, 'timeout');
+    await futureSignal(timer!, 'timeout');
 
     getNodeT<Button>('StartButton')?.show();
   }
