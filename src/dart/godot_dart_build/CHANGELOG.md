@@ -1,3 +1,11 @@
+## 0.3.2
+
+- Fix a different version constraint issue.
+
+## 0.3.1
+
+- Fix a version constraint issue.
+
 ## 0.3.0
 
 - Improve Global Class hot reload by generating a list of available global classes.
