@@ -1,3 +1,7 @@
+## 0.5.2
+
+- Fix `Future<void>` throwing an error when put in a Variant, which could happen with `async` signal recievers.
+
 ## 0.5.1
 
 - Bind `CallbackAwaiter` during initialization.
