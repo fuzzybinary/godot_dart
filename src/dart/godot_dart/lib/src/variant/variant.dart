@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
@@ -258,6 +259,13 @@ class Variant implements Finalizable {
             final c = _fromTypeConstructor[
                 GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
             c!(nativePtr.cast(), gdString.nativePtr.cast());
+            break;
+          case final Future<void> _:
+            // Allow FutureOr and Future void to be return types, but not
+            // others. This simply returns the variant 'nil'. This is
+            // specifically for async signal recievers, which return
+            // FutureOr<void>
+            gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
             break;
           // TODO: All the other variant types (dictionary? List?)
           default:
