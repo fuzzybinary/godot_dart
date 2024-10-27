@@ -3,6 +3,8 @@
 - Adjust generate global constats to avoid unnecessary prefixes.
 - Have `Variant.getType` return `VariantType` instead of int.
 - Add `Variant.cast` to support getting an object directly from a Variant.
+- Add generation of Godot utility functions under `GD` static class.
+- Add `getWeak` extension method on `GodotObject`.
 
 ## 0.5.2
 

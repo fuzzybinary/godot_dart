@@ -650,6 +650,25 @@ class GDExtensionFFI {
       void Function(GDExtensionVariantPtr, int, GDExtensionConstVariantPtr,
           ffi.Pointer<GDExtensionBool>, ffi.Pointer<GDExtensionBool>)>();
 
+  GDExtensionPtrUtilityFunction gde_variant_get_ptr_utility_function(
+    GDExtensionConstStringNamePtr p_function,
+    int p_hash,
+  ) {
+    return _gde_variant_get_ptr_utility_function(
+      p_function,
+      p_hash,
+    );
+  }
+
+  late final _gde_variant_get_ptr_utility_functionPtr = _lookup<
+      ffi.NativeFunction<
+          GDExtensionPtrUtilityFunction Function(GDExtensionConstStringNamePtr,
+              GDExtensionInt)>>('gde_variant_get_ptr_utility_function');
+  late final _gde_variant_get_ptr_utility_function =
+      _gde_variant_get_ptr_utility_functionPtr.asFunction<
+          GDExtensionPtrUtilityFunction Function(
+              GDExtensionConstStringNamePtr, int)>();
+
   void gde_string_new_with_utf8_chars(
     GDExtensionUninitializedStringPtr r_dest,
     ffi.Pointer<ffi.Char> p_contents,
@@ -2409,6 +2428,16 @@ typedef GDExtensionPtrKeyedCheckerFunction = ffi.Uint32 Function(
     GDExtensionConstVariantPtr p_base, GDExtensionConstVariantPtr p_key);
 typedef DartGDExtensionPtrKeyedCheckerFunction = int Function(
     GDExtensionConstVariantPtr p_base, GDExtensionConstVariantPtr p_key);
+typedef GDExtensionPtrUtilityFunction
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrUtilityFunctionFunction>>;
+typedef GDExtensionPtrUtilityFunctionFunction = ffi.Void Function(
+    GDExtensionTypePtr r_return,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    ffi.Int p_argument_count);
+typedef DartGDExtensionPtrUtilityFunctionFunction = void Function(
+    GDExtensionTypePtr r_return,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    int p_argument_count);
 typedef GDExtensionConstStringPtr = ffi.Pointer<ffi.Void>;
 typedef char16_t = ffi.Uint16;
 typedef Dartchar16_t = int;

@@ -1034,4 +1034,5 @@ GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
 
   return (void *)result;
 }
+
 }

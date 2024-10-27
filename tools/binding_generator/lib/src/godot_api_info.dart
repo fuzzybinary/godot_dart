@@ -262,6 +262,31 @@ class ArgumentProxy {
     );
   }
 
+  factory ArgumentProxy.fromReturnType(ReturnType? returnType) {
+    if (returnType == null) return ArgumentProxy.fromTypeName('void');
+
+    final typeName = returnTypeValues.reverse[returnType]!;
+    final dartType = godotTypeToDartType(typeName);
+    final typeCategory = GodotApiInfo.instance().getTypeCategory(typeName);
+    final isRefCounted = typeCategory == TypeCategory.engineClass &&
+        GodotApiInfo.instance().isRefCounted(typeName);
+    final isOptional = typeCategory == TypeCategory.engineClass;
+    return ArgumentProxy._(
+      name: 'ret',
+      type: typeName,
+      rawDartType: godotTypeToRawDartType(typeName),
+      dartType: dartType,
+      isOptional: isOptional,
+      isPointer: false,
+      isRefCounted: isRefCounted,
+      typeCategory: typeCategory,
+      meta: null,
+      defaultArgumentValue: null,
+      defaultReturnValue:
+          _getDefaultReturnValue(typeName, dartType, isOptional),
+    );
+  }
+
   factory ArgumentProxy.fromTypeName(String? typeName) {
     final dartType = godotTypeToDartType(typeName);
     final isPointer = typeName?.endsWith('*') ?? false;

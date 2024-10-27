@@ -360,12 +360,32 @@ extension ClassMethodConverter on BuiltinClassMethod {
   }
 }
 
+extension UtilityMethodConverter on UtilityFunction {
+  ClassMethod asMethodData() {
+    return ClassMethod(
+      name: name,
+      isConst: false,
+      isVararg: isVararg,
+      isStatic: true,
+      isVirtual: false,
+      hash: hash,
+      returnValue: returnType == null
+          ? null
+          : ReturnValue(type: returnTypeValues.reverse[returnType!]!),
+      arguments:
+          arguments?.map((e) => Argument(name: e.name, type: e.type)).toList(),
+    );
+  }
+}
+
 String makeSignature(dynamic functionData, {bool useGodotStringTypes = false}) {
   assert(functionData is BuiltinClassMethod || functionData is ClassMethod);
   ClassMethod methodData;
   if (functionData is ClassMethod) {
     methodData = functionData;
   } else if (functionData is BuiltinClassMethod) {
+    methodData = functionData.asMethodData();
+  } else if (functionData is UtilityFunction) {
     methodData = functionData.asMethodData();
   } else {
     return '';

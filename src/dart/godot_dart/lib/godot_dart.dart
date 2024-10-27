@@ -17,6 +17,7 @@ export 'src/extensions/async_extensions.dart';
 export 'src/extensions/core_extensions.dart';
 export 'src/gen/classes/engine_classes.dart';
 export 'src/gen/global_constants.dart';
+export 'src/gen/utility_functions.dart';
 export 'src/gen/variant/builtins.dart';
 export 'src/variant/variant.dart' hide getToTypeConstructor;
 
@@ -49,6 +50,7 @@ void _registerGodot(int libraryAddress, int bindingCallbacks) {
   initVariantBindings(ffiInterface);
   TypeInfo.initTypeMappings();
 
+  GD.initBindings();
   SignalAwaiter.bind();
   CallbackAwaiter.bind();
 

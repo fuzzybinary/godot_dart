@@ -31,3 +31,9 @@ extension StringExtensions on String {
     });
   }
 }
+
+extension WeakRefExtension on Object {
+  WeakRef? getWeak() {
+    return GD.weakref(Variant(this)).cast<WeakRef>();
+  }
+}

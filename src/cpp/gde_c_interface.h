@@ -65,6 +65,8 @@ GDE_EXPORT void gde_variant_set_indexed(GDExtensionVariantPtr p_self, GDExtensio
                                         GDExtensionConstVariantPtr p_value, GDExtensionBool *r_valid,
                                         GDExtensionBool *r_oob);
 
+GDE_EXPORT GDExtensionPtrUtilityFunction gde_variant_get_ptr_utility_function(GDExtensionConstStringNamePtr p_function,
+                                                                              GDExtensionInt p_hash);
 GDE_EXPORT void gde_string_new_with_utf8_chars(GDExtensionUninitializedStringPtr r_dest, const char *p_contents);
 GDE_EXPORT GDExtensionInt gde_string_to_utf8_chars(GDExtensionConstStringPtr p_self, char *r_text,
                                                    GDExtensionInt p_max_write_length);

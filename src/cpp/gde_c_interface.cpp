@@ -193,6 +193,15 @@ void gde_variant_set_indexed(GDExtensionVariantPtr p_self, GDExtensionInt p_inde
   }
 }
 
+static GDExtensionInterfaceVariantGetPtrUtilityFunction _variant_get_ptr_utility_function_func = nullptr;
+GDExtensionPtrUtilityFunction gde_variant_get_ptr_utility_function(GDExtensionConstStringNamePtr p_function,
+                                                                   GDExtensionInt p_hash) {
+  if (gde_variant_get_ptr_utility_function) {
+    return _variant_get_ptr_utility_function_func(p_function, p_hash);
+  }
+  return nullptr;
+}
+
 static GDExtensionInterfaceStringNewWithUtf8Chars _string_new_with_utf8_chars_func = nullptr;
 void gde_string_new_with_utf8_chars(GDExtensionUninitializedStringPtr r_dest, const char *p_contents) {
   if (_string_new_with_utf8_chars_func) {
@@ -400,6 +409,7 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(variant_get_ptr_keyed_checker, GDExtensionInterfaceVariantGetPtrKeyedChecker);
   LOAD_METHOD(variant_get_indexed, GDExtensionInterfaceVariantGetIndexed);
   LOAD_METHOD(variant_set_indexed, GDExtensionInterfaceVariantSetIndexed);
+  LOAD_METHOD(variant_get_ptr_utility_function, GDExtensionInterfaceVariantGetPtrUtilityFunction);
   LOAD_METHOD(string_new_with_utf8_chars, GDExtensionInterfaceStringNewWithUtf8Chars);
   LOAD_METHOD(string_to_utf8_chars, GDExtensionInterfaceStringToUtf8Chars);
   LOAD_METHOD(string_to_utf16_chars, GDExtensionInterfaceStringToUtf16Chars);

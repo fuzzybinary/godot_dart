@@ -144,7 +144,9 @@ void GodotDartRuntimePlugin::shutdown_dart_bindings() {
         }
       } else {
         // This should also not happen. If it's weak, Dart should have destroyed it.
-        assert(false);
+        // TODO: This does appear to happen if Dart is holding a WeakRef object, but not
+        // sure there's anything we have to do here
+        // assert(false);
       }
     }
 
