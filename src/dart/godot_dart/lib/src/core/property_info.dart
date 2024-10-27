@@ -10,7 +10,7 @@ class PropertyInfo {
   PropertyInfo({
     required this.typeInfo,
     required this.name,
-    this.hint = PropertyHint.propertyHintNone,
+    this.hint = PropertyHint.none,
     this.hintString = '',
     this.flags = 6, // PropertyUsage.propertyUsageDefault
   });

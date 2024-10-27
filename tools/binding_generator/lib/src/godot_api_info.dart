@@ -1,8 +1,8 @@
 import 'package:collection/collection.dart';
 import 'package:tuple/tuple.dart';
 
+import 'common_helpers.dart';
 import 'godot_extension_api_json.dart';
-import 'string_extensions.dart';
 import 'type_helpers.dart';
 
 enum TypeCategory {
@@ -98,26 +98,14 @@ class GodotApiInfo {
   }
 
   String findEnumValue(String type, String value) {
-    // Special case -- Vector3Axis was reimplemented
-    if (type == 'Vector3Axis') {
-      switch (value) {
-        case '0':
-          return 'Vector3Axis.x';
-        case '1':
-          return 'Vector3Axis.y';
-        case '2':
-          return 'Vector3Axis.z';
-      }
-    }
-
     final godotEnum = enumMap[type];
     if (godotEnum == null) return value;
 
     List<Value> valueList;
     if (godotEnum is BuiltinClassEnum) {
-      valueList = godotEnum.values;
+      valueList = godotEnum.transformedValues();
     } else if (godotEnum is GlobalEnumElement) {
-      valueList = godotEnum.values;
+      valueList = godotEnum.transformedValues();
     } else {
       throw ArgumentError(
           'Trying to write an enum that is of type ${godotEnum.runtimeType}');
@@ -126,7 +114,7 @@ class GodotApiInfo {
     final foundValue = valueList
         .firstWhereOrNull((element) => element.value.toString() == value);
     if (foundValue != null) {
-      return '$type.${foundValue.name.toLowerCamelCase()}';
+      return '$type.${foundValue.name}';
     }
 
     return value;

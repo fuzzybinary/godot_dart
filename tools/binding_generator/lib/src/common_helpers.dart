@@ -739,16 +739,76 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
   o.p('$ret;');
 }
 
+// A map of enumTypes to prefixes that are different from their type name, and
+// can be removed in Dart.
+const removePrefixes = <String, String>{
+  'KeyModifierMask': 'keyMask',
+  'Variant.Type': 'type',
+  'Error': 'err',
+  'MethodFlags': 'methodFlag',
+  'PropertyUsageFlags': 'propertyUsage',
+  'Variant.Operator': 'op',
+  'Planes': 'plane',
+};
+
+// Reserved words that get used as enum names, and should instead
+// default back to their original, prefixed names.
+final reservedWordEnumNames = [
+  'default',
+  'const',
+  'static',
+  'in',
+  'index',
+  'new',
+  'class',
+  'continue',
+];
+
+Value _transformEnumValues(Value e, String name) {
+  final lowerEnumName = name.lowerFirstLetter();
+  String originalName = e.name.toLowerCamelCase();
+  String transformedName = originalName;
+  if (originalName != lowerEnumName && originalName.startsWith(lowerEnumName)) {
+    transformedName =
+        originalName.replaceFirst(lowerEnumName, '').lowerFirstLetter();
+  } else if (removePrefixes.containsKey(name)) {
+    final prefix = removePrefixes[name]!;
+    transformedName =
+        transformedName.replaceFirst(prefix, '').lowerFirstLetter();
+  }
+
+  // Don't allow keywords
+  if (transformedName == 'int') transformedName = 'integer';
+  if (transformedName == 'enum') transformedName = 'enumVal';
+  if (reservedWordEnumNames.contains(transformedName)) {
+    transformedName = originalName;
+  }
+
+  return Value(name: transformedName, value: e.value);
+}
+
+extension EnumTransform on BuiltinClassEnum {
+  List<Value> transformedValues() {
+    return values.map((e) => _transformEnumValues(e, name)).toList();
+  }
+}
+
+extension EnumTranform on GlobalEnumElement {
+  List<Value> transformedValues() {
+    return values.map((e) => _transformEnumValues(e, name)).toList();
+  }
+}
+
 void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
   String name;
   List<Value> valueList;
   bool isBitfield = false;
   if (godotEnum is BuiltinClassEnum) {
     name = godotEnum.name;
-    valueList = godotEnum.values;
+    valueList = godotEnum.transformedValues();
   } else if (godotEnum is GlobalEnumElement) {
     name = godotEnum.name;
-    valueList = godotEnum.values;
+    valueList = godotEnum.transformedValues();
     isBitfield = godotEnum.isBitfield;
   } else {
     throw ArgumentError(
@@ -756,14 +816,15 @@ void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
   }
 
   var enumName = getEnumName(name, inClass);
+
   o.b('enum $enumName {', () {
-    if (isBitfield) {
+    if (isBitfield && valueList.where((e) => e.name == 'none').isEmpty) {
       o.p('none(0),');
     }
     for (int i = 0; i < valueList.length; ++i) {
       final value = valueList[i];
       final end = i == valueList.length - 1 ? ';' : ',';
-      o.p('${value.name.toLowerCamelCase()}(${value.value})$end');
+      o.p('${value.name}(${value.value})$end');
     }
     o.nl();
 

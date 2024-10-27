@@ -26,4 +26,8 @@ extension StringHelpers on String {
     return lowerCamel.replaceRange(
         0, 1, lowerCamel[0].toUpperCase().toString());
   }
+
+  String lowerFirstLetter() {
+    return replaceRange(0, 1, this[0].toLowerCase().toString());
+  }
 }

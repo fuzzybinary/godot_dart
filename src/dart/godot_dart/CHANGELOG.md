@@ -1,3 +1,9 @@
+## 0.6.0
+
+- Adjust generate global constats to avoid unnecessary prefixes.
+- Have `Variant.getType` return `VariantType` instead of int.
+- Add `Variant.cast` to support getting an object directly from a Variant.
+
 ## 0.5.2
 
 - Fix `Future<void>` throwing an error when put in a Variant, which could happen with `async` signal recievers.

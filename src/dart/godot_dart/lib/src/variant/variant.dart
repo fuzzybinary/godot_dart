@@ -183,12 +183,18 @@ class Variant implements Finalizable {
     _attachFinalizer();
   }
 
-  int getType() {
-    return gde.ffiBindings.gde_variant_get_type(_opaque.cast());
+  VariantType getType() {
+    final cValue = gde.ffiBindings.gde_variant_get_type(_opaque.cast());
+    return VariantType.fromValue(cValue);
   }
 
   void constructCopy(GDExtensionTypePtr ptr) {
     gde.ffiBindings.gde_variant_new_copy(ptr, nativePtr.cast());
+  }
+
+  T? cast<T>() {
+    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
+    return convertFromVariant(this, typeInfo) as T?;
   }
 
   void _attachFinalizer() {
