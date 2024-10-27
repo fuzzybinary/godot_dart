@@ -1,3 +1,7 @@
+## 0.6.1
+
+- Fix `Variant.cast` to correctly return null in cases where the Variant is null.
+
 ## 0.6.0
 
 - Adjust generate global constats to avoid unnecessary prefixes.

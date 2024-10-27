@@ -197,8 +197,8 @@ class Variant implements Finalizable {
       var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
       return convertFromVariant(this, typeInfo) as T?;
     }
-    final obj = convertFromVariant(this, GodotObject.sTypeInfo) as GodotObject;
-    return obj.cast<T>();
+    final obj = convertFromVariant(this, GodotObject.sTypeInfo) as GodotObject?;
+    return obj?.cast<T>();
   }
 
   void _attachFinalizer() {
