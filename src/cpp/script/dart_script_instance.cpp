@@ -117,70 +117,35 @@ bool DartScriptInstance::get_class_category(GDExtensionPropertyInfo *p_class_cat
 }
 
 const GDExtensionPropertyInfo *DartScriptInstance::get_property_list(uint32_t *r_count) {
-  GodotDartBindings *gde = GodotDartBindings::instance();
-  if (gde == nullptr) {
-    return nullptr;
-  }
-
-  GDExtensionPropertyInfo *prop_list = nullptr;
-  gde->execute_on_dart_thread([&] {
-    DartBlockScope scope;
-
-    // This is a lot of work just to get the size of the list
-    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
-    DART_CHECK(properties_list, Dart_GetField(dart_script_info, Dart_NewStringFromCString("properties")),
-               "Failed to get properties info");
-    intptr_t prop_count = 0;
-    Dart_ListLength(properties_list, &prop_count);
-    *r_count = prop_count;
-
-    if (prop_count > 0) {
-      prop_list = new GDExtensionPropertyInfo[prop_count];
-      for (auto i = 0; i < prop_count; ++i) {
-        DART_CHECK(dart_property, Dart_ListGetAt(properties_list, i), "Failed to get property at index");
-        gde_property_info_from_dart(dart_property, &prop_list[i]);
-      }
+  GDExtensionPropertyInfo *prop_list{nullptr};
+  const auto &prop_map = _dart_script->get_properties();
+  size_t prop_count = prop_map.size();
+  *r_count = prop_count;
+  if (prop_count > 0) {
+    prop_list = new GDExtensionPropertyInfo[prop_count];
+    size_t index = 0;
+    for (const auto &property : prop_map) {
+      prop_list[index] = property.second;
+      ++index;
     }
-  });
+  }
 
   return prop_list;
 }
 
 void DartScriptInstance::free_property_list(const GDExtensionPropertyInfo *p_list) {
-  GodotDartBindings *gde = GodotDartBindings::instance();
-  if (gde == nullptr) {
-    return;
-  }
-
-  gde->execute_on_dart_thread([&] {
-    DartBlockScope scope;
-
-    // This is a lot of work just to get the size of the list
-    DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
-    DART_CHECK(properties_list, Dart_GetField(dart_script_info, Dart_NewStringFromCString("properties")),
-               "Failed to get properties info");
-    intptr_t prop_count = 0;
-    Dart_ListLength(properties_list, &prop_count);
-
-    if (p_list != nullptr) {
-      for (intptr_t i = 0; i < prop_count; ++i) {
-        gde_free_property_info_fields(const_cast<GDExtensionPropertyInfo *>(&p_list[i]));
-      }
-
-      delete[] p_list;
-    }
-  });
+  delete[] p_list;
 }
 
 GDExtensionVariantType DartScriptInstance::get_property_type(const godot::StringName &p_name,
                                                              GDExtensionBool *r_is_valid) {
-  return GDExtensionVariantType();
+  const auto &properties = _dart_script->get_properties();
+  const auto &prop_itr = properties.find(p_name);
+  *r_is_valid = prop_itr != properties.end();
+  if (r_is_valid) {
+    return prop_itr->second.type;
+  }
+  return GDExtensionVariantType{};
 }
 
 bool DartScriptInstance::validate_property(GDExtensionPropertyInfo *p_property) {

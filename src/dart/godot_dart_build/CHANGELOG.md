@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Add correct default property hints to Node and Resource types.
+
 ## 0.3.2
 
 - Fix a different version constraint issue.

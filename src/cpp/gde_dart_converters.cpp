@@ -2,8 +2,8 @@
 
 #include <dart_api.h>
 
-#include "dart_helpers.h"
 #include "dart_bindings.h"
+#include "dart_helpers.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 
@@ -25,7 +25,7 @@ void *get_object_address(Dart_Handle engine_handle) {
 }
 
 void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodInfo *method_info) {
-  DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");  
+  DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");
   method_info->name = create_godot_string_name_ptr(dart_name);
   // TODO: id?
   method_info->id = 0;
@@ -61,7 +61,7 @@ void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodIn
 
 void gde_free_method_info_fields(GDExtensionMethodInfo *method_info) {
   if (method_info->name != nullptr) {
-    delete reinterpret_cast<godot::StringName*>(method_info->name);
+    delete reinterpret_cast<godot::StringName *>(method_info->name);
   }
 
   gde_free_property_info_fields(&method_info->return_value);
@@ -89,8 +89,10 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
 
   DART_CHECK(dart_property_hint, Dart_GetField(dart_property_info, Dart_NewStringFromCString("hint")),
              "Failed to get hint");
+  DART_CHECK(dart_hint_value, Dart_GetField(dart_property_hint, Dart_NewStringFromCString("value")),
+             "Failed to get PropertyHint.value");
   uint64_t hint = 0;
-  Dart_IntegerToUint64(dart_property_hint, &hint);
+  Dart_IntegerToUint64(dart_hint_value, &hint);
   prop_info->hint = uint32_t(hint);
 
   DART_CHECK(dart_hint_string, Dart_GetField(dart_property_info, Dart_NewStringFromCString("hintString")),

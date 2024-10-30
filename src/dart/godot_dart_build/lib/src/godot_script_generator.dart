@@ -180,9 +180,31 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('PropertyInfo(');
     buffer.writeln('  name: \'$exportName\',');
     buffer.writeln('  typeInfo: ${_typeInfoForType(field.type)},');
+
+    final propertyHint = _getPropertyHint(field.type);
+    if (propertyHint != null) {
+      buffer.writeln('  hint: ${propertyHint.toString()},');
+      buffer.writeln(
+          '  hintString: \'${field.type.getDisplayString(withNullability: false)}\',');
+    }
+
     buffer.write(')');
 
     return buffer.toString();
+  }
+
+  PropertyHint? _getPropertyHint(DartType type) {
+    final element = type.element;
+    if (element is ClassElement) {
+      for (final supertype in element.allSupertypes) {
+        if (supertype.element.name == 'Node') {
+          return PropertyHint.nodeType;
+        } else if (supertype.element.name == 'Resource') {
+          return PropertyHint.resourceType;
+        }
+      }
+    }
+    return null;
   }
 
   String _typeInfoForType(DartType type) {

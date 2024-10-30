@@ -1,16 +1,16 @@
 #include "dart_script.h"
 
-#include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 
 #include "../dart_bindings.h"
 
 #include "../dart_helpers.h"
 #include "../godot_string_wrappers.h"
-#include "script/dart_script_language.h"
 #include "script/dart_script_instance.h"
+#include "script/dart_script_language.h"
 
 using namespace godot;
 
@@ -18,6 +18,8 @@ DartScript::DartScript() : _source_code(), _needs_refresh(false), _dart_type(nul
 }
 
 DartScript::~DartScript() {
+  clear_property_cache();
+
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (bindings == nullptr) {
     return;
@@ -39,7 +41,7 @@ void DartScript::_bind_methods() {
 }
 
 godot::Ref<Script> DartScript::_get_base_script() const {
-  refresh_type();
+  const_cast<DartScript *>(this)->refresh_type();
 
   return _base_script;
 }
@@ -71,7 +73,7 @@ bool DartScript::_can_instantiate() const {
     return default_return;                                                                                             \
   }                                                                                                                    \
                                                                                                                        \
-  refresh_type();                                                                                                      \
+  const_cast<DartScript *>(this)->refresh_type();                                                                      \
   if (_script_info == nullptr) {                                                                                       \
     return default_return;                                                                                             \
   }
@@ -213,27 +215,20 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_property_list() con
 
   godot::TypedArray<godot::Dictionary> ret_val;
 
-  bindings->execute_on_dart_thread([&] {
-    DartBlockScope scope;
-
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
-
-    Dart_Handle dart_prop_name = Dart_NewStringFromCString("properties");
-    DART_CHECK(dart_property_list, Dart_GetField(script_info, dart_prop_name), "Error getting field properties");
-
-    intptr_t property_count = 0;
-    Dart_ListLength(dart_property_list, &property_count);
-    for (intptr_t i = 0; i < property_count; ++i) {
-      Dart_Handle property_info = Dart_ListGetAt(dart_property_list, i);
-
-      Dart_Handle d_as_dict = Dart_NewStringFromCString("asDict");
-      DART_CHECK(dart_godot_dict, Dart_Invoke(property_info, d_as_dict, 0, nullptr), "Error calling asDict");
-
-      void *dict_pointer = get_object_address(dart_godot_dict);
-      godot::Dictionary propety_dict(*((godot::Dictionary *)dict_pointer));
-      ret_val.append(propety_dict);
-    }
-  });
+  // TODO: Look if there's a better way to store these strings as constants
+  for (const auto &prop : _properties_cache) {
+    const auto &prop_info = prop.second;
+    godot::Dictionary info_dict;
+    info_dict[godot::Variant(godot::String("type"))] = Variant(prop_info.type);
+    info_dict[godot::Variant(godot::String("name"))] = Variant(*reinterpret_cast<godot::String *>(prop_info.name));
+    info_dict[godot::Variant(godot::String("class_name"))] =
+        Variant(*reinterpret_cast<godot::StringName *>(prop_info.name));
+    info_dict[godot::Variant(godot::String("hint"))] = Variant(prop_info.hint);
+    info_dict[godot::Variant(godot::String("hint_string"))] =
+        Variant(*reinterpret_cast<godot::String *>(prop_info.hint_string));
+    info_dict[godot::Variant(godot::String("usage"))] = Variant(prop_info.usage);
+    ret_val.push_back(info_dict);
+  }
 
   return ret_val;
 }
@@ -290,6 +285,8 @@ godot::Variant DartScript::_get_property_default_value(const godot::StringName &
 }
 
 void DartScript::_update_exports() {
+  refresh_type();
+  
   for (const auto &script_instance : _placeholders) {
     script_instance->notify_property_list_changed();
   }
@@ -319,12 +316,12 @@ godot::StringName DartScript::_get_global_name() const {
   return ret;
 }
 
-void DartScript::load_from_disk(const godot::String &path) {  
+void DartScript::load_from_disk(const godot::String &path) {
   Ref<FileAccess> file = FileAccess::open(path, FileAccess::READ);
   if (!file.is_null()) {
     String text = file->get_as_text();
     set_source_code(text);
-    file->close();   
+    file->close();
     _path = path;
   }
 }
@@ -332,7 +329,7 @@ void DartScript::load_from_disk(const godot::String &path) {
 void DartScript::did_hot_reload() {
   _update_exports();
   auto editor_interface = godot::EditorInterface::get_singleton();
-  if (editor_interface) {    
+  if (editor_interface) {
     editor_interface->get_resource_filesystem()->update_file(_path);
   }
 }
@@ -347,7 +344,7 @@ void *DartScript::_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  refresh_type();
+  const_cast<DartScript *>(this)->refresh_type();
   if (_dart_type == nullptr) {
     return nullptr;
   }
@@ -365,7 +362,7 @@ void *DartScript::_placeholder_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  refresh_type();
+  const_cast<DartScript *>(this)->refresh_type();
   if (_dart_type == nullptr) {
     return nullptr;
   }
@@ -373,32 +370,32 @@ void *DartScript::_placeholder_instance_create(Object *for_object) const {
   return create_script_instance_internal(for_object, true);
 }
 
-void *DartScript::create_script_instance_internal(Object* for_object, bool is_placeholder) const {
+void *DartScript::create_script_instance_internal(Object *for_object, bool is_placeholder) const {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   GDExtensionScriptInstancePtr godot_script_instance = nullptr;
 
   RefCounted *rc = Object::cast_to<RefCounted>(for_object);
-  
+
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
-  
+
     Dart_Handle dart_pointer = bindings->new_dart_void_pointer(for_object->_owner);
     Dart_Handle args[1] = {dart_pointer};
     DART_CHECK(dart_object, Dart_New(_dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
-                "Error creating bindings");
-  
-    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, const_cast<DartScript *>(this),
-                                                                  for_object, is_placeholder, rc != nullptr);
-  
+               "Error creating bindings");
+
+    DartScriptInstance *script_instance =
+        new DartScriptInstance(dart_object, const_cast<DartScript *>(this), for_object, is_placeholder, rc != nullptr);
+
     godot_script_instance =
         gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                     reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-    
+
     if (is_placeholder) {
       _placeholders.insert(script_instance);
     }
   });
-  
+
   return godot_script_instance;
 }
 
@@ -406,7 +403,14 @@ void DartScript::dart_placeholder_erased(DartScriptInstance *p_placeholder) {
   _placeholders.erase(p_placeholder);
 }
 
-void DartScript::refresh_type() const {
+void DartScript::clear_property_cache() {
+  for (auto &prop : _properties_cache) {
+    gde_free_property_info_fields(&prop.second);
+  }
+  _properties_cache.clear();
+}
+
+void DartScript::refresh_type() {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (bindings == nullptr) {
     return;
@@ -444,11 +448,29 @@ void DartScript::refresh_type() const {
                  "Failed to get scriptInfo");
       if (script_info != nullptr) {
         _script_info = Dart_NewPersistentHandle(script_info);
-
+        
         // Find the base type
         Dart_Handle base_type = Dart_GetField(type_info, Dart_NewStringFromCString("parentType"));
         if (Dart_IsNull(base_type)) {
           _base_script = language->find_script_for_type(script_info);
+        }
+
+        clear_property_cache();
+
+        // TODO: Get properties from our base class?
+        DART_CHECK(properties_list, Dart_GetField(script_info, Dart_NewStringFromCString("properties")),
+                   "Failed to get properties info");
+        intptr_t prop_count = 0;
+        Dart_ListLength(properties_list, &prop_count);
+
+        if (prop_count > 0) {
+          for (auto i = 0; i < prop_count; ++i) {
+            DART_CHECK(dart_property, Dart_ListGetAt(properties_list, i), "Failed to get property at index");
+            GDExtensionPropertyInfo property_info;
+            gde_property_info_from_dart(dart_property, &property_info);
+            godot::StringName *prop_name = reinterpret_cast<godot::StringName *>(property_info.name);
+            _properties_cache[*prop_name] = property_info;
+          }
         }
       }
     }
