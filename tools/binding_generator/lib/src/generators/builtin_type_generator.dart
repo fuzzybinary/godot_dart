@@ -306,17 +306,29 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   // TODO: This can be made more efficient for PackedXArray, but for now we're going
   // to just use Variant's indexed getter / setters
   if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
+    final returnTypeCategory =
+        GodotApiInfo.instance().getTypeCategory(builtin.indexingReturnType!);
     var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
     o.b('$dartReturnType operator [](int index) {', () {
       o.p('final self = Variant(this);');
       o.p('final ret = gde.variantGetIndexed(self, index);');
-      o.p('return convertFromVariant(ret, null) as $dartReturnType;');
+      if (dartReturnType == 'Variant') {
+        o.p('return ret;');
+      } else if (returnTypeCategory == TypeCategory.engineClass) {
+        o.p('return convertFromVariant(ret, $dartReturnType.sTypeInfo) as $dartReturnType;');
+      } else {
+        o.p('return convertFromVariant(ret, null) as $dartReturnType;');
+      }
     }, '}');
     o.nl();
     o.b('void operator []=(int index, $dartReturnType value) {', () {
       o.p('final self = Variant(this);');
-      o.p('final variantValue = Variant(value);');
-      o.p('gde.variantSetIndexed(self, index, variantValue);');
+      if (dartReturnType == 'Variant') {
+        o.p('gde.variantSetIndexed(self, index, value);');
+      } else {
+        o.p('final variantValue = Variant(value);');
+        o.p('gde.variantSetIndexed(self, index, variantValue);');
+      }
     }, '}');
     o.nl();
   }

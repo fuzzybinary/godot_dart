@@ -791,9 +791,9 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
-  // Defaults for non-engine classes
+  
+  // Default for non-engine classes
   void *token = gde->get_library_ptr();
-  const GDExtensionInstanceBindingCallbacks *bindings_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
 
   Dart_Handle bindings_token = Dart_GetNativeArgument(args, 2);
   if (!Dart_IsNull(bindings_token)) {
@@ -805,12 +805,11 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
     }
     uint64_t token_int = 0;
     Dart_IntegerToUint64(address, &token_int);
-    token = (void *)token_int;
-    bindings_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
+    token = (void *)token_int;    
   }
 
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
-      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, bindings_callbacks);
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, &DartGodotInstanceBinding::engine_binding_callbacks);
   if (binding == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {

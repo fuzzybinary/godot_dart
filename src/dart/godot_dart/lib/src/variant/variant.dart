@@ -172,6 +172,9 @@ class Variant implements Finalizable {
   Variant([Object? obj]) {
     if (obj == null) {
       gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
+    } else if (obj is Variant) {
+      throw ArgumentError.value(
+          obj, 'obj', 'Do not construct Variants with Variants.');
     } else {
       _initFromObject(obj);
     }
@@ -355,9 +358,11 @@ Object? convertFromVariantPtr(
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
+        final token =
+            typeInfo?.bindingToken ?? GodotObject.sTypeInfo.bindingToken;
         ret = gde.dartBindings.gdObjectToDartObject(
           ptr.value,
-          typeInfo?.bindingToken,
+          token,
         );
         break;
 
