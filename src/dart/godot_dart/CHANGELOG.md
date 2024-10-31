@@ -1,3 +1,7 @@
+## 0.6.2
+
+- Fix a crash when using the indexed getter on `Array`
+
 ## 0.6.1
 
 - Fix `Variant.cast` to correctly return null in cases where the Variant is null.
