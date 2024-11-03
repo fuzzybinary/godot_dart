@@ -60,7 +60,7 @@ protected:
   static void _bind_methods();
 
 private:
-  void refresh_type();
+  void refresh_type(bool force);
   void clear_property_cache();
   void *create_script_instance_internal(Object *for_object, bool is_placeholder) const;
 
@@ -68,7 +68,6 @@ private:
   godot::String _path;
   std::unordered_map<godot::StringName, GDExtensionPropertyInfo> _properties_cache;
   mutable std::unordered_set<DartScriptInstance *> _placeholders;
-  mutable bool _needs_refresh;
   mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;
   mutable Dart_PersistentHandle _script_info;

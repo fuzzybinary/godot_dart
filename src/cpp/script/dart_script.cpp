@@ -14,7 +14,7 @@
 
 using namespace godot;
 
-DartScript::DartScript() : _source_code(), _needs_refresh(false), _dart_type(nullptr), _script_info(nullptr) {
+DartScript::DartScript() : _source_code(), _dart_type(nullptr), _script_info(nullptr) {
 }
 
 DartScript::~DartScript() {
@@ -41,7 +41,7 @@ void DartScript::_bind_methods() {
 }
 
 godot::Ref<Script> DartScript::_get_base_script() const {
-  const_cast<DartScript *>(this)->refresh_type();
+  const_cast<DartScript *>(this)->refresh_type(false);
 
   return _base_script;
 }
@@ -73,7 +73,7 @@ bool DartScript::_can_instantiate() const {
     return default_return;                                                                                             \
   }                                                                                                                    \
                                                                                                                        \
-  const_cast<DartScript *>(this)->refresh_type();                                                                      \
+  const_cast<DartScript *>(this)->refresh_type(false);                                                                      \
   if (_script_info == nullptr) {                                                                                       \
     return default_return;                                                                                             \
   }
@@ -238,10 +238,7 @@ godot::Error DartScript::_reload(bool keep_state) {
 
   if (bindings != nullptr) {
     bindings->reload_code();
-    _needs_refresh = true;
   }
-
-  // Don't set _last_modified_time here, as it will be set by did_hot_reload();
 
   return godot::Error::OK;
 }
@@ -285,7 +282,7 @@ godot::Variant DartScript::_get_property_default_value(const godot::StringName &
 }
 
 void DartScript::_update_exports() {
-  refresh_type();
+  refresh_type(true);
   
   for (const auto &script_instance : _placeholders) {
     script_instance->notify_property_list_changed();
@@ -344,7 +341,7 @@ void *DartScript::_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  const_cast<DartScript *>(this)->refresh_type();
+  const_cast<DartScript *>(this)->refresh_type(false);
   if (_dart_type == nullptr) {
     return nullptr;
   }
@@ -362,7 +359,7 @@ void *DartScript::_placeholder_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  const_cast<DartScript *>(this)->refresh_type();
+  const_cast<DartScript *>(this)->refresh_type(false);
   if (_dart_type == nullptr) {
     return nullptr;
   }
@@ -410,20 +407,21 @@ void DartScript::clear_property_cache() {
   _properties_cache.clear();
 }
 
-void DartScript::refresh_type() {
+void DartScript::refresh_type(bool force) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   if (bindings == nullptr) {
     return;
   }
 
-  if (_dart_type != nullptr && !_needs_refresh) {
-    // Don't bother unless we've been asked to reload
+  if (_dart_type != nullptr && !force) {
     return;
   }
 
   _base_script.unref();
 
   bindings->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+    
     // Delete old persistent handles
     if (_dart_type != nullptr) {
       Dart_DeletePersistentHandle(_dart_type);
@@ -434,7 +432,6 @@ void DartScript::refresh_type() {
       _script_info = nullptr;
     }
 
-    DartBlockScope scope;
     DartScriptLanguage *language = DartScriptLanguage::instance();
 
     String path = get_path();
