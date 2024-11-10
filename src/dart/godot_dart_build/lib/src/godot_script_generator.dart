@@ -5,6 +5,7 @@ import 'package:build/build.dart';
 import 'package:godot_dart/godot_dart.dart';
 import 'package:source_gen/source_gen.dart';
 
+const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
 const _godotExportChecker = TypeChecker.fromRuntime(GodotExport);
 const _godotSignalChecker = TypeChecker.fromRuntime(GodotSignal);
 const _godotPropertyChecker = TypeChecker.fromRuntime(GodotProperty);
@@ -22,11 +23,14 @@ class GodotScriptAnnotationGenerator
       );
     }
 
+    final packageName = buildStep.inputId.package;
+
     log.info('Trying to write output for ${element.name}');
-    yield _createTypeInfo(element, annotation);
+    yield _createTypeInfo(element, annotation, packageName);
   }
 
-  String _createTypeInfo(ClassElement element, ConstantReader annotation) {
+  String _createTypeInfo(
+      ClassElement element, ConstantReader annotation, String packageName) {
     final buffer = StringBuffer();
 
     // Find the first superclass that has nativeTypeName defined
@@ -98,7 +102,8 @@ class GodotScriptAnnotationGenerator
     for (final propertyField in propertyFields) {
       final propertyAnnotation =
           _godotPropertyChecker.firstAnnotationOf(propertyField);
-      buffer.write(_generatePropertyInfo(propertyField, propertyAnnotation));
+      buffer.write(_generatePropertyInfo(
+          propertyField, propertyAnnotation, packageName));
       buffer.writeln(',');
     }
     buffer.writeln('    ],');
@@ -169,7 +174,7 @@ class GodotScriptAnnotationGenerator
   }
 
   String _generatePropertyInfo(
-      FieldElement field, DartObject? propertyAnnotation) {
+      FieldElement field, DartObject? propertyAnnotation, String packageName) {
     final buffer = StringBuffer();
 
     final reader = ConstantReader(propertyAnnotation);
@@ -185,7 +190,7 @@ class GodotScriptAnnotationGenerator
     if (propertyHint != null) {
       buffer.writeln('  hint: ${propertyHint.toString()},');
       buffer.writeln(
-          '  hintString: \'${field.type.getDisplayString(withNullability: false)}\',');
+          '  hintString: \'${_getPropertyHintString(field.type, packageName)}\',');
     }
 
     buffer.write(')');
@@ -205,6 +210,20 @@ class GodotScriptAnnotationGenerator
       }
     }
     return null;
+  }
+
+  String _getPropertyHintString(DartType type, String packageName) {
+    final element = type.element;
+    if (element is ClassElement &&
+        _godotScriptChecker.hasAnnotationOf(element,
+            throwOnUnresolved: false)) {
+      final relativeName = element.library.librarySource.fullName
+          .replaceFirst('/$packageName/', '');
+      return 'res://src/$relativeName';
+    }
+
+    // Else, return its type
+    return '${type.getDisplayString(withNullability: false)}';
   }
 
   String _typeInfoForType(DartType type) {

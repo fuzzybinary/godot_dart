@@ -318,58 +318,59 @@ Object? convertFromVariantPtr(
   }
 
   // Else, it's probably a dart native type
-  using((arena) {
+  ret = using((arena) {
     switch (variantType) {
       // Built-in types
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL:
         Pointer<GDExtensionBool> ptr =
             arena.allocate(sizeOf<GDExtensionBool>());
         c!(ptr.cast(), variantPtr);
-        ret = ptr.value != 0;
-        break;
+        return ptr.value != 0;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT:
         Pointer<GDExtensionInt> ptr = arena.allocate(sizeOf<GDExtensionInt>());
         c!(ptr.cast(), variantPtr);
-        ret = ptr.value;
-        break;
+        return ptr.value;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT:
         Pointer<Double> ptr = arena.allocate(sizeOf<Double>());
         c!(ptr.cast(), variantPtr);
-        ret = ptr.value;
-        break;
+        return ptr.value;
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING_NAME:
         var gdStringName = StringName();
         c!(gdStringName.nativePtr.cast(), variantPtr);
-        ret = gdStringName.toDartString();
-        break;
+        return gdStringName.toDartString();
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
         c!(gdString.nativePtr.cast(), variantPtr);
-        ret = gdString.toDartString();
-        break;
+        return gdString.toDartString();
 
       // Or a hand-implemented object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
-        ret = Vector3.fromVariantPtr(variantPtr);
-        break;
+        return Vector3.fromVariantPtr(variantPtr);
 
       // Or a wrapped object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
-        final token =
-            typeInfo?.bindingToken ?? GodotObject.sTypeInfo.bindingToken;
-        ret = gde.dartBindings.gdObjectToDartObject(
-          ptr.value,
-          token,
-        );
+        if (typeInfo?.scriptInfo != null) {
+          final scriptInstance = gde.dartBindings.getScriptInstance(ptr.value);
+          if (scriptInstance != nullptr) {
+            return gde.dartBindings.objectFromScriptInstance(scriptInstance);
+          }
+        } else {
+          final token =
+              typeInfo?.bindingToken ?? GodotObject.sTypeInfo.bindingToken;
+          return gde.dartBindings.gdObjectToDartObject(
+            ptr.value,
+            token,
+          );
+        }
         break;
 
       // TODO: all the other variant types
       default:
-        ret = null;
     }
+    return null;
   });
 
   return ret;
