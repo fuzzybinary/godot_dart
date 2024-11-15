@@ -155,8 +155,16 @@ class GodotScriptAnnotationGenerator
     final signalName = reader.read('signalName').stringValue;
     buffer.writeln('  name: \'$signalName\',');
 
-    // TODO: Signals that take parameters....
-    buffer.writeln('  args:  [],');
+    final signalArguments = reader.read('args').listValue;
+    buffer.writeln('  args:  [');
+    for (final arg in signalArguments) {
+      final argReader = ConstantReader(arg);
+      final argName = argReader.read('name').stringValue;
+      final argType = argReader.read('type').typeValue;
+      buffer.writeln(
+          '    PropertyInfo(name: \'${argName}\', typeInfo: ${_typeInfoForType(argType)}),');
+    }
+    buffer.writeln(']');
     buffer.write(')');
 
     return buffer.toString();

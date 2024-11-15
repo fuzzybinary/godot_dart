@@ -21,12 +21,21 @@ class GodotExport {
   const GodotExport({this.name});
 }
 
+@immutable
+class SignalArgument {
+  final String name;
+  final Type type;
+
+  const SignalArgument(this.name, this.type);
+}
+
 /// Annotate a Godot Signal
 @immutable
 class GodotSignal {
   final String signalName;
+  final List<SignalArgument> args;
 
-  const GodotSignal(this.signalName);
+  const GodotSignal(this.signalName, {this.args = const []});
 }
 
 /// Annotate a field that should be visible to the Godot property inspector
