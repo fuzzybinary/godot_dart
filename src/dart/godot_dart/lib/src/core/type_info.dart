@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
+import 'rpc_info.dart';
 
 class MethodInfo {
   final String name;
@@ -44,11 +45,13 @@ class ScriptInfo {
   final List<MethodInfo> methods;
   final List<MethodInfo> signals;
   final List<PropertyInfo> properties;
+  final List<RpcInfo> rpcInfo;
 
   const ScriptInfo({
     required this.methods,
     required this.signals,
     required this.properties,
+    required this.rpcInfo,
   });
 
   bool hasMethod(String methodName) => getMethodInfo(methodName) != null;

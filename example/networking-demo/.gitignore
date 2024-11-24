@@ -1,0 +1,10 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Ignore built libraries
+*.dll
+*.lib
+*.dylib
+*.pdb
+*.exp

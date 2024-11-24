@@ -42,6 +42,10 @@ public:
   void _update_exports() override;
   godot::StringName _get_global_name() const override;
 
+  godot::Variant _get_rpc_config() const override {
+    return _rpc_config;
+  }
+
   void load_from_disk(const godot::String &path);
   void did_hot_reload();
 
@@ -50,7 +54,7 @@ public:
 
   const std::unordered_map<godot::StringName, GDExtensionPropertyInfo>& get_properties() const {
     return _properties_cache;
-  }
+  }  
   
   // ScriptInstances in extensions are never of the type that calls
   // _placeholder_erased, so we handle this manually on instance free
@@ -67,6 +71,8 @@ private:
   godot::String _source_code;
   godot::String _path;
   std::unordered_map<godot::StringName, GDExtensionPropertyInfo> _properties_cache;
+  godot::Variant _rpc_config;
+
   mutable std::unordered_set<DartScriptInstance *> _placeholders;
   mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;

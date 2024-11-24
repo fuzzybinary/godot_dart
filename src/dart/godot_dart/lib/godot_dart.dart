@@ -11,6 +11,7 @@ export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
 export 'src/core/gdextension.dart';
 export 'src/core/property_info.dart';
+export 'src/core/rpc_info.dart';
 export 'src/core/type_info.dart';
 export 'src/core/type_resolver.dart';
 export 'src/extensions/async_extensions.dart';

@@ -1,0 +1,23 @@
+name: godot_dart_example
+description: An example of using Dart in Godot
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  ffi: ^2.0.1
+  godot_dart:
+    path: ../../../src/dart/godot_dart
+  collection: ^1.17.2
+
+dev_dependencies:
+  lints: ^2.0.0
+  build_runner: ^2.3.3
+  godot_dart_build:
+    path: ../../../src/dart/godot_dart_build
+
+dependency_overrides: 
+  godot_dart:
+    path: ../../../src/dart/godot_dart

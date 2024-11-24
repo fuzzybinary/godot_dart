@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
 import '../../godot_dart.dart';
 
+@immutable
 class PropertyInfo {
   final TypeInfo typeInfo;
   final String name;
@@ -7,7 +10,7 @@ class PropertyInfo {
   final String hintString;
   final int flags;
 
-  PropertyInfo({
+  const PropertyInfo({
     required this.typeInfo,
     required this.name,
     this.hint = PropertyHint.none,

@@ -1,0 +1,16 @@
+include: package:lints/recommended.yaml
+
+# Uncomment the following section to specify additional rules.
+
+analyzer:
+  exclude:
+    - lib/src/gdextension_bindings.dart
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_relative_imports: true
+    unawaited_futures: true

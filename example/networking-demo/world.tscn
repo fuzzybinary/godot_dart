@@ -1,0 +1,49 @@
+[gd_scene load_steps=2 format=3 uid="uid://bkf6e3f23fmp6"]
+
+[ext_resource type="Script" path="res://src/lib/world.dart" id="1_f3sb7"]
+
+[node name="World" type="Node2D"]
+script = ExtResource("1_f3sb7")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(80, -154)
+zoom = Vector2(1.5, 1.5)
+
+[node name="Host" type="Button" parent="."]
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Host"
+
+[node name="Join" type="Button" parent="."]
+offset_left = 45.0
+offset_right = 53.0
+offset_bottom = 8.0
+text = "Join"
+
+[node name="Username" type="LineEdit" parent="."]
+offset_left = 85.0
+offset_right = 185.0
+offset_bottom = 31.0
+placeholder_text = "Username"
+
+[node name="Send" type="Button" parent="."]
+offset_top = -104.0
+offset_right = 47.0
+offset_bottom = -73.0
+text = "Send
+"
+
+[node name="Line" type="LineEdit" parent="."]
+offset_left = 1.0
+offset_top = -137.0
+offset_right = 201.0
+offset_bottom = -106.0
+
+[node name="Messages" type="TextEdit" parent="."]
+offset_top = -339.0
+offset_right = 200.0
+offset_bottom = -139.0
+
+[connection signal="pressed" from="Host" to="." method="onHostPressed"]
+[connection signal="pressed" from="Join" to="." method="onJoinPressed"]
+[connection signal="pressed" from="Send" to="." method="onSendPressed"]

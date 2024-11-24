@@ -1,3 +1,5 @@
+import 'dart:mirrors';
+
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -9,6 +11,7 @@ const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
 const _godotExportChecker = TypeChecker.fromRuntime(GodotExport);
 const _godotSignalChecker = TypeChecker.fromRuntime(GodotSignal);
 const _godotPropertyChecker = TypeChecker.fromRuntime(GodotProperty);
+const _godotRpcInfoChecker = TypeChecker.fromRuntime(GodotRpc);
 
 /// Generates code for @GodotScript annotated classes
 class GodotScriptAnnotationGenerator
@@ -27,6 +30,7 @@ class GodotScriptAnnotationGenerator
 
     log.info('Trying to write output for ${element.name}');
     yield _createTypeInfo(element, annotation, packageName);
+    yield _createRpcExtension(element);
   }
 
   String _createTypeInfo(
@@ -74,6 +78,13 @@ class GodotScriptAnnotationGenerator
         buffer.write(_buildMethodInfo(method, exportAnnotation));
         buffer.writeln(',');
       }
+      // Automatically export all RPC methods as well
+      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+      if (rpcAnnotation != null) {
+        buffer.write(_buildMethodInfo(method, rpcAnnotation));
+        buffer.write(',');
+      }
     }
     buffer.writeln('    ],');
 
@@ -108,6 +119,16 @@ class GodotScriptAnnotationGenerator
     }
     buffer.writeln('    ],');
 
+    buffer.writeln('    rpcInfo: [');
+    for (final method in element.methods) {
+      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+      if (rpcAnnotation != null) {
+        buffer.write(_buildRpcMethodInfo(method, rpcAnnotation));
+      }
+    }
+    buffer.writeln('    ]');
+
     buffer.writeln('  ),');
     buffer.writeln(');');
 
@@ -122,9 +143,9 @@ class GodotScriptAnnotationGenerator
 
     if (exportAnnotation != null) {
       final reader = ConstantReader(exportAnnotation);
-      final nameReader = reader.read('name');
+      final nameReader = reader.peek('name');
       String? exportName =
-          nameReader.isNull ? element.name : nameReader.stringValue;
+          (nameReader?.isNull ?? true) ? element.name : nameReader?.stringValue;
       buffer.writeln('  name: \'$exportName\',');
       buffer.writeln('  dartMethodName: \'${element.name}\',');
     } else if (element.hasOverride) {
@@ -234,6 +255,25 @@ class GodotScriptAnnotationGenerator
     return '${type.getDisplayString(withNullability: false)}';
   }
 
+  String _buildRpcMethodInfo(MethodElement method, DartObject rpcAnnotation) {
+    final buffer = StringBuffer();
+    buffer.writeln('RpcInfo(');
+    buffer.writeln('  name: \'${method.name}\',');
+
+    final reader = ConstantReader(rpcAnnotation);
+    final modeReader = reader.read('mode');
+    buffer.writeln(
+        '  mode: ${modeReader.enumValue<MultiplayerAPIRPCMode>().toString()},');
+    buffer.writeln('  callLocal: ${reader.read('callLocal').boolValue},');
+    buffer.writeln(
+        '  transferMode: ${reader.read('transferMode').enumValue<MultiplayerPeerTransferMode>()},');
+    buffer.writeln(
+        '  transferChannel: ${reader.read('transferChannel').intValue},');
+    buffer.writeln('),');
+
+    return buffer.toString();
+  }
+
   String _typeInfoForType(DartType type) {
     bool isPrimitive(DartType type) {
       return type.isDartCoreBool ||
@@ -261,6 +301,39 @@ class GodotScriptAnnotationGenerator
     }
     return name;
   }
+
+  String _createRpcExtension(ClassElement element) {
+    final rpcMethods = element.methods.where((m) =>
+        _godotRpcInfoChecker.firstAnnotationOf(m, throwOnUnresolved: false) !=
+        null);
+    if (rpcMethods.isEmpty) return '';
+
+    StringBuffer buffer = StringBuffer();
+
+    final className = element.name;
+    final rpcMethodsClass = '_\$${className}RpcMethods';
+    buffer.writeln('class $rpcMethodsClass {');
+    buffer.writeln('  $className self;');
+    buffer.writeln('  $rpcMethodsClass(this.self);');
+
+    for (final method in rpcMethods) {
+      buffer.write(method.getDisplayString(withNullability: true));
+      buffer.writeln('{');
+      buffer.write("  self.rpc('${method.name}', vargs: [");
+      for (final arg in method.parameters) {
+        buffer.write('Variant(${arg.name}),');
+      }
+      buffer.writeln(']);');
+      buffer.writeln('}');
+    }
+    buffer.writeln('}');
+
+    buffer.writeln('extension ${className}RpcExtension on ${className} {');
+    buffer.writeln('  $rpcMethodsClass get \$rpc => $rpcMethodsClass(this);');
+    buffer.writeln('}');
+
+    return buffer.toString();
+  }
 }
 
 extension StringHelper on String {
@@ -274,5 +347,15 @@ extension StringHelper on String {
         .replaceAll('2_D', '2d')
         .replaceAll('3_D', '3d')
         .toLowerCase();
+  }
+}
+
+extension EnumHelper on ConstantReader {
+  T enumValue<T>() {
+    final classMirror = reflectClass(T);
+    final values = classMirror.getField(Symbol('values')).reflectee as List<T>;
+    final index = peek('index')?.intValue;
+
+    return values[index!];
   }
 }

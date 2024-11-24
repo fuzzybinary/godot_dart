@@ -452,6 +452,7 @@ void DartScript::refresh_type(bool force) {
           _base_script = language->find_script_for_type(script_info);
         }
 
+        // Update Properties
         clear_property_cache();
 
         // TODO: Get properties from our base class?
@@ -469,6 +470,27 @@ void DartScript::refresh_type(bool force) {
             _properties_cache[*prop_name] = property_info;
           }
         }
+
+        // Update RPC Methods
+        DART_CHECK(rpc_list, Dart_GetField(script_info, Dart_NewStringFromCString("rpcInfo")), "Failed to get Rpc Info");
+        intptr_t rpc_count = 0;
+        Dart_ListLength(rpc_list, &rpc_count);
+        _rpc_config.clear();
+        if (rpc_count > 0) {
+          Dart_Handle rpc_as_dict = Dart_NewStringFromCString("asDict");   
+          godot::Dictionary godot_rpc_config;
+          for (auto i = 0; i < rpc_count; ++i) {
+            DART_CHECK(rpc_info, Dart_ListGetAt(rpc_list, i), "Failed to get rpc at index");
+            DART_CHECK(dart_godot_dict, Dart_Invoke(rpc_info, rpc_as_dict, 0, nullptr), "Error calling asDict");
+
+            void *dict_pointer = get_object_address(dart_godot_dict);
+            auto dict = godot::Dictionary(*((godot::Dictionary *)dict_pointer));
+            auto name = dict.get(godot::String("name"), godot::Variant());
+            godot_rpc_config[name] = dict;
+          }
+          _rpc_config = godot_rpc_config;
+        }
+
       }
     }
   });

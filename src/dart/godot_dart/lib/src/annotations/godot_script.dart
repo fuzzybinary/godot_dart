@@ -1,5 +1,8 @@
 import 'package:meta/meta.dart';
 
+import '../gen/classes/multiplayer_api.dart';
+import '../gen/classes/multiplayer_peer.dart';
+
 /// An annotation that specifies that this class should be used as a Godot
 /// script.
 @immutable
@@ -45,4 +48,19 @@ class GodotProperty {
 
   // TODO: Property Hints
   const GodotProperty({this.name});
+}
+
+@immutable
+class GodotRpc {
+  final MultiplayerAPIRPCMode mode;
+  final bool callLocal;
+  final MultiplayerPeerTransferMode transferMode;
+  final int transferChannel;
+
+  const GodotRpc({
+    this.mode = MultiplayerAPIRPCMode.rpcModeAuthority,
+    this.callLocal = false,
+    this.transferMode = MultiplayerPeerTransferMode.reliable,
+    this.transferChannel = 0,
+  });
 }

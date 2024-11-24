@@ -71,6 +71,7 @@ class Player extends Area2D {
     setPosition(position);
   }
 
+  @GodotRpc()
   void start(Vector2 pos) {
     setPosition(pos);
     show();
