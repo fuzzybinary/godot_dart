@@ -1,3 +1,9 @@
+## 0.5.0
+
+- Support parameters on Signals with `SignalArgument`
+- Fix using Dart defined scripts as GodotProperties.
+- Add support for RPC methods.
+
 ## 0.4.0
 
 - Add correct default property hints to Node and Resource types.

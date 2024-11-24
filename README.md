@@ -19,10 +19,10 @@ working, 🟨 - Partially working, ❌ - Not working)
 | ------- | :-----: | ---- |
 | Dart as a Godot Extension Language | 🟨 |  |
 | Dart Debugging Extension | ✅ | Attach to `http://127.0.0.1:5858` |
-| Dart Available as a Scripting Language | 🟨 | Very early implementation |
-| Hot Reload | ✅ | Reloading from Godot will reload the Dart module. |
+| Dart Available as a Scripting Language | 🟨 | Mostly usable in personal testing |
+| Hot Reload | ✅ | Hot Reload button now included. |
 | Simplified Binding using build_runner | 🟨 | Early implementation | 
-| Dart native Variants | ❌ | Needed for performance reasons |
+| Dart native Variants | ❌ | Needed for performance reasons, Vector2 and Vector3 are done |
 | Memory efficiency / Leak prevention | ✅ | All RefCounted objects appear to be working correclty. |
 | Godot Editor inspector integration | ❌ | |
 | Godot Editor -> Dart LSP Integration | ❌ | |
@@ -86,18 +86,23 @@ class SimpleScript extends Sprite2D  {
   @GodotProperty()
   int speed = 400
 
-  // Any method that needs to be seen by a signal needs to be exported
-  @GodotExport()
-  void onSignal() {
-
-  }
-
   // Overridden virtuals are added automatically via build_runner
   @override
   void vReady() {}
 
   @override
   void vProcess(double delta) {}
+
+  // You can also export methods for RPC
+  @GodotRpc(mode: MultiplayerAPIRPCMode.rpcModeAnyPeer, callLocal: true)
+  void rpcMesssage(String message) {}
+
+  // Any method that needs to be seen by a signal needs to be exported
+  @GodotExport()
+  void onSignal() {
+    // To call and RPC as an RPC you use the $rpc variable
+    $rpc.rpcMessage('message');
+  }
 }
 ```
 
@@ -192,13 +197,46 @@ So instead, Godot Dart prefixes all virtual methods with `v`.
 
 ### Indirectly Calling Godot Functions
 
-The Dart API uses `lowerPascalCase` instead of `snake_case` in GDScript/C++. Where possible, fields and getters/setters have been converted to properties. In general, the Dart Godot API strives to be as idiomatic as is reasonably possible.
+The Dart API uses `lowerPascalCase` instead of `snake_case` in GDScript/C++. In general, the Dart Godot API 
+strives to be as idiomatic as is reasonably possible.
 
-However, Godot still thinks of these methods as being named in `snake_case`, so if you are calling them by their name (for example)
+However, Godot still thinks of these methods as being named in `snake_case`, so if you are calling them by their name
 when using `call`, `callDeferred`, `connect`, or `callGroup`, you need to use `snake_case` for the method name.
 
 Basically, if you defined the method, use `lowerPascalCase`. If Godot defined the method, use `snake_case`. And if Godot defined
 the method and its virtual, use `_snake_case` instead of `vPascalCase` currently used in Dart.
+
+### Lack of Properties
+
+While Dart supports properties, I have specifically not converted Godot fields to Dart properties, and instead leave them
+with `getX` and `setX` methods.
+
+This is to avoid [this issue](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html#common-pitfalls),
+which is common with this type of embedding. For example: 
+
+```dart
+// The `x` property on the vector is set, but the `position` is not changed because the position 
+// setter is never called, therefore the change is never broadcast back to Godot
+position.x += 5
+```
+
+The common workaround for this is to do this:
+
+```dart
+final pos = position;
+pos.x = 5;
+position = pos;
+```
+
+But in my opinion, this defeats the purpose of wrapping properties. Properties should mimic public member variables, and, when they 
+can't, use methods instead.
+
+# Performance
+
+I have not measured the performance of this extension, partially because I know there is a lot of space for improvement in the
+embedding library itself, as well as in how the built in types are currently built.
+
+Once I've performed an optimization pass on the library, I'll look into measuring its performance.
 
 # More Info
 

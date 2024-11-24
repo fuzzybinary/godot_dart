@@ -1,3 +1,9 @@
+## 0.7.0
+
+- Support parameters on Signals with `SignalArgument`
+- Fix using Dart defined scripts as GodotProperties.
+- Add support for RPC methods.
+
 ## 0.6.2
 
 - Fix a crash when using the indexed getter on `Array`
