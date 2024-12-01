@@ -30,7 +30,7 @@ working, 🟨 - Partially working, ❌ - Not working)
 
 # Setup
 
-You can now download a usable extension zip from out [Github Actions](https://github.com/fuzzybinary/dart_shared_library/actions).
+You can now download a usable extension zip from out [Github Actions](https://github.com/fuzzybinary/godot_dart/actions).
 
 Unzip this into a Godot project, then run `dart pub get` in the `./src` directory before relaunching Godot.
 
