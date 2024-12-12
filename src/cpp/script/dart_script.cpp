@@ -249,7 +249,11 @@ bool DartScript::_is_tool() const {
 
 godot::StringName DartScript::_get_instance_base_type() const {
   GodotDartBindings *bindings = GodotDartBindings::instance();
-  if (bindings == nullptr || _dart_type == nullptr) {
+  if (bindings == nullptr) {
+    return godot::StringName();
+  }
+  const_cast<DartScript *>(this)->refresh_type(false);
+  if (_dart_type == nullptr) {
     return godot::StringName();
   }
 

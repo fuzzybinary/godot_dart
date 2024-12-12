@@ -15,8 +15,8 @@ public:
   GodotDartEditorPlugin();
   ~GodotDartEditorPlugin();
 
-  virtual void _enter_tree() override;
-  virtual void _exit_tree() override;
+  void _enter_tree() override;
+  void _exit_tree() override;
 
   bool run_pub_get();
   bool run_build_runner();

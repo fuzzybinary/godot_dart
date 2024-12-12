@@ -196,7 +196,7 @@ class Variant implements Finalizable {
   }
 
   T? cast<T>() {
-    if (T is BuiltinType) {
+    if (<T>[] is List<BuiltinType>) {
       var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
       return convertFromVariant(this, typeInfo) as T?;
     }
