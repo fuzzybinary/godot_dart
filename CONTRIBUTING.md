@@ -8,6 +8,15 @@ The rest of this document helps me / you understand how to build the extension.
 
 ## Getting Started
 
+Most of the following steps are now performed by the shell script at the root of the repository.
+So you can now run:
+
+```bash
+./prepare.sh
+```
+
+To prepare the repository.
+
 ### Updating the Dart SDK
 
 The Dart SDK dynamic libraries must be downloaded before you can work with this repo. There is a Dart
@@ -32,7 +41,7 @@ header as well as the GDExtension API json file.
 To update to more recent versions of `godot-cpp` or GDExtension, checkout a more recent version of `godot-cpp`
 and generate the FFI bindings using Dart's ffigen tool. 
 
-From the `/src/dart` directory run:
+From the `/src/dart/godot_dart` directory run:
 
 ```bash
 dart run ffigen
@@ -53,7 +62,7 @@ dart ./bin/binding_generator.dart
 For now, this generator takes no options, but it potentially will take options in
 the future.
 
-### Building
+## Building
 
 Building the C++ source uses CMake.  The following is the easiest way to build the required dynamic 
 libraries needed to work with Godot Dart.

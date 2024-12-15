@@ -45,7 +45,7 @@ class World extends Node2D {
 
   @GodotRpc(mode: MultiplayerAPIRPCMode.rpcModeAnyPeer, callLocal: true)
   void messageRpc(String username, String data) {
-    final newText = _messages.getText() + '$username: $data\n';
+    final newText = '${_messages.getText()}$username: $data\n';
     _messages.setText(newText);
   }
 
