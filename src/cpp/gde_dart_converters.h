@@ -9,7 +9,6 @@ struct TypeInfo {
   // Can be null
   Dart_Handle parent_type = nullptr;
   GDExtensionVariantType variant_type = GDEXTENSION_VARIANT_TYPE_NIL;
-  void *binding_token = nullptr;
   // Can be null
   const GDExtensionInstanceBindingCallbacks *binding_callbacks = nullptr;
 };

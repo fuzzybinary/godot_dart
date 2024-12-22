@@ -62,7 +62,7 @@ class Player extends Area2D {
         animatedSprite?.setFlipV(velocity.y > 0);
       }
     } else {
-      getNodeT<AnimatedSprite2D>()?.stop();
+      animatedSprite?.stop();
     }
 
     var position = getPosition();

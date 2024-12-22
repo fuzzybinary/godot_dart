@@ -5,7 +5,6 @@ import 'package:meta/meta.dart';
 
 import '../../godot_dart.dart';
 import 'gdextension_ffi_bindings.dart';
-import 'rpc_info.dart';
 
 class MethodInfo {
   final String name;
@@ -104,10 +103,6 @@ class TypeInfo {
   /// The size of the variant type. Zero for non-variants
   final int size;
 
-  /// The token for binding callbacks for a given type. Actually a Dart persistent
-  /// handle to the type istelf.
-  late final Pointer<Void>? bindingToken;
-
   /// The Type's vTable (a table of virutal methods).
   final Map<String, Pointer<GodotVirtualFunction>> vTable;
 
@@ -123,18 +118,9 @@ class TypeInfo {
     this.parentType,
     this.variantType = GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT,
     this.size = 0,
-    Pointer<Void>? bindingToken,
     this.vTable = const {},
     this.scriptInfo,
-  }) {
-    if (variantType == GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT &&
-        bindingToken == null) {
-      // Default to the type as the binding token for objects
-      this.bindingToken = gde.dartBindings.toPersistentHandle(type);
-    } else {
-      this.bindingToken = bindingToken;
-    }
-  }
+  }) {}
 
   static late Map<Type?, TypeInfo> _typeMapping;
   static void initTypeMappings() {

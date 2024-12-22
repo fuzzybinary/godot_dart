@@ -69,8 +69,7 @@ class GodotDartNativeBindings {
   external String gdStringToString(GDString string);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::gdObjectToDartObject')
-  external Object? gdObjectToDartObject(
-      GDExtensionObjectPtr object, Pointer<Void>? bindingToken);
+  external Object? gdObjectToDartObject(GDExtensionObjectPtr object);
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotTypeInfo')
   external TypeInfo getGodotTypeInfo(Type type);
@@ -90,7 +89,9 @@ List<Object?> _variantsToDart(
   for (int i = 0; i < count; ++i) {
     var variantPtr = (variants + i).value;
     dynamic info = typeInfoList[i];
-    // TODO: this is a hack to get around two different ways of calling this. Please fix.
+    // TODO: Fix me - called from both GodotDartBindings::bind_call which uses
+    // TypeInfo, and DartScriptInstance::call which uses PropertyInfo. See if
+    // We can't combine into one type.
     if (info is PropertyInfo) {
       result.add(_variantPtrToDart(variantPtr, info.typeInfo));
     } else {
@@ -102,13 +103,16 @@ List<Object?> _variantsToDart(
 }
 
 @pragma('vm:entry-point')
+// TODO: The only thing we actually need to know here is if we want to
+// keep the type as a Variant, as that's the only special case.
 Object? _variantPtrToDart(Pointer<Void> variantPtr, TypeInfo typeInfo) {
-  var variant = Variant.fromVariantPtr(variantPtr);
+  // What to do here? This was essentially a "cast" replacement which is why it
+  // had a special case checking if it was casting to "Variant."
   if (typeInfo.variantType ==
       GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
     // Keep as variant
-    return variant;
+    return Variant.fromVariantPtr(variantPtr);
   } else {
-    return convertFromVariant(variant, typeInfo);
+    return convertFromVariantPtr(variantPtr);
   }
 }

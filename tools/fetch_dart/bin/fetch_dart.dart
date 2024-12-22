@@ -88,7 +88,7 @@ void main(List<String> arguments) async {
 }
 
 void _fetchLocal(String localPath, Logger l) async {
-  l.info('Fetching local artifacts from ${localPath}');
+  l.info('Fetching local artifacts from $localPath');
   final localDir = Directory(localPath);
   if (!(await localDir.exists())) {
     l.severe('❌ Could not find directory $localPath.');
@@ -114,7 +114,7 @@ void _fetchLocal(String localPath, Logger l) async {
   for (final copyFile in platformFiles) {
     final srcFile = File(path.join(localPath, platformLocation, copyFile));
     final destPath = path.join(destBinDir.path, copyFile);
-    l.info('  ${srcFile.path} => ${destPath}');
+    l.info('  ${srcFile.path} => $destPath');
     await srcFile.copy(destPath);
   }
 
@@ -124,14 +124,14 @@ void _fetchLocal(String localPath, Logger l) async {
   for (final copyFile in dartHeaderList) {
     final srcFile = File(path.join(localPath, dartHeaderDir, copyFile));
     final destPath = path.join(destIncludeDir.path, copyFile);
-    l.info('  ${srcFile.path} => ${destPath}');
+    l.info('  ${srcFile.path} => $destPath');
     await srcFile.copy(destPath);
   }
 
   // Copy dart_dll header
   final srcFile = File(path.join(localPath, 'src/dart_dll.h'));
   final destPath = path.join(destDir.path, 'include', 'dart_dll.h');
-  l.info('  ${srcFile.path} => ${destPath}');
+  l.info('  ${srcFile.path} => $destPath');
   await srcFile.copy(destPath);
 
   l.info('Done ✔');
@@ -185,14 +185,14 @@ Future<String> _downloadAsset(ReleaseAsset asset, Logger l) async {
 
   final writeFile = File(path.join(Directory.systemTemp.path, asset.name!));
   l.fine('Opening temp file... ${writeFile.path}');
-  final sink = await writeFile.openWrite();
+  final sink = writeFile.openWrite();
 
   final totalLength = response.contentLength ?? 0;
   var currentLength = 0;
   final subscription = response.stream.listen((value) {
     currentLength += value.length;
     stdout.write(
-        '  ${asset.browserDownloadUrl}  ${currentLength} / ${totalLength}\r');
+        '  ${asset.browserDownloadUrl}  $currentLength / $totalLength\r');
     sink.add(value);
   }, onDone: () {
     sink.close();
@@ -211,7 +211,7 @@ Future<void> _unzipBinaryFiles(String zipLocation, Logger l) async {
   for (final file in archive.files) {
     if (file.isFile && file.name.startsWith('bin')) {
       final destPath = path.join(destBinDir.path, path.basename(file.name));
-      l.info('  Extracting ${file.name} to ${destPath}');
+      l.info('  Extracting ${file.name} to $destPath');
       final outputStream = OutputFileStream(destPath);
       file.writeContent(outputStream);
       await outputStream.close();
@@ -226,7 +226,7 @@ Future<void> _unzipIncludeFiles(String zipLocation, Logger l) async {
   for (final file in archive.files) {
     if (file.isFile && file.name.startsWith('include')) {
       final destPath = path.join(destIncludeDir.path, path.basename(file.name));
-      l.info('  Extracting ${file.name} to ${destPath}');
+      l.info('  Extracting ${file.name} to $destPath');
       final outputStream = OutputFileStream(destPath);
       file.writeContent(outputStream);
       await outputStream.close();

@@ -10,20 +10,37 @@ import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
 
+final builtinImports = '''
+import 'dart:ffi';
+
+import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
+
+import '../core/core_types.dart';
+import '../core/gdextension_ffi_bindings.dart';
+import '../core/gdextension.dart';
+import '../core/type_info.dart';
+import '../extensions/core_extensions.dart';
+import '../variant/variant.dart';
+
+import 'engine_classes.dart';
+import 'global_constants.dart';
+''';
+
 Future<void> generateBuiltinBindings(
   GodotApiInfo api,
   String targetDir,
   String buildConfig,
 ) async {
-  targetDir = path.join(targetDir, 'variant');
-  var directory = Directory(targetDir);
+  final variantTargetDir = path.join(targetDir, 'variant');
+  var directory = Directory(variantTargetDir);
   if (!directory.existsSync()) {
     await directory.create(recursive: true);
   }
 
-  // Holds all the exports an initializations for the builtins, written as
+  // Holds all the parts to be written as the library
   // 'builtins.dart' at the end of generation
-  var exportsString = '';
+  var builtinParts = '';
 
   var builtinSizes = {for (final e in api.classSize.sizes) e.name: e.size};
 
@@ -37,13 +54,15 @@ Future<void> generateBuiltinBindings(
 
     final size = builtinSizes[builtin.name]!;
 
-    final destPath = path.join(targetDir, '${builtin.name.toSnakeCase()}.dart');
+    final destPath =
+        path.join(variantTargetDir, '${builtin.name.toSnakeCase()}.dart');
     final o = CodeSink(File(destPath));
 
     o.write(header);
+    o.nl();
 
-    // Imports
-    writeImports(o, api, builtin, true);
+    o.p("part of '../builtins.dart';");
+    o.nl();
 
     // Class
     o.b('class ${builtin.dartName} extends BuiltinType {', () {
@@ -83,13 +102,14 @@ Future<void> generateBuiltinBindings(
 
     await o.close();
 
-    exportsString += "export '${builtin.name.toSnakeCase()}.dart';\n";
+    builtinParts += "part 'variant/${builtin.name.toSnakeCase()}.dart';\n";
   }
 
   var exportsFile = File(path.join(targetDir, 'builtins.dart'));
   var out = exportsFile.openWrite();
   out.write(header);
-  out.write(exportsString);
+  out.write(builtinImports);
+  out.write(builtinParts);
 
   await out.close();
 }
@@ -107,9 +127,6 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
       o.p('StringName(),');
       o.p('variantType: $variantEnum,');
       o.p('size: _size,');
-      o.p(
-        'bindingToken: null',
-      );
     }, ');');
 
     final members = builtin.members ?? [];
@@ -314,10 +331,8 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       o.p('final ret = gde.variantGetIndexed(self, index);');
       if (dartReturnType == 'Variant') {
         o.p('return ret;');
-      } else if (returnTypeCategory == TypeCategory.engineClass) {
-        o.p('return convertFromVariant(ret, $dartReturnType.sTypeInfo) as $dartReturnType;');
       } else {
-        o.p('return convertFromVariant(ret, null) as $dartReturnType;');
+        o.p('return convertFromVariant(ret) as $dartReturnType;');
       }
     }, '}');
     o.nl();
@@ -376,7 +391,7 @@ void _generateVarargMethod(CodeSink o, BuiltinClassMethod method) {
     if (method.returnType == 'Variant') {
       o.p('return retVal;');
     } else {
-      o.p('return convertFromVariant(retVal, null) as ${method.returnType};');
+      o.p('return convertFromVariant(retVal) as ${method.returnType};');
     }
   }
 }

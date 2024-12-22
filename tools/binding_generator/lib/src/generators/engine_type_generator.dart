@@ -10,20 +10,39 @@ import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
 
+final classesImports = '''
+import 'dart:ffi';
+
+import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
+
+import '../core/core_types.dart';
+import '../core/gdextension_ffi_bindings.dart';
+import '../core/gdextension.dart';
+import '../core/type_info.dart';
+export '../extensions/core_extensions.dart';
+import '../variant/variant.dart';
+import '../variant/typed_array.dart';
+
+import 'global_constants.dart';
+import 'builtins.dart';
+import 'native_structures.dart';
+''';
+
 Future<void> generateEngineBindings(
   GodotApiInfo api,
   String targetDir,
   String buildConfig,
 ) async {
-  targetDir = path.join(targetDir, 'classes');
-  var directory = Directory(targetDir);
+  final classesTarget = path.join(targetDir, 'classes');
+  var directory = Directory(classesTarget);
   if (!directory.existsSync()) {
     await directory.create(recursive: true);
   }
 
-  // Holds all the exports an initializations for the builtins, written as
-  // 'classes.dart' at the end of generation
-  var exportsString = '';
+  // Holds all the classes that we generate that will be a global
+  // 'engine_classes.dart' library at the end of generation
+  var libraryParts = '';
 
   for (final classInfo in api.engineClasses.values) {
     if (hasDartType(classInfo.name)) {
@@ -31,12 +50,12 @@ Future<void> generateEngineBindings(
     }
 
     final destPath =
-        path.join(targetDir, '${classInfo.name.toSnakeCase()}.dart');
+        path.join(classesTarget, '${classInfo.name.toSnakeCase()}.dart');
     final o = CodeSink(File(destPath));
 
     o.write(header);
-
-    writeImports(o, api, classInfo, false);
+    o.nl();
+    o.p("part of '../engine_classes.dart';");
     o.nl();
 
     final inherits = classInfo.inherits ?? 'ExtensionType';
@@ -80,13 +99,14 @@ Future<void> generateEngineBindings(
 
     await o.close();
 
-    exportsString += "export '${classInfo.name.toSnakeCase()}.dart';\n";
+    libraryParts += "part 'classes/${classInfo.name.toSnakeCase()}.dart';\n";
   }
 
-  var exportsFile = File(path.join(targetDir, 'engine_classes.dart'));
-  var out = exportsFile.openWrite();
+  var classesLibrary = File(path.join(targetDir, 'engine_classes.dart'));
+  var out = classesLibrary.openWrite();
   out.write(header);
-  out.write(exportsString);
+  out.write(classesImports);
+  out.write(libraryParts);
 
   await out.close();
 }
@@ -101,7 +121,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     o.b('if (_singletonPtr == null) {', () {
       o.p('_singletonPtr = gde.globalGetSingleton(sTypeInfo.className);');
       o.p('_singletonObj = gde.dartBindings.gdObjectToDartObject(');
-      o.p('    _singletonPtr!.cast(), sTypeInfo.bindingToken) as ${classInfo.dartName};');
+      o.p('    _singletonPtr!.cast()) as ${classInfo.dartName};');
     }, '}');
 
     o.p('return _singletonObj!;');
@@ -114,10 +134,6 @@ void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.p('${classInfo.dartName}() : super();');
   o.nl();
   o.p('${classInfo.dartName}.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);');
-  o.b('static ${classInfo.dartName}? fromOwner(Pointer<Void> owner) {', () {
-    o.p('if (owner == nullptr) return null;');
-    o.p('return ${classInfo.dartName}.withNonNullOwner(owner);');
-  }, '}');
   o.nl();
 }
 
@@ -174,17 +190,12 @@ void _generateVarargMethod(CodeSink o, ClassMethod method) {
   }, ']);');
 
   if (hasReturn) {
-    var typeInfo = 'null';
-    if (returnInfo.typeCategory == TypeCategory.engineClass) {
-      typeInfo = '${returnInfo.rawDartType}.sTypeInfo';
-    }
-
     if (returnInfo.typeCategory == TypeCategory.enumType) {
-      o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret, null) as int);');
+      o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret) as int);');
     } else if (returnInfo.dartType == 'Variant') {
       o.p('return ret;');
     } else {
-      o.p('return convertFromVariant(ret, $typeInfo) as ${returnInfo.dartType};');
+      o.p('return convertFromVariant(ret) as ${returnInfo.dartType};');
     }
   }
 }

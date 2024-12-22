@@ -64,13 +64,19 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     Dart_SetMessageNotifyCallback(dart_message_notify_callback);
 
     Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
-    Dart_Handle godot_dart_library = Dart_LookupLibrary(godot_dart_package_name);
-    if (Dart_IsError(godot_dart_library)) {
-      GD_PRINT_ERROR("GodotDart: Initialization Error (Could not find the `godot_dart` "
+    DART_CHECK_RET(godot_dart_library, Dart_LookupLibrary(godot_dart_package_name), false,
+                   "GodotDart: Initialization Error (Could not find the `godot_dart` "
+                   "package)");
+    _godot_dart_library = Dart_NewPersistentHandle(godot_dart_library);
+
+    // Find the Engine classes library. This is needed to lookup engine types
+    {
+      Dart_Handle engine_classes_package_name =
+          Dart_NewStringFromCString("package:godot_dart/src/gen/engine_classes.dart");
+      DART_CHECK_RET(engine_classes_library, Dart_LookupLibrary(engine_classes_package_name), false,
+                     "GodotDart: Initialization Error (Could not find the `engine_classes.dart` "
                      "package)");
-      return false;
-    } else {
-      _godot_dart_library = Dart_NewPersistentHandle(godot_dart_library);
+      _engine_classes_library = Dart_NewPersistentHandle(engine_classes_library);
     }
 
     // Find the DartBindings "library" (just the file) and set us as the native callback handler
@@ -83,11 +89,10 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
       Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
 
-    // Find the DartBindings "library" (just the file) and set us as the native callback handler
+    // Find the CoreTypes "library" (just the file) and set us as the native callback handler
     {
-      Dart_Handle native_bindings_library_name =
-          Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
-      DART_CHECK_RET(library, Dart_LookupLibrary(native_bindings_library_name), false, "Error finding core_types.dart");
+      Dart_Handle core_bindings_library_name = Dart_NewStringFromCString("package:godot_dart/src/core/core_types.dart");
+      DART_CHECK_RET(library, Dart_LookupLibrary(core_bindings_library_name), false, "Error finding core_types.dart");
       Dart_SetNativeResolver(library, native_resolver, nullptr);
     }
 
@@ -151,7 +156,7 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     {
       GDEWrapper *wrapper = GDEWrapper::instance();
       Dart_Handle args[] = {
-          Dart_NewInteger((int64_t)wrapper->get_library_ptr()),
+          Dart_NewInteger((int64_t)this),
           Dart_NewInteger(((int64_t)&DartGodotInstanceBinding::engine_binding_callbacks)),
       };
       DART_CHECK_RET(result, Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_registerGodot"), 2, args),
@@ -387,6 +392,25 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
 
   delete[] arg_info;
   delete[] arg_meta_info;
+}
+
+Dart_Handle GodotDartBindings::find_dart_type(Dart_Handle type_name) {
+  DartBlockScope scope;
+
+  uint8_t* c_type_name = nullptr;
+  intptr_t length = 0;
+  Dart_StringToUTF8(type_name, &c_type_name, &length);
+  if (0 == strncmp(reinterpret_cast<const char*>(c_type_name), "Object", length)) {
+    type_name = Dart_NewStringFromCString("GodotObject");
+  }
+
+  DART_CHECK_RET(engine_classes_library, Dart_HandleFromPersistent(_engine_classes_library), Dart_Null(),
+    "Error getting class class library.")
+
+  DART_CHECK_RET(type, Dart_GetNonNullableType(engine_classes_library, type_name, 0, nullptr), Dart_Null(),
+    "Could not find type in the engine_classes_library.");
+
+  return type;
 }
 
 void GodotDartBindings::add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info) {
@@ -791,25 +815,9 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
-  
-  // Default for non-engine classes
-  void *token = gde->get_library_ptr();
-
-  Dart_Handle bindings_token = Dart_GetNativeArgument(args, 2);
-  if (!Dart_IsNull(bindings_token)) {
-    address = Dart_GetField(bindings_token, Dart_NewStringFromCString("address"));
-    if (Dart_IsError(address)) {
-      GD_PRINT_ERROR(Dart_GetError(address));
-      Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(address)));
-      return;
-    }
-    uint64_t token_int = 0;
-    Dart_IntegerToUint64(address, &token_int);
-    token = (void *)token_int;    
-  }
 
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
-      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), token, &DartGodotInstanceBinding::engine_binding_callbacks);
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), bindings, &DartGodotInstanceBinding::engine_binding_callbacks);
   if (binding == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {
@@ -897,8 +905,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
 
   Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
   Dart_Handle parent_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentType"));
-  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
-  Dart_Handle binding_token = Dart_GetField(dart_type_info, Dart_NewStringFromCString("bindingToken"));
+  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));  
 
   type_info->type_name = get_object_address(class_name);
   type_info->parent_type = parent_type;
@@ -906,18 +913,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   int64_t temp;
   Dart_IntegerToInt64(variant_type, &temp);
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
-  if (Dart_IsNull(binding_token)) {
-    type_info->binding_token = nullptr;
-    type_info->binding_callbacks = nullptr;
-  } else {
-    Dart_Handle dart_address = Dart_GetField(binding_token, Dart_NewStringFromCString("address"));
-
-    uint64_t address = 0;
-    Dart_IntegerToUint64(dart_address, &address);
-
-    type_info->binding_token = (void *)address;
-    type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
-  }
+  type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
 
   Dart_ExitScope();
 }
@@ -928,6 +924,7 @@ extern "C" {
 
 GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr godot_object, bool is_refcounted,
                                    bool is_godot_defined) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
   DartBlockScope scope;
 
   Dart_Handle d_class_type_info = Dart_GetField(dart_object, Dart_NewStringFromCString("typeInfo"));
@@ -942,7 +939,7 @@ GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr
 
   const GDExtensionInstanceBindingCallbacks *callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
-      godot_object, class_type_info.binding_token, callbacks);
+      godot_object, bindings, callbacks);
   if (!binding->is_initialized()) {
     binding->initialize(dart_object, is_refcounted);
   }
@@ -1033,5 +1030,4 @@ GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
 
   return (void *)result;
 }
-
 }

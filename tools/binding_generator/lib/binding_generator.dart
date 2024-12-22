@@ -97,12 +97,8 @@ Future<void> generateUtilityFunctions(
   o.p("import '../core/gdextension_ffi_bindings.dart';");
   o.p("import '../core/gdextension.dart';");
   o.p("import '../variant/variant.dart';");
-  o.p("import 'classes/object.dart';");
-  o.p("import 'variant/packed_int64_array.dart';");
-  o.p("import 'variant/packed_byte_array.dart';");
-  o.p("import 'variant/rid.dart';");
-  o.p("import 'variant/string.dart';");
-  o.p("import 'variant/string_name.dart';");
+  o.p("import 'engine_classes.dart';");
+  o.p("import 'builtins.dart';");
 
   o.nl();
   o.b('class GD {', () {

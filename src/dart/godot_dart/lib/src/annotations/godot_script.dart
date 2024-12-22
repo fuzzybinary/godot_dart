@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '../gen/classes/multiplayer_api.dart';
-import '../gen/classes/multiplayer_peer.dart';
+import '../gen/engine_classes.dart';
 
 /// An annotation that specifies that this class should be used as a Godot
 /// script.

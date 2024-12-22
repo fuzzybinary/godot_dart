@@ -21,7 +21,7 @@ public:
   }
   godot::Ref<Script> _get_base_script() const override;
   godot::ScriptLanguage *_get_language() const override;
-  void _set_source_code(const godot::String& code);
+  void _set_source_code(const godot::String& code) override;
   godot::String _get_source_code() const override;
   bool _has_source_code() const override;
   bool _can_instantiate() const override;

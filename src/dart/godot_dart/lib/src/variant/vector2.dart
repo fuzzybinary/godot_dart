@@ -28,7 +28,6 @@ class Vector2 extends BuiltinType {
     StringName(),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2,
     size: _size,
-    bindingToken: null,
   );
 
   @override

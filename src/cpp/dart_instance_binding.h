@@ -9,8 +9,8 @@
 // persitent handles, encapsulate that into a custom GC handle
 class DartGodotInstanceBinding {
 public:
-  DartGodotInstanceBinding(void *token, GDExtensionObjectPtr godot_object)
-      : _is_refcounted(false), _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object), _token(token) {
+  DartGodotInstanceBinding(Dart_PersistentHandle dart_type, GDExtensionObjectPtr godot_object)
+      : _is_refcounted(false), _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object), _dart_type(dart_type) {
   }
 
   ~DartGodotInstanceBinding();
@@ -46,7 +46,7 @@ private:
   bool _is_weak;
   void *_persistent_handle;
   GDExtensionObjectPtr _godot_object;
-  void *_token;
+  Dart_PersistentHandle _dart_type;  
 };
 
 void gde_weak_finalizer(void *isolate_callback_data, void *peer);

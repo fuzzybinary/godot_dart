@@ -183,7 +183,7 @@ class GodotScriptAnnotationGenerator
       final argName = argReader.read('name').stringValue;
       final argType = argReader.read('type').typeValue;
       buffer.writeln(
-          '    PropertyInfo(name: \'${argName}\', typeInfo: ${_typeInfoForType(argType)}),');
+          '    PropertyInfo(name: \'$argName\', typeInfo: ${_typeInfoForType(argType)}),');
     }
     buffer.writeln(']');
     buffer.write(')');
@@ -252,7 +252,7 @@ class GodotScriptAnnotationGenerator
     }
 
     // Else, return its type
-    return '${type.getDisplayString(withNullability: false)}';
+    return type.getDisplayString(withNullability: false);
   }
 
   String _buildRpcMethodInfo(MethodElement method, DartObject rpcAnnotation) {
@@ -328,7 +328,7 @@ class GodotScriptAnnotationGenerator
     }
     buffer.writeln('}');
 
-    buffer.writeln('extension ${className}RpcExtension on ${className} {');
+    buffer.writeln('extension ${className}RpcExtension on $className {');
     buffer.writeln('  $rpcMethodsClass get \$rpc => $rpcMethodsClass(this);');
     buffer.writeln('}');
 

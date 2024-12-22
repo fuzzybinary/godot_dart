@@ -29,7 +29,6 @@ class Vector3 extends BuiltinType {
     StringName(),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3,
     size: _size,
-    bindingToken: null,
   );
 
   @override

@@ -20,12 +20,13 @@ class GodotDart {
   static GodotDart? instance;
 
   final GDExtensionFFI ffiBindings;
-  final GDExtensionClassLibraryPtr libraryPtr;
+  final GDExtensionClassLibraryPtr extensionToken;
   final Pointer<GDExtensionInstanceBindingCallbacks> engineBindingCallbacks;
 
   late GodotDartNativeBindings dartBindings;
 
-  GodotDart(this.ffiBindings, this.libraryPtr, this.engineBindingCallbacks) {
+  GodotDart(
+      this.ffiBindings, this.extensionToken, this.engineBindingCallbacks) {
     instance = this;
 
     dartBindings = GodotDartNativeBindings();
@@ -211,6 +212,8 @@ class GodotDart {
 }
 
 extension GodotObjectCast on GodotObject {
+  // TODO: We might not need this if gdObjectToDartObject checks
+  // if something has a script instance, than casts it directly.
   T? cast<T>() {
     var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
     final classTag = gde.getClassTag(typeInfo.className);
@@ -221,18 +224,14 @@ extension GodotObjectCast on GodotObject {
         return null;
       }
 
-      if (typeInfo.bindingToken != null) {
-        final persistent = gde.ffiBindings.gde_object_get_instance_binding(
-          casted,
-          typeInfo.bindingToken!,
-          gde.engineBindingCallbacks,
-        );
-        final dartObject =
-            gde.dartBindings.objectFromInstanceBinding(persistent);
+      final persistent = gde.ffiBindings.gde_object_get_instance_binding(
+        casted,
+        gde.extensionToken,
+        gde.engineBindingCallbacks,
+      );
+      final dartObject = gde.dartBindings.objectFromInstanceBinding(persistent);
 
-        return dartObject as T;
-      }
-      // TODO: What case is there where there is a class tag but no binding token?
+      return dartObject as T;
     } else {
       // Try getting the script instance, and casting from that
       final scriptInstance = gde.dartBindings.getScriptInstance(nativePtr);

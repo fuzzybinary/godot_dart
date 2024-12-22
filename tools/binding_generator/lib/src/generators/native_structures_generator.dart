@@ -45,15 +45,15 @@ class FieldInfo {
 
 Future<void> generateNativeStructures(
     GodotApiInfo api, String targetDir, String buildConfig) async {
-  targetDir = path.join(targetDir, 'classes');
-  var directory = Directory(targetDir);
+  final structsDir = path.join(targetDir, 'structs');
+  var directory = Directory(structsDir);
   if (!directory.existsSync()) {
     await directory.create(recursive: true);
   }
 
-  // Holds all the exports for native structures, written as 'structs.dart' at
+  // Holds all the parts for native structures, written as 'structs.dart' at
   // the end of generation
-  var exportsString = '';
+  var structsParts = '';
 
   for (final nativeStruct in api.nativeStructures.values) {
     if (hasDartType(nativeStruct.name)) {
@@ -61,37 +61,17 @@ Future<void> generateNativeStructures(
     }
 
     final destPath =
-        path.join(targetDir, '${nativeStruct.name.toSnakeCase()}.dart');
+        path.join(structsDir, '${nativeStruct.name.toSnakeCase()}.dart');
     final o = CodeSink(File(destPath));
 
     o.write(header);
+    o.nl();
+    o.p("part of '../native_structures.dart';");
 
     final fields = nativeStruct.format
         .split(';')
         .map((e) => FieldInfo.fromString(e))
         .toList();
-
-    o.p("import 'dart:ffi';");
-    o.p("import '../../variant/structs.dart';");
-
-    Set<String> usedTypes = {};
-
-    for (final field in fields) {
-      if (usedTypes.contains(field.type)) {
-        continue;
-      }
-      usedTypes.add(field.type);
-      if (api.nativeStructures.containsKey(field.type) ||
-          api.engineClasses.containsKey(field.type)) {
-        o.p("import '${field.type.toSnakeCase()}.dart';");
-      }
-      if (api.builtinClasses.containsKey(field.type) &&
-          !hasDartType(field.type) &&
-          !hasCustomImplementation(field.type)) {
-        o.p("import '../variant/${field.type.toSnakeCase()}.dart';");
-      }
-    }
-    o.nl();
 
     o.b('final class ${nativeStruct.dartName} extends Struct {', () {
       // Write fields
@@ -140,13 +120,18 @@ Future<void> generateNativeStructures(
 
     await o.close();
 
-    exportsString += "import '${nativeStruct.name.toSnakeCase()}.dart';\n";
+    structsParts += "part 'structs/${nativeStruct.name.toSnakeCase()}.dart';\n";
   }
 
   var exportsFile = File(path.join(targetDir, 'native_structures.dart'));
   var out = exportsFile.openWrite();
   out.write(header);
-  out.write(exportsString);
+  out.writeln("import 'dart:ffi';");
+  out.writeln("import '../variant/structs.dart';");
+  out.writeln("import '../variant/variant.dart';");
+  out.writeln("import 'builtins.dart' hide Array;");
+
+  out.write(structsParts);
 
   await out.close();
 }

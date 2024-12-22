@@ -100,7 +100,7 @@ public:
     // TODO:
     return 0;
   }
-  int32_t _profiling_get_frame_data(godot::ScriptLanguageExtensionProfilingInfo *info_array, int32_t info_max) {
+  int32_t _profiling_get_frame_data(godot::ScriptLanguageExtensionProfilingInfo *info_array, int32_t info_max) override {
     // TODO:
     return 0;
   }

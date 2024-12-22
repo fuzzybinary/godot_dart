@@ -1,11 +1,13 @@
 #include "dart_instance_binding.h"
 
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/godot.hpp>
 
-#include "dart_helpers.h"
 #include "dart_bindings.h"
+#include "dart_helpers.h"
 #include "gde_c_interface.h"
 #include "ref_counted_wrapper.h"
+#include "godot_string_wrappers.h"
 
 void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
   if (peer == nullptr) {
@@ -22,7 +24,7 @@ void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
   }
 }
 
-std::map<intptr_t, DartGodotInstanceBinding*> DartGodotInstanceBinding::s_instanceMap;
+std::map<intptr_t, DartGodotInstanceBinding *> DartGodotInstanceBinding::s_instanceMap;
 
 DartGodotInstanceBinding::~DartGodotInstanceBinding() {
   GodotDartBindings *bindings = GodotDartBindings::instance();
@@ -38,12 +40,10 @@ DartGodotInstanceBinding::~DartGodotInstanceBinding() {
     // Don't attempt to execute on the Dart isolate if this is the case
     // (it might be already doing things)
     Dart_IsolateGroup current_isolate_group = Dart_CurrentIsolateGroup();
-    if(current_isolate_group) {
+    if (current_isolate_group) {
       delete_dart_handle();
     } else {
-      GodotDartBindings::instance()->execute_on_dart_thread([&]{
-        delete_dart_handle();
-      });
+      GodotDartBindings::instance()->execute_on_dart_thread([&] { delete_dart_handle(); });
     }
     bindings->remove_pending_ref_change(this);
   }
@@ -136,7 +136,7 @@ void DartGodotInstanceBinding::create_dart_object() {
   }
 
   bindings->execute_on_dart_thread([&] {
-    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(_token);
+    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(_dart_type);
     Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
 
     Dart_Handle dart_pointer = bindings->new_dart_void_pointer(_godot_object);
@@ -152,7 +152,26 @@ void DartGodotInstanceBinding::create_dart_object() {
 /* Binding callbacks used for Engine types implemented in Godot and wrapped in Dart */
 
 static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
-  DartGodotInstanceBinding *binding = new DartGodotInstanceBinding(p_token, p_instance);
+  GodotDartBindings *bindings = GodotDartBindings::instance();  
+  godot::StringName class_name;
+
+  DartGodotInstanceBinding *binding = nullptr;
+  if (godot::internal::gdextension_interface_object_get_class_name(
+          p_instance, p_token, reinterpret_cast<GDExtensionStringNamePtr>(class_name._native_ptr()))) {
+    bindings->execute_on_dart_thread([&] {
+      Dart_EnterScope();
+
+      Dart_Handle type_name = to_dart_string(class_name);
+      DART_CHECK(type, bindings->find_dart_type(type_name), "Error finding Dart type");
+      if (!Dart_IsNull(type)) {
+        Dart_PersistentHandle persistent_type = Dart_NewPersistentHandle(type);
+        binding = new DartGodotInstanceBinding(persistent_type, p_instance);
+      }
+
+      Dart_ExitScope();
+    });
+  }
+    
   return binding;
 }
 
@@ -164,10 +183,10 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
     delete binding;
     return;
   }
-  
+
   if (binding->is_weak() || bindings->_is_stopping) {
-    // If the binding is weak or we're shutting down, there's a possibility Dart is asking us 
-    // to kill this in a way that does not allow us to call back into any other Dart code other 
+    // If the binding is weak or we're shutting down, there's a possibility Dart is asking us
+    // to kill this in a way that does not allow us to call back into any other Dart code other
     // than deleting the reference. So just do that and be done with it.
     delete binding;
     return;
@@ -222,9 +241,7 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
     // Refcount incremented, change our reference to strong to prevent Dart from finalizing
     if (refcount > 1 && engine_binding->is_weak()) {
       if (!is_finalizer) {
-        bindings->execute_on_dart_thread([&] { 
-          engine_binding->convert_to_strong();
-        });
+        bindings->execute_on_dart_thread([&] { engine_binding->convert_to_strong(); });
       } else {
         bindings->add_pending_ref_change(engine_binding);
       }
@@ -234,13 +251,11 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
   } else {
     if (refcount == 1 && !engine_binding->is_weak()) {
       if (!is_finalizer) {
-        bindings->execute_on_dart_thread([&] {
-          engine_binding->convert_to_weak();
-        });
+        bindings->execute_on_dart_thread([&] { engine_binding->convert_to_weak(); });
       } else {
         bindings->add_pending_ref_change(engine_binding);
       }
-      
+
       is_dieing = false;
     }
   }

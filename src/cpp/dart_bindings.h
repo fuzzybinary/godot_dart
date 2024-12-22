@@ -44,6 +44,7 @@ public:
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
                    Dart_Handle args_list, MethodFlags method_flags);
+  Dart_Handle find_dart_type(Dart_Handle type_name);
   void add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info);
   void execute_on_dart_thread(std::function<void()> work);
   Dart_Handle new_dart_void_pointer(void *ptr);
@@ -82,6 +83,7 @@ public:
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;
+  Dart_PersistentHandle _engine_classes_library;
   Dart_PersistentHandle _native_library;
 
   // Some things we need often

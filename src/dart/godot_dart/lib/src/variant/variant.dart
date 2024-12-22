@@ -196,12 +196,11 @@ class Variant implements Finalizable {
   }
 
   T? cast<T>() {
-    if (<T>[] is List<BuiltinType>) {
-      var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-      return convertFromVariant(this, typeInfo) as T?;
+    final value = convertFromVariant(this);
+    if (value is T) {
+      return value;
     }
-    final obj = convertFromVariant(this, GodotObject.sTypeInfo) as GodotObject?;
-    return obj?.cast<T>();
+    return null;
   }
 
   void _attachFinalizer() {
@@ -274,7 +273,7 @@ class Variant implements Finalizable {
             c!(nativePtr.cast(), gdString.nativePtr.cast());
             break;
           case final Future<void> _:
-            // Allow FutureOr and Future void to be return types, but not
+            // Allow FutureOr<void> and Future<void> to be return types, but not
             // others. This simply returns the variant 'nil'. This is
             // specifically for async signal recievers, which return
             // FutureOr<void>
@@ -295,8 +294,7 @@ class Variant implements Finalizable {
 // can copy it directly from its pointer. Prevents an extra constructor / destructor
 // call.
 @pragma('vm:entry-point')
-Object? convertFromVariantPtr(
-    GDExtensionVariantPtr variantPtr, TypeInfo? typeInfo) {
+Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
   Object? ret;
 
   int variantType = gde.ffiBindings.gde_variant_get_type(variantPtr.cast());
@@ -352,20 +350,13 @@ Object? convertFromVariantPtr(
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
-        if (typeInfo?.scriptInfo != null) {
-          final scriptInstance = gde.dartBindings.getScriptInstance(ptr.value);
-          if (scriptInstance != nullptr) {
-            return gde.dartBindings.objectFromScriptInstance(scriptInstance);
-          }
-        } else {
-          final token =
-              typeInfo?.bindingToken ?? GodotObject.sTypeInfo.bindingToken;
-          return gde.dartBindings.gdObjectToDartObject(
-            ptr.value,
-            token,
-          );
+        final scriptInstance = gde.dartBindings.getScriptInstance(ptr.value);
+        if (scriptInstance != nullptr) {
+          return gde.dartBindings.objectFromScriptInstance(scriptInstance);
         }
-        break;
+
+        //Should not need the binding token anymore
+        return gde.dartBindings.gdObjectToDartObject(ptr.value);
 
       // TODO: all the other variant types
       default:
@@ -377,9 +368,6 @@ Object? convertFromVariantPtr(
 }
 
 // Use in all cases where you already have a Dart Variant.
-Object? convertFromVariant(
-  Variant variant,
-  TypeInfo? typeInfo,
-) {
-  return convertFromVariantPtr(variant.nativePtr.cast(), typeInfo);
+Object? convertFromVariant(Variant variant) {
+  return convertFromVariantPtr(variant.nativePtr.cast());
 }
