@@ -1,3 +1,8 @@
+## 0.6.0
+
+- Update generation to not add "binding tokens" to TypeInfo (major refactor in `godot_dart` 0.8.0).
+- Fix RPC generation to not create a private class.
+
 ## 0.5.0
 
 - Support parameters on Signals with `SignalArgument`

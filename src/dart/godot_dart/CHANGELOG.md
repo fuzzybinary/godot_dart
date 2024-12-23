@@ -1,3 +1,9 @@
+## 0.8.0
+
+- Fix casting to builtin types from `Variant`.
+- BREAKING: Remove `bindingToken` as a paremeter of type info. Simplified instance binding creation which should also lower the extension's memory usage.
+- BREAKING: Remove `GodotObject.cast<T>` as Dart downcasting now works. Replaced with `GodotObject.as<T>`. This extension may be removed entirely in future versions.
+
 ## 0.7.0
 
 - Support parameters on Signals with `SignalArgument`
