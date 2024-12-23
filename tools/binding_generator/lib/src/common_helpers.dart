@@ -82,15 +82,15 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
       o.p('return retPtr.value;');
       break;
     case TypeCategory.engineClass:
+      final question = returnType.isOptional ? '?' : '';
       if (returnType.isRefCounted) {
-        final question = returnType.isOptional ? '?' : '';
         o.p('final realObj = gde.ffiBindings.gde_ref_get_object(retPtr.cast());');
         o.p('final retVal = gde.dartBindings.gdObjectToDartObject(realObj.cast()) as ${returnType.rawDartType}$question;');
         // Need to unreference the Ref<T> as its destructor is never called
         o.p('retVal$question.unreference();');
         o.p('return retVal;');
       } else {
-        o.p('return gde.dartBindings.gdObjectToDartObject(retPtr.value) as ${returnType.rawDartType};');
+        o.p('return gde.dartBindings.gdObjectToDartObject(retPtr.value) as ${returnType.rawDartType}$question;');
       }
       break;
     case TypeCategory.builtinClass:
