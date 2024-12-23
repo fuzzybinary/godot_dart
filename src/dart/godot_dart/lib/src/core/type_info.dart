@@ -120,7 +120,7 @@ class TypeInfo {
     this.size = 0,
     this.vTable = const {},
     this.scriptInfo,
-  }) {}
+  });
 
   static late Map<Type?, TypeInfo> _typeMapping;
   static void initTypeMappings() {

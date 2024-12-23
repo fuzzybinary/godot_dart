@@ -212,37 +212,8 @@ class GodotDart {
 }
 
 extension GodotObjectCast on GodotObject {
-  // TODO: We might not need this if gdObjectToDartObject checks
-  // if something has a script instance, than casts it directly.
-  T? cast<T>() {
-    var typeInfo = gde.dartBindings.getGodotTypeInfo(T);
-    final classTag = gde.getClassTag(typeInfo.className);
-    Pointer<Void> casted;
-    if (classTag != nullptr) {
-      casted = gde.ffiBindings.gde_object_cast_to(nativePtr, classTag);
-      if (casted == nullptr) {
-        return null;
-      }
-
-      final persistent = gde.ffiBindings.gde_object_get_instance_binding(
-        casted,
-        gde.extensionToken,
-        gde.engineBindingCallbacks,
-      );
-      final dartObject = gde.dartBindings.objectFromInstanceBinding(persistent);
-
-      return dartObject as T;
-    } else {
-      // Try getting the script instance, and casting from that
-      final scriptInstance = gde.dartBindings.getScriptInstance(nativePtr);
-      if (scriptInstance != nullptr) {
-        final o = gde.dartBindings.objectFromScriptInstance(scriptInstance);
-        if (o is T) {
-          return o;
-        }
-      }
-    }
-
-    return null;
+  // Implementation of as? or dynamic_cast
+  T? as<T>() {
+    return this is T ? this as T : null;
   }
 }

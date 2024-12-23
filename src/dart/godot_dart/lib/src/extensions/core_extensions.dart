@@ -15,7 +15,7 @@ extension TNode on Node {
       name = GDString.fromStringName(typeInfo.className);
     }
     var node = getNode(NodePath.fromGDString(name));
-    return node?.cast<T>();
+    return node?.as<T>();
   }
 }
 

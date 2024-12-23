@@ -397,18 +397,18 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
 Dart_Handle GodotDartBindings::find_dart_type(Dart_Handle type_name) {
   DartBlockScope scope;
 
-  uint8_t* c_type_name = nullptr;
+  uint8_t *c_type_name = nullptr;
   intptr_t length = 0;
   Dart_StringToUTF8(type_name, &c_type_name, &length);
-  if (0 == strncmp(reinterpret_cast<const char*>(c_type_name), "Object", length)) {
+  if (0 == strncmp(reinterpret_cast<const char *>(c_type_name), "Object", length)) {
     type_name = Dart_NewStringFromCString("GodotObject");
   }
 
   DART_CHECK_RET(engine_classes_library, Dart_HandleFromPersistent(_engine_classes_library), Dart_Null(),
-    "Error getting class class library.")
+                 "Error getting class class library.")
 
   DART_CHECK_RET(type, Dart_GetNonNullableType(engine_classes_library, type_name, 0, nullptr), Dart_Null(),
-    "Could not find type in the engine_classes_library.");
+                 "Could not find type in the engine_classes_library.");
 
   return type;
 }
@@ -815,9 +815,17 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
+  GDExtensionScriptInstanceDataPtr script_instance = gde_object_get_script_instance(
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), DartScriptLanguage::instance()->_owner);
+  if (script_instance) {
+    Dart_Handle obj = reinterpret_cast<DartScriptInstance *>(script_instance)->get_dart_object();
+    Dart_SetReturnValue(args, obj);
+    return;
+  }
 
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
-      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), bindings, &DartGodotInstanceBinding::engine_binding_callbacks);
+      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), bindings,
+      &DartGodotInstanceBinding::engine_binding_callbacks);
   if (binding == nullptr) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {
@@ -905,7 +913,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
 
   Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
   Dart_Handle parent_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentType"));
-  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));  
+  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
 
   type_info->type_name = get_object_address(class_name);
   type_info->parent_type = parent_type;
@@ -938,8 +946,8 @@ GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr
   type_info_from_dart(&class_type_info, d_class_type_info);
 
   const GDExtensionInstanceBindingCallbacks *callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
-  DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
-      godot_object, bindings, callbacks);
+  DartGodotInstanceBinding *binding =
+      (DartGodotInstanceBinding *)gde_object_get_instance_binding(godot_object, bindings, callbacks);
   if (!binding->is_initialized()) {
     binding->initialize(dart_object, is_refcounted);
   }

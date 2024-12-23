@@ -100,7 +100,7 @@ class SimpleScript extends Sprite2D  {
   // Any method that needs to be seen by a signal needs to be exported
   @GodotExport()
   void onSignal() {
-    // To call and RPC as an RPC you use the $rpc variable
+    // To call an RPC as an RPC you use the $rpc variable
     $rpc.rpcMessage('message');
   }
 }
@@ -133,8 +133,7 @@ class Simple extends Sprite2D {
     StringName.fromString('Simple'),
     parentClass: StringName.fromString('Sprite2D'),
     // a vTable getter is required for classes that will be used from extensions.
-    // If you are not adding any virtual functions, just return the base class's vTable.
-    // If the class is only used from scripts, this is likely not necessary.
+    // If you are not adding any virtual functions, just return the base class's vTable.    
     vTable: Sprite2D.sTypeInfo.vTable;
   );
   // An override of [typeInfo] is required. This is how
@@ -184,9 +183,9 @@ void main() {
 
 ### Casting
 
-When you are working with a Godot object, do not use `is` or `as` to perform downcasting. This will
-always fail because of how Godot extension works. Instead, use `.cast<T>`, which will return `null`
-if the cast fails.
+Early versions of Godot Dart required using `.cast<T>` to perform downcasting. This is no longer
+necessary. Dart's built in `is` and `as` operators should now work to perform downcasting. `cast<T>` 
+has also been removed and replaced with `.as<T>`, which is an implementation of `as?` or `dynamic_cast`.
 
 ### Virtual functions
 

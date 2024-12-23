@@ -149,7 +149,6 @@ class GodotScriptAnnotationGenerator
       buffer.writeln('  name: \'$exportName\',');
       buffer.writeln('  dartMethodName: \'${element.name}\',');
     } else if (element.hasOverride) {
-      // TODO - I might change the naming scheme here
       final godotMethodName = _convertVirtualMethodName(element.name);
       buffer.writeln('  name: \'$godotMethodName\',');
       buffer.writeln('  dartMethodName: \'${element.name}\',');
@@ -311,7 +310,7 @@ class GodotScriptAnnotationGenerator
     StringBuffer buffer = StringBuffer();
 
     final className = element.name;
-    final rpcMethodsClass = '_\$${className}RpcMethods';
+    final rpcMethodsClass = '\$${className}RpcMethods';
     buffer.writeln('class $rpcMethodsClass {');
     buffer.writeln('  $className self;');
     buffer.writeln('  $rpcMethodsClass(this.self);');
