@@ -1,6 +1,8 @@
 import 'package:meta/meta.dart';
 
-import '../../godot_dart.dart';
+import '../gen/builtins.dart';
+import '../gen/engine_classes.dart';
+import '../variant/variant.dart';
 
 @immutable
 class RpcInfo {

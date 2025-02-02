@@ -89,7 +89,7 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('    ],');
 
     List<FieldElement> signalFields = [];
-    List<FieldElement> propertyFields = [];
+    List<Element> propertyFields = [];
     for (final field in element.fields) {
       if (_godotSignalChecker.hasAnnotationOf(field,
           throwOnUnresolved: false)) {
@@ -98,6 +98,14 @@ class GodotScriptAnnotationGenerator
           throwOnUnresolved: false)) {
         propertyFields.add(field);
       }
+    }
+    for (final accessor in element.accessors) {
+      if (accessor.isGetter &&
+          _godotPropertyChecker.hasAnnotationOf(accessor,
+              throwOnUnresolved: false)) {
+        propertyFields.add(accessor);
+      }
+      // TODO: Warn on properties having annotations on setters.
     }
 
     buffer.writeln('    signals: [');
@@ -202,7 +210,7 @@ class GodotScriptAnnotationGenerator
   }
 
   String _generatePropertyInfo(
-      FieldElement field, DartObject? propertyAnnotation, String packageName) {
+      Element field, DartObject? propertyAnnotation, String packageName) {
     final buffer = StringBuffer();
 
     final reader = ConstantReader(propertyAnnotation);
@@ -210,15 +218,19 @@ class GodotScriptAnnotationGenerator
     String? exportName =
         nameReader.isNull ? field.name : nameReader.stringValue;
 
+    final type = field is FieldElement
+        ? field.type
+        : (field as PropertyAccessorElement).returnType;
+
     buffer.writeln('PropertyInfo(');
     buffer.writeln('  name: \'$exportName\',');
-    buffer.writeln('  typeInfo: ${_typeInfoForType(field.type)},');
+    buffer.writeln('  typeInfo: ${_typeInfoForType(type)},');
 
-    final propertyHint = _getPropertyHint(field.type);
+    final propertyHint = _getPropertyHint(type);
     if (propertyHint != null) {
       buffer.writeln('  hint: ${propertyHint.toString()},');
       buffer.writeln(
-          '  hintString: \'${_getPropertyHintString(field.type, packageName)}\',');
+          '  hintString: \'${_getPropertyHintString(type, packageName)}\',');
     }
 
     buffer.write(')');
@@ -316,13 +328,21 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('  $rpcMethodsClass(this.self);');
 
     for (final method in rpcMethods) {
-      buffer.write(method.getDisplayString(withNullability: true));
+      var methodSignature = method.getDisplayString(withNullability: true);
+      var withIdParam =
+          '${methodSignature.substring(0, methodSignature.length - 1)}, {int? peerId})';
+      buffer.write(withIdParam);
       buffer.writeln('{');
-      buffer.write("  self.rpc('${method.name}', vargs: [");
+      buffer.writeln('  final args = [');
       for (final arg in method.parameters) {
         buffer.write('Variant(${arg.name}),');
       }
-      buffer.writeln(']);');
+      buffer.writeln('];');
+      buffer.writeln('  if (peerId != null) {');
+      buffer.writeln("    self.rpcId(peerId, '${method.name}', vargs: args);");
+      buffer.writeln('  } else {');
+      buffer.writeln("    self.rpc('${method.name}', vargs: args);");
+      buffer.writeln('  }');
       buffer.writeln('}');
     }
     buffer.writeln('}');

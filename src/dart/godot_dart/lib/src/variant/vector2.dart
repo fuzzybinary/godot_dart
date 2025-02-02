@@ -4,9 +4,12 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-import '../../godot_dart.dart';
+import '../core/type_info.dart';
+import '../core/core_types.dart';
+import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/math_extensions.dart' as mathe;
+import '../gen/builtins.dart';
 import 'variant.dart';
 
 enum Vector2Axis {

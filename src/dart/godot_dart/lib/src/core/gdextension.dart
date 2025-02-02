@@ -2,7 +2,10 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
-import '../../godot_dart.dart';
+import '../gen/builtins.dart';
+import '../gen/engine_classes.dart';
+import '../variant/variant.dart';
+import 'core_types.dart';
 import 'gdextension_ffi_bindings.dart';
 import 'godot_dart_native_bindings.dart';
 

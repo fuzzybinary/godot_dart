@@ -1,7 +1,12 @@
 import 'dart:ffi';
 
-import '../../godot_dart.dart';
+import '../gen/builtins.dart';
+import '../variant/variant.dart';
+import 'property_info.dart';
+import 'type_info.dart';
 import 'gdextension_ffi_bindings.dart';
+import 'signals.dart';
+import 'type_resolver.dart';
 
 typedef ScriptResolver = Type? Function(String scriptPath);
 
@@ -47,6 +52,11 @@ class GodotDartNativeBindings {
       .asFunction<
           GDExtensionScriptInstanceDataPtr Function(
               GDExtensionConstObjectPtr)>();
+
+  late final createSignalCallable = processLib
+      .lookup<NativeFunction<Handle Function(Handle, GDObjectInstanceID)>>(
+          'create_signal_callable')
+      .asFunction<Object Function(SignalCallable, int)>();
 
   GodotDartNativeBindings() {
     processLib = DynamicLibrary.process();

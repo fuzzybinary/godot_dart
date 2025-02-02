@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
-import '../../godot_dart.dart';
+import '../core/type_info.dart';
+import '../gen/builtins.dart';
 
 class TypedArray<T> extends Array {
   TypedArray() : super() {

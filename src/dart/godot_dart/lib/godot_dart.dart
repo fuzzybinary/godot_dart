@@ -3,12 +3,18 @@ library godot_dart;
 
 import 'dart:ffi';
 
-import 'godot_dart.dart';
+import 'src/core/gdextension.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
+import 'src/core/type_info.dart';
+import 'src/extensions/async_extensions.dart';
+import 'src/gen/engine_classes.dart';
+import 'src/gen/utility_functions.dart';
 import 'src/reloader/hot_reloader.dart';
+import 'src/variant/variant.dart';
 
 export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
+export 'src/core/signals.dart' hide SignalCallable;
 export 'src/core/gdextension.dart';
 export 'src/core/property_info.dart';
 export 'src/core/rpc_info.dart';

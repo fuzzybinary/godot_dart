@@ -2,8 +2,12 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 
-import '../../godot_dart.dart';
+import '../gen/builtins.dart';
+import '../gen/engine_classes.dart';
+import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
+import '../gen/utility_functions.dart';
+import '../variant/variant.dart';
 
 extension TNode on Node {
   T? getNodeT<T>([String? path]) {

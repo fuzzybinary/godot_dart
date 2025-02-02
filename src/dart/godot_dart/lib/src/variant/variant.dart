@@ -4,8 +4,15 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
-import '../../godot_dart.dart';
+import '../core/core_types.dart';
+import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
+import '../core/type_info.dart';
+import '../gen/builtins.dart';
+
+import '../gen/global_constants.dart';
+import 'vector2.dart';
+import 'vector3.dart';
 
 export 'vector2.dart';
 export 'vector3.dart';

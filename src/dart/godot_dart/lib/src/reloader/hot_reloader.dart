@@ -67,7 +67,7 @@ class HotReloader {
         }
         reloadReports[isolateRef] = reloadReport;
         //log.finest('reloadReport for [${isolateRef.name}]: $reloadReport');
-      } on vms.SentinelException catch (ex) {
+      } on vms.SentinelException {
         // happens when the isolate has been garbage collected in the meantime
         // log.warning(
         //     'Failed to reload code of isolate [${isolateRef.name}]: $ex');

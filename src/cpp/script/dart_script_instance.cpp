@@ -560,10 +560,23 @@ void script_instance_free(GDExtensionScriptInstanceDataPtr p_instance) {
   }
 
   gde->execute_on_dart_thread([&] {
+    DartBlockScope scope;
+
     DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
     if (instance->is_placeholder()) {
       instance->get_dart_script()->dart_placeholder_erased(instance);
-    }    
+    }
+
+    Dart_Handle dart_object = instance->get_dart_object();
+
+    if (!Dart_IsNull(dart_object)) {
+      Dart_Handle result = Dart_Invoke(dart_object, Dart_NewStringFromCString("detachOwner"), 0, nullptr);
+      if (Dart_IsError(result)) {
+        GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
+        GD_PRINT_ERROR(Dart_GetError(result));
+      }      
+    }
+
     delete instance;
   });
 }

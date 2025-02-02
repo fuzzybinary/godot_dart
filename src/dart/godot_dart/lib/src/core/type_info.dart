@@ -3,7 +3,12 @@ import 'dart:ffi';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import '../../godot_dart.dart';
+import '../gen/builtins.dart';
+import '../gen/global_constants.dart';
+import '../variant/variant.dart';
+import 'property_info.dart';
+import 'rpc_info.dart';
+import 'gdextension.dart';
 import 'gdextension_ffi_bindings.dart';
 
 class MethodInfo {

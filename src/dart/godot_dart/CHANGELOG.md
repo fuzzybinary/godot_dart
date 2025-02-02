@@ -1,3 +1,9 @@
+## 0.9.0
+
+- Add type safe `SignalX` objects supporting automatic registering / deregistering.
+- Fixed an issue with ScriptInstances not detaching themselves from their Dart counterparts on deletion.
+- Attempted to refactor several files to make analysis faster.
+
 ## 0.8.0
 
 - Fix casting to builtin types from `Variant`.

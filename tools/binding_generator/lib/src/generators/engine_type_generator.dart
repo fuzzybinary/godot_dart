@@ -17,6 +17,7 @@ import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../core/core_types.dart';
+import '../core/signals.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/gdextension.dart';
 import '../core/type_info.dart';
@@ -80,6 +81,7 @@ Future<void> generateEngineBindings(
 
       //o.p('Map<String, Pointer<GodotVirtualFunction>> get _staticVTable => vTable;');
 
+      _writeSignals(o, classInfo);
       _writeSingleton(o, classInfo);
       _writeConstructors(o, classInfo);
       _writeMethods(o, classInfo);
@@ -109,6 +111,36 @@ Future<void> generateEngineBindings(
   out.write(libraryParts);
 
   await out.close();
+}
+
+void _writeSignals(CodeSink o, GodotExtensionApiJsonClass classInfo) {
+  if (classInfo.signals == null) return;
+
+  for (final signal in classInfo.signals!) {
+    int numArgs = signal.arguments?.length ?? 0;
+
+    // Right now we're using lazy signal construction, but we should see if we
+    // want to connect the signals as part of the construcor, or with an initialization
+    // call instead.
+    final signalVarName = signal.name.toLowerCamelCase();
+    if (numArgs == 0) {
+      o.p('Signal0? _$signalVarName;');
+      o.b('Signal0 get $signalVarName {', () {
+        o.p('_$signalVarName ??= Signal0(this, \'${signal.name}\');');
+        o.p('return _$signalVarName!;');
+      }, '}');
+    } else {
+      final arguments = signal.arguments!;
+      final argTypeList =
+          arguments.map((e) => godotTypeToDartType(e.type)).join(', ');
+      o.p('Signal$numArgs<$argTypeList>? _$signalVarName;');
+      o.b('Signal$numArgs<$argTypeList> get $signalVarName {', () {
+        o.p('_$signalVarName ??= Signal$numArgs<$argTypeList>(this, \'${signal.name}\');');
+        o.p('return _$signalVarName!;');
+      }, '}');
+    }
+  }
+  o.nl();
 }
 
 void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {

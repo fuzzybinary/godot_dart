@@ -202,10 +202,10 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
       if (Dart_IsError(result)) {
         GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
         GD_PRINT_ERROR(Dart_GetError(result));
-      }
-
-      delete binding;
+      }      
     }
+
+    delete binding;
   });
 }
 

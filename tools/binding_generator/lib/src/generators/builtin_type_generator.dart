@@ -323,8 +323,6 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
   // TODO: This can be made more efficient for PackedXArray, but for now we're going
   // to just use Variant's indexed getter / setters
   if (builtin.indexingReturnType != null && builtin.name != 'Dictionary') {
-    final returnTypeCategory =
-        GodotApiInfo.instance().getTypeCategory(builtin.indexingReturnType!);
     var dartReturnType = godotTypeToDartType(builtin.indexingReturnType);
     o.b('$dartReturnType operator [](int index) {', () {
       o.p('final self = Variant(this);');

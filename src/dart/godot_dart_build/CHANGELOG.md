@@ -1,3 +1,8 @@
+## 0.7.0
+
+- Add the ability to use @GodotProperty on getters.
+- Allow sending RPC messages to specific peers.
+
 ## 0.6.0
 
 - Update generation to not add "binding tokens" to TypeInfo (major refactor in `godot_dart` 0.8.0).

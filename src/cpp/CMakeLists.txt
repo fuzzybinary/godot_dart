@@ -15,36 +15,20 @@ add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 
 add_library(godot_dart SHARED
     dart_bindings.cpp
-    dart_bindings.h
     dart_instance_binding.cpp
-    dart_instance_binding.h
-    dart_helpers.h
     "script/dart_script_instance.cpp"
-    "script/dart_script_instance.h"
     gde_c_interface.cpp
-    gde_c_interface.h
     gde_dart_converters.cpp
-    gde_dart_converters.h
     gde_wrapper.cpp
-    gde_wrapper.h
     godot_dart.cpp
-    godot_dart_runtime_plugin.h
     godot_dart_runtime_plugin.cpp
     godot_string_wrappers.cpp
-    godot_string_wrappers.h
     ref_counted_wrapper.cpp
-    ref_counted_wrapper.h
     editor/godot_dart_editor_plugin.cpp
-    editor/godot_dart_editor_plugin.h 
     editor/dart_templates.cpp
-    editor/dart_templates.h
-    "editor/dart_progress_dialog.h"
     "editor/dart_progress_dialog.cpp"
     script/dart_script_language.cpp
-    script/dart_script_language.h
-    script/dart_script.h
     script/dart_script.cpp
-    script/dart_resource_format.h
     script/dart_resource_format.cpp
  )
 
@@ -101,6 +85,11 @@ elseif(LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 
     find_package(Threads REQUIRED)
+    # Find shared libraries next to the executable
+    set_target_properties(godot_dart PROPERTIES
+        BUILD_WITH_INSTALL_RPATH FALSE
+        LINK_FLAGS "-rpath,./")
+
     target_link_libraries(godot_dart 
         Threads::Threads
         ${CMAKE_DL_LIBS}

@@ -26,7 +26,7 @@ working, 🟨 - Partially working, ❌ - Not working)
 | Memory efficiency / Leak prevention | ✅ | All RefCounted objects appear to be working correclty. |
 | Godot Editor inspector integration | ❌ | |
 | Godot Editor -> Dart LSP Integration | ❌ | |
-| Dart Macro Support | ❌| |
+| Augmentation Support | ❌| |
 
 # Setup
 

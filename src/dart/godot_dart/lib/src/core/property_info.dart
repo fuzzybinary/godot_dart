@@ -1,6 +1,9 @@
 import 'package:meta/meta.dart';
 
-import '../../godot_dart.dart';
+import '../gen/global_constants.dart';
+import '../gen/builtins.dart';
+import '../variant/variant.dart';
+import 'type_info.dart';
 
 @immutable
 class PropertyInfo {

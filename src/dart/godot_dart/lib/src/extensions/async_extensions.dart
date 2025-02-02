@@ -1,6 +1,9 @@
 import 'dart:async';
 
-import '../../godot_dart.dart';
+import '../gen/engine_classes.dart';
+import '../gen/builtins.dart';
+import '../core/type_info.dart';
+import '../core/gdextension.dart';
 
 class SignalAwaiter extends GodotObject {
   static TypeInfo sTypeInfo = TypeInfo(
@@ -35,10 +38,17 @@ class SignalAwaiter extends GodotObject {
   }
 
   void signalCalled() {
-    completer.complete();
     source?.disconnect(signalName!, callable!);
+    completer.complete();
+  }
+
+  void cancel() {
+    source?.disconnect(signalName!, callable!);
+    completer.completeError(OperationCanceledError());
   }
 }
+
+class OperationCanceledError extends Error {}
 
 class CallbackAwaiter extends GodotObject {
   static TypeInfo sTypeInfo = TypeInfo(
