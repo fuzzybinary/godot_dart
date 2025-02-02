@@ -47,14 +47,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 # Using
 
 Note there are two ways to use Dart with Godot: as an extension language and as
-a Script language. Both are only partially implemented
+a Script language. Both are only partially implemented.
 
 ## Dart classes as Scripts
 
-Scripts require a little bit more setup, but can then be attached to exiting
-nodes, just like any other GDScript.  You should be able to create a Dart script
-by using the "Attach Script" command in the editor. This will create the
-necessary boilerplate for a Dart Script.
+Scripts can then be attached to exiting nodes, just like any other GDScript.
+You should be able to create a Dart script by using the "Attach Script" command
+in the editor. This will create the necessary boilerplate for a Dart script.
 
 While not required, the easiest way to create a scripts is to use `build_runner`
 and the `godot_dart_builder` package. After creating your script, run `build_runner`
@@ -119,10 +118,48 @@ void main() {
 }
 ```
 
+### Signals
+
+You can add signals to your script with the `GodotSignal` property. This takes the signal name and a list 
+of arguments for the signal:
+
+```dart
+@GodotScript()
+class Hud extends CanvasLayer {
+  //...
+
+  
+  @GodotSignal('start_game')
+  late final Signal _startGame = Signal.fromObjectSignal(this, 'start_game');
+}
+```
+
+You can then emit signals with `Signal.emit`.
+
+Classes from Godot support type safe signal subscription for each or their signals.  For example, if you
+want to subscribe to the `animation_added` signal on `AnimationLibrary`, you can do so like so:
+
+```dart
+@GodotScript()
+class MyClass extends Node {
+  @override
+  void vReady() {
+    final animationLibrary = getNodeT<AnimationLibrary>('AnimationLibrary');
+    animationLibrary.animationAdded.connect(this, _animationAdded);
+  }
+
+  void _animationAdded(String name) {
+    // ...
+  }
+}
+```
+
+These signal connections are automatically cleaned up if the target supplied to `connect` is removed.
+
+
 ## Dart classes as Extensions
 
-There are requirements for almost any Godot accessible Dart class. Here's a Simple
-example class
+Here's a Simple example class that can be used as an extension.
 
 ```dart
 class Simple extends Sprite2D {
@@ -227,8 +264,8 @@ pos.x = 5;
 position = pos;
 ```
 
-But in my opinion, this defeats the purpose of wrapping properties. Properties should mimic public member variables, and, when they 
-can't, use methods instead.
+But in my opinion, this defeats the purpose of wrapping properties. Properties
+should mimic public member variables, and, when they can't, use methods instead.
 
 # Performance
 
