@@ -124,20 +124,12 @@ void _writeSignals(CodeSink o, GodotExtensionApiJsonClass classInfo) {
     // call instead.
     final signalVarName = signal.name.toLowerCamelCase();
     if (numArgs == 0) {
-      o.p('Signal0? _$signalVarName;');
-      o.b('Signal0 get $signalVarName {', () {
-        o.p('_$signalVarName ??= Signal0(this, \'${signal.name}\');');
-        o.p('return _$signalVarName!;');
-      }, '}');
+      o.p('final late $signalVarName = Signal0(this, \'${signal.name}\');;');
     } else {
       final arguments = signal.arguments!;
       final argTypeList =
           arguments.map((e) => godotTypeToDartType(e.type)).join(', ');
-      o.p('Signal$numArgs<$argTypeList>? _$signalVarName;');
-      o.b('Signal$numArgs<$argTypeList> get $signalVarName {', () {
-        o.p('_$signalVarName ??= Signal$numArgs<$argTypeList>(this, \'${signal.name}\');');
-        o.p('return _$signalVarName!;');
-      }, '}');
+      o.p('final late $signalVarName = Signal$numArgs<$argTypeList>(this, \'${signal.name}\');');
     }
   }
   o.nl();
