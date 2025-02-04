@@ -41,7 +41,7 @@ jobs:
           cmake --build build --config release
         working-directory: ./src/cpp
       - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: ./src/cpp/build/${{ matrix.artifact-path }}
@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - run: dart pub get
