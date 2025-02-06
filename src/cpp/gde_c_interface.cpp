@@ -196,7 +196,7 @@ void gde_variant_set_indexed(GDExtensionVariantPtr p_self, GDExtensionInt p_inde
 static GDExtensionInterfaceVariantGetPtrUtilityFunction _variant_get_ptr_utility_function_func = nullptr;
 GDExtensionPtrUtilityFunction gde_variant_get_ptr_utility_function(GDExtensionConstStringNamePtr p_function,
                                                                    GDExtensionInt p_hash) {
-  if (gde_variant_get_ptr_utility_function) {
+  if (_variant_get_ptr_utility_function_func) {
     return _variant_get_ptr_utility_function_func(p_function, p_hash);
   }
   return nullptr;

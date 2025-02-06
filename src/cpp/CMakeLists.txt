@@ -85,10 +85,16 @@ elseif(LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 
     find_package(Threads REQUIRED)
+    set(RPATH_ARG "-rpath=./")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(RPATH_ARG "-Wl,-rpath,./")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(RPATH_ARG "-rpath ./")
+    endif()
     # Find shared libraries next to the executable
     set_target_properties(godot_dart PROPERTIES
         BUILD_WITH_INSTALL_RPATH FALSE
-        LINK_FLAGS "-rpath,./")
+        LINK_FLAGS ${RPATH_ARG})
 
     target_link_libraries(godot_dart 
         Threads::Threads

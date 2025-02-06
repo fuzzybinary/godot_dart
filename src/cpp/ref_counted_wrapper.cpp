@@ -37,14 +37,14 @@ int RefCountedWrapper::get_reference_count() {
 }
 
 void RefCountedWrapper::init() {
-  const int class_hash = 2240911060;
+  const GDExtensionInt class_hash = 2240911060;
   godot::StringName class_name("RefCounted");
   init_ref_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("init_ref")._native_ptr(), 2240911060);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("init_ref")._native_ptr(), class_hash);
   reference_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("reference")._native_ptr(), 2240911060);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("reference")._native_ptr(), class_hash);
   unreference_ptr_call =
-      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("unreference")._native_ptr(), 2240911060);
+      gde_classdb_get_method_bind(class_name._native_ptr(), godot::StringName("unreference")._native_ptr(), class_hash);
   get_reference_count_ptr_call = gde_classdb_get_method_bind(
       class_name._native_ptr(), godot::StringName("get_reference_count")._native_ptr(), 3905245786);
 }
