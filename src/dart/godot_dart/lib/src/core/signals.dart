@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:meta/meta.dart';
@@ -126,6 +127,19 @@ class Signal0 extends SignalCallable {
     _subscriptions.unsubscribe(subscriptionKey);
   }
 
+  Future<void> asFuture(GodotObject target) {
+    final completer = Completer<void>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, () {
+      completer.complete();
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+    return completer.future;
+  }
+
   @override
   void unsubscribeAll(GodotObject target) {
     _subscriptions.unsubscribeAll(target);
@@ -155,6 +169,20 @@ class Signal1<P1> extends SignalCallable {
 
   void disconnect(int subscriptionKey) {
     _subscriptions.unsubscribe(subscriptionKey);
+  }
+
+  Future<P1> asFuture(GodotObject target) {
+    final completer = Completer<P1>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, (p1) {
+      completer.complete(p1);
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+
+    return completer.future;
   }
 
   @override
@@ -191,6 +219,20 @@ class Signal2<P1, P2> extends SignalCallable {
     _subscriptions.unsubscribe(subscriptionKey);
   }
 
+  Future<(P1, P2)> asFuture(GodotObject target) {
+    final completer = Completer<(P1, P2)>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, (p1, p2) {
+      completer.complete((p1, p2));
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+
+    return completer.future;
+  }
+
   @override
   void clear() => _subscriptions.clear();
 
@@ -224,6 +266,20 @@ class Signal3<P1, P2, P3> extends SignalCallable {
 
   void disconnect(int subscriptionKey) {
     _subscriptions.unsubscribe(subscriptionKey);
+  }
+
+  Future<(P1, P2, P3)> asFuture(GodotObject target) {
+    final completer = Completer<(P1, P2, P3)>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, (p1, p2, p3) {
+      completer.complete((p1, p2, p3));
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+
+    return completer.future;
   }
 
   @override
@@ -262,6 +318,20 @@ class Signal4<P1, P2, P3, P4> extends SignalCallable {
     _subscriptions.unsubscribe(subscriptionKey);
   }
 
+  Future<(P1, P2, P3, P4)> asFuture(GodotObject target) {
+    final completer = Completer<(P1, P2, P3, P4)>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, (p1, p2, p3, p4) {
+      completer.complete((p1, p2, p3, p4));
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+
+    return completer.future;
+  }
+
   @override
   void clear() => _subscriptions.clear();
 
@@ -286,7 +356,7 @@ class Signal5<P1, P2, P3, P4, P5> extends SignalCallable {
         args[1].cast<P2>() as P2,
         args[2].cast<P3>() as P3,
         args[3].cast<P4>() as P4,
-        args[4].cast<P4>() as P5,
+        args[4].cast<P5>() as P5,
       );
     }
   }
@@ -297,6 +367,20 @@ class Signal5<P1, P2, P3, P4, P5> extends SignalCallable {
 
   void disconnect(int subscriptionKey) {
     _subscriptions.unsubscribe(subscriptionKey);
+  }
+
+  Future<(P1, P2, P3, P4, P5)> asFuture(GodotObject target) {
+    final completer = Completer<(P1, P2, P3, P4, P5)>();
+    var subscriptionKey = 0;
+    subscriptionKey = connect(target, (p1, p2, p3, p4, p5) {
+      completer.complete((p1, p2, p3, p4, p5));
+    });
+
+    completer.future.then((_) {
+      disconnect(subscriptionKey);
+    });
+
+    return completer.future;
   }
 
   @override
