@@ -207,6 +207,11 @@ class Variant implements Finalizable {
     if (value is T) {
       return value;
     }
+    // Allow weak conversion from StringName / GDString to Dart Strings
+    if (T == String) {
+      if (value is StringName) return value.toDartString() as T;
+      if (value is GDString) return value.toDartString() as T;
+    }
     return null;
   }
 
