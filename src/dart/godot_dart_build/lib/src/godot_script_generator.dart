@@ -329,8 +329,14 @@ class GodotScriptAnnotationGenerator
 
     for (final method in rpcMethods) {
       var methodSignature = method.getDisplayString(withNullability: true);
-      var withIdParam =
-          '${methodSignature.substring(0, methodSignature.length - 1)}, {int? peerId})';
+      String withIdParam;
+      if (method.parameters.where((p) => p.isNamed).isNotEmpty) {
+        withIdParam =
+            '${methodSignature.substring(0, methodSignature.length - 2)}, int? peerId})';
+      } else {
+        withIdParam =
+            '${methodSignature.substring(0, methodSignature.length - 1)}, {int? peerId})';
+      }
       buffer.write(withIdParam);
       buffer.writeln('{');
       buffer.writeln('  final args = [');

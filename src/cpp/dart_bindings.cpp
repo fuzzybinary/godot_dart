@@ -710,7 +710,7 @@ void dart_print(Dart_NativeArguments args) {
   Dart_Handle arg = Dart_GetNativeArgument(args, 1);
   DART_CHECK(result, Dart_StringToCString(arg, &cstring), "Error getting printable string.");
 
-  __print_verbose(cstring);
+  __print(cstring);
 }
 
 void bind_class(Dart_NativeArguments args) {

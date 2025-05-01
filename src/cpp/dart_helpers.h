@@ -12,6 +12,11 @@ inline bool is_print_verbose_enabled() {
   return false;
 }
 
+inline void __print(const char* msg) {
+  godot::String godot_msg(msg);
+  godot::UtilityFunctions::print(msg);
+}
+
 inline void __print_verbose(const char *msg) {
   if (is_print_verbose_enabled()) {
     godot::String godot_msg(msg);
