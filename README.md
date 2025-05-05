@@ -18,7 +18,7 @@ working, 🟨 - Partially working, ❌ - Not working)
 | Feature | Support | Note |
 | ------- | :-----: | ---- |
 | Dart as a Godot Extension Language | 🟨 |  |
-| Dart Debugging Extension | ✅ | Attach to `http://127.0.0.1:5858` |
+| Dart Debugging (VS Code) | ⚠ | See [Debugging](#debugging) |
 | Dart Available as a Scripting Language | 🟨 | Mostly usable in personal testing |
 | Hot Reload | ✅ | Hot Reload button now included. |
 | Simplified Binding using build_runner | 🟨 | Early implementation | 
@@ -267,12 +267,26 @@ position = pos;
 But in my opinion, this defeats the purpose of wrapping properties. Properties
 should mimic public member variables, and, when they can't, use methods instead.
 
+# Debugging
+
+Because of a change in the Dart SDK, you currently need to run the Dart Dev Service (DDS) in order to debug your game or Dart code in the Godot editor. To do so, with your game running, run the following in a terminal:
+
+```
+dart development-service --vm-service-uri=http://127.0.0.1:5858
+```
+
+I'm looking into ways to improve this experience in the long term.
+
 # Performance
 
 I have not measured the performance of this extension, partially because I know there is a lot of space for improvement in the
 embedding library itself, as well as in how the built in types are currently built.
 
 Once I've performed an optimization pass on the library, I'll look into measuring its performance.
+
+# Memory
+
+See [Memory](docs/memory.md)
 
 # More Info
 
