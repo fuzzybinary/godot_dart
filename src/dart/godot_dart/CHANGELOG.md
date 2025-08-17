@@ -3,6 +3,7 @@
 - Add type safe `SignalX` objects supporting automatic registering / deregistering.
 - Fixed an issue with ScriptInstances not detaching themselves from their Dart counterparts on deletion.
 - Attempted to refactor several files to make analysis faster.
+- Fix weak conversion from `StringName` / `GDString` in `Variant.cast`
 
 ## 0.8.0
 

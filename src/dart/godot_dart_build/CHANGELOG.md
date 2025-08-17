@@ -2,6 +2,7 @@
 
 - Add the ability to use @GodotProperty on getters.
 - Allow sending RPC messages to specific peers.
+- Fix generation of RPCs in several situations.
 
 ## 0.6.0
 
