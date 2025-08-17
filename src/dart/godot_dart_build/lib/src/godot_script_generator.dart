@@ -4,6 +4,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:code_builder/code_builder.dart' as c;
 import 'package:godot_dart/godot_dart.dart';
 import 'package:source_gen/source_gen.dart';
 
@@ -319,48 +320,75 @@ class GodotScriptAnnotationGenerator
         null);
     if (rpcMethods.isEmpty) return '';
 
-    StringBuffer buffer = StringBuffer();
-
     final className = element.name;
-    final rpcMethodsClass = '\$${className}RpcMethods';
-    buffer.writeln('class $rpcMethodsClass {');
-    buffer.writeln('  $className self;');
-    buffer.writeln('  $rpcMethodsClass(this.self);');
+    final rpcMethodsClassName = '\$${className}RpcMethods';
+    final rpcMethodClass = c.Class((b) => b
+      ..name = rpcMethodsClassName
+      ..fields.addAll([
+        c.Field((f) => f
+          ..type = c.Reference(className)
+          ..name = 'self'),
+      ])
+      ..constructors.add(c.Constructor((e) => e
+        ..requiredParameters.add(c.Parameter((p) => p
+          ..toThis = true
+          ..name = 'self'))))
+      ..methods.addAll(rpcMethods.map(_generateRpcMethod)));
 
-    for (final method in rpcMethods) {
-      var methodSignature = method.getDisplayString(withNullability: true);
-      String withIdParam;
-      if (method.parameters.isEmpty) {
-        withIdParam =
-            '${methodSignature.substring(0, methodSignature.length - 1)}{int? peerId})';
-      } else if (method.parameters.where((p) => p.isNamed).isNotEmpty) {
-        withIdParam =
-            '${methodSignature.substring(0, methodSignature.length - 2)}, int? peerId})';
-      } else {
-        withIdParam =
-            '${methodSignature.substring(0, methodSignature.length - 1)}, {int? peerId})';
-      }
-      buffer.write(withIdParam);
-      buffer.writeln('{');
-      buffer.writeln('  final args = <Variant>[');
-      for (final arg in method.parameters) {
-        buffer.write('Variant(${arg.name}),');
-      }
-      buffer.writeln('];');
-      buffer.writeln('  if (peerId != null) {');
-      buffer.writeln("    self.rpcId(peerId, '${method.name}', vargs: args);");
-      buffer.writeln('  } else {');
-      buffer.writeln("    self.rpc('${method.name}', vargs: args);");
-      buffer.writeln('  }');
-      buffer.writeln('}');
-    }
-    buffer.writeln('}');
+    final c.DartEmitter emitter = c.DartEmitter(useNullSafetySyntax: true);
+    StringBuffer buffer = StringBuffer();
+    buffer.write(rpcMethodClass.accept(emitter).toString());
 
-    buffer.writeln('extension ${className}RpcExtension on $className {');
-    buffer.writeln('  $rpcMethodsClass get \$rpc => $rpcMethodsClass(this);');
-    buffer.writeln('}');
+    final rpcExtension = c.Extension((b) => b
+      ..name = '${className}RpcExtension'
+      ..on = c.Reference(className)
+      ..methods.add(c.Method((m) => m
+        ..returns = c.Reference(rpcMethodsClassName)
+        ..type = c.MethodType.getter
+        ..name = '\$rpc'
+        ..body = c.Code('return $rpcMethodsClassName(this);'))));
 
+    buffer.write(rpcExtension.accept(emitter).toString());
     return buffer.toString();
+  }
+
+  c.Method _generateRpcMethod(MethodElement method) {
+    StringBuffer methodBody = StringBuffer();
+    methodBody.writeln('  final args = <Variant>[');
+    for (final arg in method.parameters) {
+      methodBody.write('Variant(${arg.name}),');
+    }
+    methodBody.writeln('];');
+    methodBody.writeln('  if (peerId != null) {');
+    methodBody
+        .writeln("    self.rpcId(peerId, '${method.name}', vargs: args);");
+    methodBody.writeln('  } else {');
+    methodBody.writeln("    self.rpc('${method.name}', vargs: args);");
+    methodBody.writeln('  }');
+
+    final optionalParameters = method.parameters
+        .where((e) => e.isOptional)
+        .map((e) => c.Parameter((p) => p
+          ..named = e.isNamed
+          ..name = e.name
+          ..type = c.Reference(e.type.getDisplayString(withNullability: true))))
+        .toList()
+      ..add(c.Parameter((b) => b
+        ..name = 'peerId'
+        ..named = true
+        ..type = c.Reference('int?')));
+    final requiredParametrs = method.parameters.where((e) => !e.isOptional).map(
+        (e) => c.Parameter((p) => p
+          ..named = e.isNamed
+          ..name = e.name
+          ..type =
+              c.Reference(e.type.getDisplayString(withNullability: true))));
+
+    return c.Method((b) => b
+      ..optionalParameters.addAll(optionalParameters)
+      ..requiredParameters.addAll(requiredParametrs)
+      ..name = method.name
+      ..body = c.Code(methodBody.toString()));
   }
 }
 
