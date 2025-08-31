@@ -14,19 +14,19 @@ import 'src/variant/variant.dart';
 
 export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
-export 'src/core/signals.dart' hide SignalCallable;
 export 'src/core/gdextension.dart';
 export 'src/core/property_info.dart';
 export 'src/core/rpc_info.dart';
+export 'src/core/signals.dart' hide SignalCallable;
 export 'src/core/type_info.dart';
 export 'src/core/type_resolver.dart';
 export 'src/extensions/async_extensions.dart';
 export 'src/extensions/core_extensions.dart';
+export 'src/gen/builtins.dart';
 export 'src/gen/engine_classes.dart';
 export 'src/gen/global_constants.dart';
-export 'src/gen/utility_functions.dart';
-export 'src/gen/builtins.dart';
 export 'src/gen/native_structures.dart';
+export 'src/gen/utility_functions.dart';
 export 'src/variant/variant.dart' hide getToTypeConstructor;
 
 // ignore: unused_element

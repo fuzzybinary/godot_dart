@@ -3,11 +3,11 @@ import 'dart:math';
 
 import 'package:meta/meta.dart';
 
-import '../gen/builtins.dart';
+import '../gen/classes/object.dart';
+import '../gen/variant/callable.dart';
+import '../variant/variant.dart';
 import 'core_types.dart';
 import 'gdextension.dart';
-import '../variant/variant.dart';
-import '../gen/engine_classes.dart';
 
 final Random _rand = Random();
 

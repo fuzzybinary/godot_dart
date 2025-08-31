@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 
 import '../code_sink.dart';
@@ -10,25 +11,24 @@ import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
 
-final builtinImports = '''
+final coreBuiltinImports = '''
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
-import '../core/core_types.dart';
-import '../core/gdextension_ffi_bindings.dart';
-import '../core/gdextension.dart';
-import '../core/type_info.dart';
-import '../extensions/core_extensions.dart';
-import '../variant/variant.dart';
+import '../../core/core.dart';
+import '../../extensions/core_extensions.dart';
+import '../../variant/variant.dart';
 
-import 'engine_classes.dart';
-import 'global_constants.dart';
+import 'string_name.dart';
+import 'string.dart';
+import '../global_constants.dart';
 ''';
 
 Future<void> generateBuiltinBindings(
   GodotApiInfo api,
+  String rootDirectory,
   String targetDir,
   String buildConfig,
 ) async {
@@ -40,7 +40,7 @@ Future<void> generateBuiltinBindings(
 
   // Holds all the parts to be written as the library
   // 'builtins.dart' at the end of generation
-  var builtinParts = '';
+  var builtinExports = '';
 
   var builtinSizes = {for (final e in api.classSize.sizes) e.name: e.size};
 
@@ -59,9 +59,9 @@ Future<void> generateBuiltinBindings(
     final o = CodeSink(File(destPath));
 
     o.write(header);
+    o.write(_generateImportsFor(builtin, rootDirectory, variantTargetDir));
     o.nl();
 
-    o.p("part of '../builtins.dart';");
     o.nl();
 
     // Class
@@ -102,16 +102,41 @@ Future<void> generateBuiltinBindings(
 
     await o.close();
 
-    builtinParts += "part 'variant/${builtin.name.toSnakeCase()}.dart';\n";
+    builtinExports += "export 'variant/${builtin.name.toSnakeCase()}.dart';\n";
   }
 
   var exportsFile = File(path.join(targetDir, 'builtins.dart'));
   var out = exportsFile.openWrite();
   out.write(header);
-  out.write(builtinImports);
-  out.write(builtinParts);
+  out.write(builtinExports);
 
   await out.close();
+}
+
+String _generateImportsFor(
+    BuiltinClass builtin, String rootLibDir, String targetDir) {
+  StringBuffer buffer = StringBuffer(coreBuiltinImports);
+  final importSet = <String>{};
+  for (final c in builtin.constructors) {
+    importSet.addAll(c.arguments?.findImports((a) => a.type) ?? []);
+  }
+  importSet.addAll(builtin.members?.findImports((m) => m.type) ?? []);
+  if (builtin.methods case final methods?) {
+    for (final m in methods) {
+      importSet.addAll(m.arguments?.findImports((a) => a.type) ?? []);
+      importSet.addAll(m.returnType?.findImport() ?? []);
+    }
+  }
+
+  final importList = importSet.toList().sorted();
+  for (final import in importList) {
+    final importLoc = path.join(rootLibDir, import);
+    final resolvedRelativeImport =
+        path.relative(importLoc, from: targetDir).replaceAll('\\', '/');
+    buffer.writeln("import '$resolvedRelativeImport';");
+  }
+
+  return buffer.toString();
 }
 
 void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {

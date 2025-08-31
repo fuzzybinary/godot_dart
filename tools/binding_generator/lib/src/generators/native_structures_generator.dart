@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 
 import '../code_sink.dart';
@@ -43,8 +44,8 @@ class FieldInfo {
   }
 }
 
-Future<void> generateNativeStructures(
-    GodotApiInfo api, String targetDir, String buildConfig) async {
+Future<void> generateNativeStructures(GodotApiInfo api, String rootDirectory,
+    String targetDir, String buildConfig) async {
   final structsDir = path.join(targetDir, 'structs');
   var directory = Directory(structsDir);
   if (!directory.existsSync()) {
@@ -64,14 +65,21 @@ Future<void> generateNativeStructures(
         path.join(structsDir, '${nativeStruct.name.toSnakeCase()}.dart');
     final o = CodeSink(File(destPath));
 
-    o.write(header);
-    o.nl();
-    o.p("part of '../native_structures.dart';");
-
     final fields = nativeStruct.format
         .split(';')
         .map((e) => FieldInfo.fromString(e))
         .toList();
+
+    o.write(header);
+    o.nl();
+    o.p("import 'dart:ffi';");
+    o.p("import '../../variant/structs.dart';");
+    o.p("import '../../variant/variant.dart';");
+    o.p(_generateImportsForFields(fields, rootDirectory, structsDir));
+    o.nl();
+
+    // o.p("import '../builtins.dart' hide Array;");
+    //o.nl();
 
     o.b('final class ${nativeStruct.dartName} extends Struct {', () {
       // Write fields
@@ -120,18 +128,33 @@ Future<void> generateNativeStructures(
 
     await o.close();
 
-    structsParts += "part 'structs/${nativeStruct.name.toSnakeCase()}.dart';\n";
+    structsParts +=
+        "export 'structs/${nativeStruct.name.toSnakeCase()}.dart';\n";
   }
 
   var exportsFile = File(path.join(targetDir, 'native_structures.dart'));
   var out = exportsFile.openWrite();
   out.write(header);
-  out.writeln("import 'dart:ffi';");
-  out.writeln("import '../variant/structs.dart';");
-  out.writeln("import '../variant/variant.dart';");
-  out.writeln("import 'builtins.dart' hide Array;");
 
   out.write(structsParts);
 
   await out.close();
+}
+
+String _generateImportsForFields(
+    List<FieldInfo> fields, String rootDirectory, String structsDir) {
+  final importSet = <String>{};
+  final filteredFields = fields.whereNot((f) => f.type.contains('::')).toList();
+  importSet.addAll(filteredFields.findImports((f) => f.type));
+
+  StringBuffer buffer = StringBuffer();
+  final importList = importSet.toList().sorted();
+  for (final import in importList) {
+    final importLoc = path.join(rootDirectory, import);
+    final resolvedRelativeImport =
+        path.relative(importLoc, from: structsDir).replaceAll('\\', '/');
+    buffer.writeln("import '$resolvedRelativeImport';");
+  }
+
+  return buffer.toString();
 }

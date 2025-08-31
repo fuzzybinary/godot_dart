@@ -10,28 +10,24 @@ import '../godot_extension_api_json.dart';
 import '../string_extensions.dart';
 import '../type_helpers.dart';
 
-final classesImports = '''
+final coreClassesImports = '''
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
-import '../core/core_types.dart';
-import '../core/signals.dart';
-import '../core/gdextension_ffi_bindings.dart';
-import '../core/gdextension.dart';
-import '../core/type_info.dart';
-export '../extensions/core_extensions.dart';
-import '../variant/variant.dart';
-import '../variant/typed_array.dart';
+import '../../core/core.dart';
+export '../../extensions/core_extensions.dart';
+import '../../variant/variant.dart';
+import '../global_constants.dart';
 
-import 'global_constants.dart';
-import 'builtins.dart';
-import 'native_structures.dart';
+import '../variant/string_name.dart';
+import '../variant/string.dart';
 ''';
 
 Future<void> generateEngineBindings(
   GodotApiInfo api,
+  String rootDirectory,
   String targetDir,
   String buildConfig,
 ) async {
@@ -55,8 +51,7 @@ Future<void> generateEngineBindings(
     final o = CodeSink(File(destPath));
 
     o.write(header);
-    o.nl();
-    o.p("part of '../engine_classes.dart';");
+    o.write(_generateImportsFor(api, classInfo, rootDirectory, classesTarget));
     o.nl();
 
     final inherits = classInfo.inherits ?? 'ExtensionType';
@@ -101,16 +96,52 @@ Future<void> generateEngineBindings(
 
     await o.close();
 
-    libraryParts += "part 'classes/${classInfo.name.toSnakeCase()}.dart';\n";
+    libraryParts += "export 'classes/${classInfo.name.toSnakeCase()}.dart';\n";
   }
 
   var classesLibrary = File(path.join(targetDir, 'engine_classes.dart'));
   var out = classesLibrary.openWrite();
   out.write(header);
-  out.write(classesImports);
   out.write(libraryParts);
 
   await out.close();
+}
+
+String _generateImportsFor(GodotApiInfo apiInfo,
+    GodotExtensionApiJsonClass classInfo, String rootLibDir, String targetDir) {
+  StringBuffer buffer = StringBuffer(coreClassesImports);
+  final importSet = <String>{};
+  importSet.addAll(classInfo.inherits?.findImport() ?? []);
+
+  // TODO: Properties
+  // if (classInfo.properties case final members?) {
+  //   for (final m in members) {
+  //     if (findImportForType(apiInfo, m.type) case final import?) {
+  //       importSet.add(import);
+  //     }
+  //   }
+  // }
+  if (classInfo.methods case final methods?) {
+    for (final m in methods) {
+      importSet.addAll(m.arguments?.findImports((e) => e.type) ?? []);
+      importSet.addAll(m.returnValue?.type.findImport() ?? []);
+    }
+  }
+  if (classInfo.signals case final signals?) {
+    for (final s in signals) {
+      importSet.addAll(s.arguments?.findImports((e) => e.type) ?? []);
+    }
+  }
+
+  final importList = importSet.toList().sorted();
+  for (final import in importList) {
+    final importLoc = path.join(rootLibDir, import);
+    final resolvedRelativeImport =
+        path.relative(importLoc, from: targetDir).replaceAll('\\', '/');
+    buffer.writeln("import '$resolvedRelativeImport';");
+  }
+
+  return buffer.toString();
 }
 
 void _writeSignals(CodeSink o, GodotExtensionApiJsonClass classInfo) {

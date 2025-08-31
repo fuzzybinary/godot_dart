@@ -19,6 +19,25 @@ const String header = '''// AUTO GENERATED FILE, DO NOT EDIT.
 // ignore_for_file: constant_identifier_names
 ''';
 
+extension GodotStringImportHelper on String {
+  List<String> findImport() {
+    return GodotApiInfo.instance().findImportForType(this);
+  }
+}
+
+extension GodotListImportHelper<T> on List<T> {
+  List<String> findImports(String? Function(T element) typeLocator) {
+    final imports = <String>[];
+    for (T e in this) {
+      final type = typeLocator(e);
+      if (type?.findImport() case final import?) {
+        imports.addAll(import);
+      }
+    }
+    return imports;
+  }
+}
+
 String? argumentAllocation(ArgumentProxy arg) {
   if (arg.needsAllocation) {
     var ffiType = getFFIType(arg, forPtrCall: true);
@@ -323,7 +342,9 @@ extension UtilityMethodConverter on UtilityFunction {
 }
 
 String makeSignature(dynamic functionData, {bool useGodotStringTypes = false}) {
-  assert(functionData is BuiltinClassMethod || functionData is ClassMethod);
+  assert(functionData is BuiltinClassMethod ||
+      functionData is ClassMethod ||
+      functionData is UtilityFunction);
   ClassMethod methodData;
   if (functionData is ClassMethod) {
     methodData = functionData;

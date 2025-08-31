@@ -3,6 +3,7 @@ import 'package:tuple/tuple.dart';
 
 import 'common_helpers.dart';
 import 'godot_extension_api_json.dart';
+import 'string_extensions.dart';
 import 'type_helpers.dart';
 
 enum TypeCategory {
@@ -62,6 +63,44 @@ class GodotApiInfo {
         .firstWhere((e) => e.buildConfiguration == 'float_64');
 
     _instance = this;
+  }
+
+  List<String> findImportForType(String type) {
+    final typeCategory = getTypeCategory(type);
+    final strippedType = _getStrippedType(type).item1;
+    switch (typeCategory) {
+      case TypeCategory.voidType:
+        return [];
+      case TypeCategory.primitive:
+        return [];
+      case TypeCategory.engineClass:
+        return ['src/gen/classes/${strippedType.toSnakeCase()}.dart'];
+      case TypeCategory.builtinClass:
+        // Special case, included in every file
+        if (strippedType.toLowerCase() == 'variant') return [];
+
+        if (hasCustomImplementation(strippedType)) {
+          return ['src/variant/${strippedType.toSnakeCase()}.dart'];
+        } else {
+          return ['src/gen/variant/${strippedType.toSnakeCase()}.dart'];
+        }
+      case TypeCategory.nativeStructure:
+        return ['src/gen/structs/${strippedType.toSnakeCase()}.dart'];
+      case TypeCategory.enumType:
+      case TypeCategory.bitfieldType:
+        final split = strippedType
+            .replaceAll('enum::', '')
+            .replaceAll('bitfield::', '')
+            .split('.');
+        if (split.length > 1) {
+          return findImportForType(split[0]);
+        }
+        return [];
+      case TypeCategory.typedArray:
+        final innerType = strippedType.replaceAll('typedarray::', '');
+        final innerImport = findImportForType(innerType);
+        return ['src/variant/typed_array.dart', ...innerImport];
+    }
   }
 
   bool isRefCounted(String godotType) {

@@ -25,12 +25,13 @@ class GenerationOptions {
 }
 
 Future<void> generate(GenerationOptions options) async {
+  final genDirectory = path.join(options.outputDirectory, 'src/gen');
   var file = File(options.apiJsonLocation);
   if (!file.existsSync()) {
     print("Couldn't find file: ${file.path}");
     return;
   }
-  var directory = Directory(options.outputDirectory);
+  var directory = Directory(genDirectory);
   if (!directory.existsSync()) {
     await directory.create(recursive: true);
   }
@@ -43,23 +44,21 @@ Future<void> generate(GenerationOptions options) async {
   final apiInfo = GodotApiInfo.fromJson(jsonApi);
   print('Generating builtins...');
   await generateBuiltinBindings(
-      apiInfo, options.outputDirectory, options.buildConfig);
+      apiInfo, options.outputDirectory, genDirectory, options.buildConfig);
 
   print('Generating engine bindings...');
   await generateEngineBindings(
-      apiInfo, options.outputDirectory, options.buildConfig);
+      apiInfo, options.outputDirectory, genDirectory, options.buildConfig);
 
   print('Generating global constants...');
-  await generateGlobalConstants(
-      apiInfo, options.outputDirectory, options.buildConfig);
+  await generateGlobalConstants(apiInfo, genDirectory, options.buildConfig);
 
   print('Generating utility functions...');
-  await generateUtilityFunctions(
-      apiInfo, options.outputDirectory, options.buildConfig);
+  await generateUtilityFunctions(apiInfo, genDirectory, options.buildConfig);
 
   print('Generating native structures...');
   await generateNativeStructures(
-      apiInfo, options.outputDirectory, options.buildConfig);
+      apiInfo, options.outputDirectory, genDirectory, options.buildConfig);
 }
 
 Future<void> generateGlobalConstants(
