@@ -7,14 +7,15 @@ part 'mob.g.dart';
 
 @GodotScript()
 class Mob extends RigidBody2D {
-  static TypeInfo get sTypeInfo => _$MobTypeInfo();
+  static ExtensionTypeInfo<Mob> get sTypeInfo => _$MobTypeInfo();
   @override
-  TypeInfo get typeInfo => Mob.sTypeInfo;
+  ExtensionTypeInfo<Mob> get typeInfo => Mob.sTypeInfo;
 
   final _random = Random();
 
   Mob() : super();
 
+  @pragma('vm:entry-point')
   Mob.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @override

@@ -38,17 +38,23 @@ class GodotScriptAnnotationGenerator
       ClassElement element, ConstantReader annotation, String packageName) {
     final buffer = StringBuffer();
 
-    // Find the first superclass that has nativeTypeName defined
+    // Find the first superclass that has nativeTypeName defined and see if we're RefCounted
     ClassElement? nativeType;
     InterfaceElement? searchElement = element;
+    bool isRefCounted = false;
     while (searchElement != null) {
       if (searchElement is ClassElement) {
-        final nativeTypeNameField = searchElement.getField('nativeTypeName');
-        if (nativeTypeNameField != null && nativeTypeNameField.isStatic) {
-          nativeType = searchElement;
-          break;
+        if (nativeType == null) {
+          final nativeTypeNameField = searchElement.getField('nativeTypeName');
+          if (nativeTypeNameField != null && nativeTypeNameField.isStatic) {
+            nativeType = searchElement;
+          }
+        }
+        if (searchElement.name == 'RefCounted') {
+          isRefCounted = true;
         }
       }
+
       // Continue searching up the tree
       searchElement = searchElement.supertype?.element;
     }
@@ -59,16 +65,19 @@ class GodotScriptAnnotationGenerator
 
     final isGlobalClassReader = annotation.read('isGlobal');
 
-    buffer.writeln('TypeInfo _\$${element.name}TypeInfo() => TypeInfo(');
-    buffer.writeln('  ${element.name},');
-    buffer.writeln('  StringName.fromString(\'${element.name}\'),');
     buffer.writeln(
-        '  StringName.fromString(${nativeType?.name}.nativeTypeName),');
+        'ExtensionTypeInfo<${element.name}> _\$${element.name}TypeInfo() => ExtensionTypeInfo(');
+    buffer.writeln('  className: StringName.fromString(\'${element.name}\'),');
+    buffer
+        .writeln('  parentTypeName: ${element.supertype}.sTypeInfo.className,');
+    buffer.writeln(
+        '  nativeTypeName: StringName.fromString(${nativeType?.name}.nativeTypeName),');
+    buffer.writeln('  isRefCounted: $isRefCounted,');
+    buffer.writeln('  constructObjectDefault: () => ${element.name}(),');
+    buffer.writeln(
+        '  constructFromGodotObject: (ptr) => ${element.name}.withNonNullOwner(ptr),');
     buffer.writeln(
         '  isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
-    buffer.writeln('  parentType: ${element.supertype},');
-    buffer.writeln('  vTable: ${element.supertype}.sTypeInfo.vTable,');
-    buffer.writeln('  scriptInfo: ScriptInfo(');
 
     // Methods
     buffer.writeln('    methods: [');
@@ -136,9 +145,7 @@ class GodotScriptAnnotationGenerator
         buffer.write(_buildRpcMethodInfo(method, rpcAnnotation));
       }
     }
-    buffer.writeln('    ]');
-
-    buffer.writeln('  ),');
+    buffer.writeln('    ],');
     buffer.writeln(');');
 
     buffer.writeln();
@@ -150,19 +157,25 @@ class GodotScriptAnnotationGenerator
     final buffer = StringBuffer();
     buffer.writeln('MethodInfo(');
 
+    final call = StringBuffer();
+    call.write('dartMethodCall: (o, a) => o.${element.name}(');
+    call.write(element.parameters.indexed
+        .map((e) => 'a[${e.$1}] as ${e.$2.type}')
+        .join(','));
+    call.write(')');
+
     if (exportAnnotation != null) {
       final reader = ConstantReader(exportAnnotation);
       final nameReader = reader.peek('name');
       String? exportName =
           (nameReader?.isNull ?? true) ? element.name : nameReader?.stringValue;
       buffer.writeln('  name: \'$exportName\',');
-      buffer.writeln('  dartMethodName: \'${element.name}\',');
     } else if (element.hasOverride) {
       final godotMethodName = _convertVirtualMethodName(element.name);
       buffer.writeln('  name: \'$godotMethodName\',');
-      buffer.writeln('  dartMethodName: \'${element.name}\',');
     }
 
+    buffer.writeln('  $call,');
     buffer.writeln('  args: [');
 
     for (final argument in element.parameters) {
@@ -178,7 +191,7 @@ class GodotScriptAnnotationGenerator
 
   String _buildSignalInfo(FieldElement element, DartObject? signalAnnotation) {
     final buffer = StringBuffer();
-    buffer.writeln('MethodInfo(');
+    buffer.writeln('SignalInfo(');
 
     final reader = ConstantReader(signalAnnotation);
     final signalName = reader.read('signalName').stringValue;
@@ -295,11 +308,11 @@ class GodotScriptAnnotationGenerator
     }
 
     if (isPrimitive(type)) {
-      return 'TypeInfo.forType(${type.getDisplayString(withNullability: false)})!';
+      return 'PrimitiveTypeInfo.forType(${type.getDisplayString(withNullability: false)})!';
     } else if (type.getDisplayString(withNullability: false) == 'Variant') {
-      return 'TypeInfo.forType(Variant)';
+      return 'Variant.sTypeInfo';
     } else if (type is VoidType) {
-      return 'TypeInfo.forType(null)';
+      return 'PrimitiveTypeInfo.forType(null)';
     } else {
       return '${type.getDisplayString(withNullability: false)}.sTypeInfo';
     }

@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 
-import '../gen/global_constants.dart';
 import '../gen/builtins.dart';
+import '../gen/global_constants.dart';
 import '../variant/variant.dart';
 import 'type_info.dart';
 

@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-import '../core/gdextension.dart';
-import '../core/type_info.dart';
 import '../core/core_types.dart';
+import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/math_extensions.dart' as mathe;
+import '../core/type_info.dart';
 import '../gen/builtins.dart';
 import 'variant.dart';
 
@@ -22,16 +22,23 @@ enum Vector3Axis {
   factory Vector3Axis.fromValue(int value) {
     return values.firstWhere((e) => e.value == value);
   }
+
+  static final sTypeInfo = PrimitiveTypeInfo<Vector3Axis>(
+    className: StringName.fromString('Vector3Axis'),
+    variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT,
+    fromPointer: (ptr) => Vector3Axis.fromValue(ptr.cast<Int32>().value),
+    toPointer: (self, ptr) => ptr.cast<Int32>().value = self.value,
+  );
 }
 
 class Vector3 extends BuiltinType {
   static const int _size = 12;
-  static TypeInfo sTypeInfo = TypeInfo(
-    Vector3,
-    StringName.fromString('Vector3'),
-    StringName(),
+  static final sTypeInfo = BuiltinTypeInfo<Vector3>(
+    className: StringName.fromString('Vector3'),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3,
     size: _size,
+    constructObjectDefault: () => Vector3(),
+    constructCopy: (ptr) => Vector3.copyPtr(ptr),
   );
 
   @override
@@ -48,7 +55,7 @@ class Vector3 extends BuiltinType {
   }
 
   @override
-  TypeInfo get typeInfo => sTypeInfo;
+  BuiltinTypeInfo<Vector3> get typeInfo => sTypeInfo;
 
   final Float32List _data = Float32List(3);
 

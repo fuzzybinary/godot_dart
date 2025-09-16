@@ -19,13 +19,13 @@ void gdStringFromString(CodeSink o) {
 
 void gdStringToDartString(CodeSink o) {
   o.b('String toDartString() {', () {
-    o.p('return gde.dartBindings.gdStringToString(this);');
+    o.p('return GDNativeInterface.gdStringToString(this);');
   }, '}');
 }
 
 void stringNameToDartString(CodeSink o) {
   o.b('String toDartString() {', () {
     o.p('GDString gdStr = GDString.fromStringName(this);');
-    o.p('return gde.dartBindings.gdStringToString(gdStr);');
+    o.p('return GDNativeInterface.gdStringToString(gdStr);');
   }, '}');
 }

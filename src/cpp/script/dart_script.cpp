@@ -380,9 +380,8 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle dart_pointer = bindings->new_dart_void_pointer(for_object->_owner);
-    Dart_Handle args[1] = {dart_pointer};
-    DART_CHECK(dart_object, Dart_New(_dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
+    DART_CHECK(dart_type, Dart_HandleFromPersistent(_dart_type), "Could not get type from persistent handle");
+    DART_CHECK(dart_object, bindings->new_godot_owned_object(dart_type, for_object->_owner),
                "Error creating bindings");
 
     DartScriptInstance *script_instance =

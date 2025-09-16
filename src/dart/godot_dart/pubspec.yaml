@@ -20,6 +20,13 @@ dev_dependencies:
 ffigen:
   output: 'lib/src/core/gdextension_ffi_bindings.dart'
   name: GDExtensionFFI
+  exclude-all-by-default: true
+  functions:
+    include:
+      - 'gde_.*'
+  typedefs:
+    include:
+      - 'GD.*'
   headers:
     entry-points:
       - '../../cpp/gde_c_interface.h'

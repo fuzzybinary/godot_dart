@@ -6,12 +6,13 @@ part 'player.g.dart';
 
 @GodotScript()
 class Player extends Area2D {
-  static TypeInfo get sTypeInfo => _$PlayerTypeInfo();
+  static ExtensionTypeInfo<Player> get sTypeInfo => _$PlayerTypeInfo();
   @override
-  TypeInfo get typeInfo => Player.sTypeInfo;
+  ExtensionTypeInfo<Player> get typeInfo => Player.sTypeInfo;
 
   Player() : super();
 
+  @pragma('vm:entry-point')
   Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @GodotSignal('hit')

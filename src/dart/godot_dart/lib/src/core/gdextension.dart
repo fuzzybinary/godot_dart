@@ -7,7 +7,8 @@ import '../gen/engine_classes.dart';
 import '../variant/variant.dart';
 import 'core_types.dart';
 import 'gdextension_ffi_bindings.dart';
-import 'godot_dart_native_bindings.dart';
+import 'godot_dart_native_bridge.dart';
+import 'type_resolver.dart';
 
 GodotDart get gde => GodotDart.instance!;
 
@@ -24,15 +25,13 @@ class GodotDart {
 
   final GDExtensionFFI ffiBindings;
   final GDExtensionClassLibraryPtr extensionToken;
-  final Pointer<GDExtensionInstanceBindingCallbacks> engineBindingCallbacks;
 
-  late GodotDartNativeBindings dartBindings;
+  final TypeResolver typeResolver = TypeResolver();
 
-  GodotDart(
-      this.ffiBindings, this.extensionToken, this.engineBindingCallbacks) {
+  GodotDart(this.ffiBindings, this.extensionToken) {
     instance = this;
 
-    dartBindings = GodotDartNativeBindings();
+    GDNativeInterface.setTypeResolver(typeResolver);
   }
 
   void callBuiltinConstructor(

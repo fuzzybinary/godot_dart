@@ -1,26 +1,32 @@
 import 'dart:async';
 
-import '../gen/engine_classes.dart';
-import '../gen/builtins.dart';
-import '../core/type_info.dart';
-import '../core/gdextension.dart';
+import '../../godot_dart.dart';
+import '../core/godot_dart_native_bridge.dart';
 
 class SignalAwaiter extends GodotObject {
-  static TypeInfo sTypeInfo = TypeInfo(
-    SignalAwaiter,
-    StringName.fromString('SignalAwaiter'),
-    StringName.fromString(GodotObject.nativeTypeName),
-    parentType: GodotObject,
-    vTable: GodotObject.sTypeInfo.vTable,
+  static final sTypeInfo = ExtensionTypeInfo<SignalAwaiter>(
+    className: StringName.fromString('SignalAwaiter'),
+    parentTypeName: GodotObject.sTypeInfo.className,
+    nativeTypeName: GodotObject.sTypeInfo.nativeTypeName,
+    isRefCounted: false,
+    constructObjectDefault: () => SignalAwaiter(),
+    constructFromGodotObject: (_) => SignalAwaiter(),
   );
 
   @override
-  TypeInfo get typeInfo => sTypeInfo;
+  ExtensionTypeInfo<SignalAwaiter> get typeInfo => sTypeInfo;
 
   static void bind() {
-    gde.dartBindings.bindClass(SignalAwaiter);
-    gde.dartBindings.bindMethod(
-        SignalAwaiter.sTypeInfo, 'signalCalled', TypeInfo.forType(null)!, []);
+    gde.typeResolver.addType(sTypeInfo);
+    GDNativeInterface.bindClass(SignalAwaiter.sTypeInfo);
+    GDNativeInterface.bindMethod(
+      SignalAwaiter.sTypeInfo,
+      MethodInfo<SignalAwaiter>(
+        name: 'signalCalled',
+        dartMethodCall: (self, _) => self.signalCalled(),
+        args: [],
+      ),
+    );
   }
 
   final GodotObject? source;
@@ -51,21 +57,29 @@ class SignalAwaiter extends GodotObject {
 class OperationCanceledError extends Error {}
 
 class CallbackAwaiter extends GodotObject {
-  static TypeInfo sTypeInfo = TypeInfo(
-    CallbackAwaiter,
-    StringName.fromString('CallbackAwaiter'),
-    StringName.fromString(GodotObject.nativeTypeName),
-    parentType: GodotObject,
-    vTable: GodotObject.sTypeInfo.vTable,
+  static final sTypeInfo = ExtensionTypeInfo<CallbackAwaiter>(
+    className: StringName.fromString('CallbackAwaiter'),
+    parentTypeName: GodotObject.sTypeInfo.className,
+    nativeTypeName: GodotObject.sTypeInfo.nativeTypeName,
+    isRefCounted: false,
+    constructObjectDefault: () => CallbackAwaiter(),
+    constructFromGodotObject: (_) => CallbackAwaiter(),
   );
 
   @override
-  TypeInfo get typeInfo => sTypeInfo;
+  ExtensionTypeInfo<CallbackAwaiter> get typeInfo => sTypeInfo;
 
   static void bind() {
-    gde.dartBindings.bindClass(CallbackAwaiter);
-    gde.dartBindings.bindMethod(
-        CallbackAwaiter.sTypeInfo, 'didCallback', TypeInfo.forType(null)!, []);
+    gde.typeResolver.addType(CallbackAwaiter.sTypeInfo);
+    GDNativeInterface.bindClass(CallbackAwaiter.sTypeInfo);
+    GDNativeInterface.bindMethod(
+      CallbackAwaiter.sTypeInfo,
+      MethodInfo<CallbackAwaiter>(
+        name: 'didCallback',
+        dartMethodCall: (self, _) => self.didCallback(),
+        args: [],
+      ),
+    );
   }
 
   Callable? _callable;

@@ -4,9 +4,9 @@ part 'world.g.dart';
 
 @GodotScript()
 class World extends Node2D {
-  static TypeInfo get sTypeInfo => _$WorldTypeInfo();
+  static ExtensionTypeInfo<World> get sTypeInfo => _$WorldTypeInfo();
   @override
-  TypeInfo get typeInfo => sTypeInfo;
+  ExtensionTypeInfo<World> get typeInfo => sTypeInfo;
 
   World() : super();
 

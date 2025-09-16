@@ -199,7 +199,7 @@ class Simple extends Sprite2D {
   // The simplest way to bind your class it to create a static function to
   // bind it to Godot. The name doesn't matter
   static void bind() {
-    gde.dartBindings.bindClass(Simple);  
+    GDNativeInterface.bindClass(Simple);  
   }
 }
 ```

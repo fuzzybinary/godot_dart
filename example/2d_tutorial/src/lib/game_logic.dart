@@ -11,9 +11,9 @@ part 'game_logic.g.dart';
 
 @GodotScript()
 class GameLogic extends Node {
-  static TypeInfo get sTypeInfo => _$GameLogicTypeInfo();
+  static ExtensionTypeInfo<GameLogic> get sTypeInfo => _$GameLogicTypeInfo();
   @override
-  TypeInfo get typeInfo => GameLogic.sTypeInfo;
+  ExtensionTypeInfo<GameLogic> get typeInfo => GameLogic.sTypeInfo;
 
   @GodotProperty()
   PackedScene? mobScene;
@@ -23,6 +23,7 @@ class GameLogic extends Node {
 
   GameLogic() : super();
 
+  @pragma('vm:entry-point')
   GameLogic.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 

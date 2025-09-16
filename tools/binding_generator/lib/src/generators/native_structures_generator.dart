@@ -73,6 +73,8 @@ Future<void> generateNativeStructures(GodotApiInfo api, String rootDirectory,
     o.write(header);
     o.nl();
     o.p("import 'dart:ffi';");
+    o.p("import '../variant/string_name.dart';");
+    o.p("import '../../core/type_info.dart';");
     o.p("import '../../variant/structs.dart';");
     o.p("import '../../variant/variant.dart';");
     o.p(_generateImportsForFields(fields, rootDirectory, structsDir));
@@ -82,7 +84,7 @@ Future<void> generateNativeStructures(GodotApiInfo api, String rootDirectory,
     //o.nl();
 
     o.b('final class ${nativeStruct.dartName} extends Struct {', () {
-      // Write fields
+      // Write fields1
       for (final field in fields) {
         var dartType = getCorrectedType(field.type);
         if (field.type == 'StringName') {
@@ -125,6 +127,14 @@ Future<void> generateNativeStructures(GodotApiInfo api, String rootDirectory,
         }
       }
     }, '}');
+
+    o.b('final s${nativeStruct.dartName}TypeInfo = NativeStructureTypeInfo<${nativeStruct.dartName}>(',
+        () {
+      o.p("className: StringName.fromString('${nativeStruct.name}'),");
+      o.p('fromPointer: (ptr) => ptr.cast<${nativeStruct.dartName}>().ref,');
+      o.p('toPointer: (self, ptr) => ptr.cast<${nativeStruct.dartName}>().ref = self,');
+    }, ');');
+    o.nl();
 
     await o.close();
 

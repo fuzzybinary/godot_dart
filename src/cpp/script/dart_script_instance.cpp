@@ -55,12 +55,11 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
     Dart_Handle value_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_value));
     Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
     Dart_Handle args[] = {
-        Dart_New(Dart_HandleFromPersistent(gde->_void_pointer_pointer_type), Dart_NewStringFromCString("fromAddress"),
-                 1, &value_address),
+        value_address,
         prop_type_info,
     };
     DART_CHECK(dart_property_value,
-               Dart_Invoke(native_library, Dart_NewStringFromCString("_variantPtrToDart"), 2, args),
+               Dart_Invoke(native_library, Dart_NewStringFromCString("_variantAddressToDart"), 2, args),
                "Failed to convert variant to Dart object");
     DART_CHECK(result, Dart_SetField(object, field_name, dart_property_value), "Failed to set field");
 
@@ -290,36 +289,34 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
       return;
     }
 
-    DART_CHECK(dart_method_name, Dart_GetField(method_info, Dart_NewStringFromCString("dartMethodName")),
-               "Failed getting dart method name");
-    if (Dart_IsNull(dart_method_name)) {
-      dart_method_name = Dart_GetField(method_info, Dart_NewStringFromCString("name"));
-    }
+    DART_CHECK(dart_method_call, Dart_GetField(method_info, Dart_NewStringFromCString("dartMethodCall")), "Failed to get dart method call");
+
     DART_CHECK(args_list, Dart_GetField(method_info, Dart_NewStringFromCString("args")),
                "Failed getting method arguments");
     intptr_t arg_count = 0;
     Dart_ListLength(args_list, &arg_count);
 
+    Dart_Handle dart_converted_arg_list;
     if (arg_count != 0) {
-      dart_args = new Dart_Handle[arg_count];
       Dart_Handle args_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_args));
       Dart_Handle convert_args[3]{
-          Dart_New(Dart_HandleFromPersistent(gde->_void_pointer_pointer_type), Dart_NewStringFromCString("fromAddress"),
-                   1, &args_address),
+          args_address,
           Dart_NewInteger(arg_count),
           args_list,
       };
-      DART_CHECK(dart_converted_arg_list,
-                 Dart_Invoke(gde->_native_library, Dart_NewStringFromCString("_variantsToDart"), 3, convert_args),
-                 "Error converting parameters from Variants");
-
-      for (intptr_t i = 0; i < arg_count; ++i) {
-        Dart_Handle type_info = Dart_ListGetAt(args_list, i);
-        dart_args[i] = Dart_ListGetAt(dart_converted_arg_list, i);
+      dart_converted_arg_list = Dart_Invoke(gde->_native_library, Dart_NewStringFromCString("_variantsToDart"), 3, convert_args);
+      if (Dart_IsError(dart_converted_arg_list)) {
+        r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+        return;
       }
+    } else {
+      dart_converted_arg_list = Dart_NewList(0);
     }
 
-    DART_CHECK(dart_ret, Dart_Invoke(object, dart_method_name, arg_count, dart_args), "Failed to call method");
+    Dart_Handle dart_args[2] = {
+      object, dart_converted_arg_list,
+    };
+    DART_CHECK(dart_ret, Dart_InvokeClosure(object, arg_count, dart_args), "Failed to call method");
     Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
     Dart_Handle args[] = {dart_ret};
     Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);

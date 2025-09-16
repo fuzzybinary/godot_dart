@@ -57,20 +57,26 @@ Future<void> generateEngineBindings(
     final inherits = classInfo.inherits ?? 'ExtensionType';
     final correctedInherits = getCorrectedType(inherits);
 
+    o.p("@pragma('vm:entry-point')");
     o.b('class ${classInfo.dartName} extends $correctedInherits {', () {
-      o.b('static TypeInfo sTypeInfo = TypeInfo(', () {
-        o.p('${classInfo.dartName},');
-        o.p("StringName.fromString('${classInfo.name}'),");
-        o.p('StringName.fromString(nativeTypeName),');
-        o.p('parentType: $correctedInherits,');
-        o.p('vTable: _getVTable(),');
+      o.b('static final ExtensionTypeInfo<${classInfo.dartName}> sTypeInfo = ExtensionTypeInfo<${classInfo.dartName}>(',
+          () {
+        o.p("className: StringName.fromString('${classInfo.name}'),");
+        o.p("parentTypeName: StringName.fromString('$inherits'),");
+        o.p('nativeTypeName: StringName.fromString(nativeTypeName),');
+        o.p('isRefCounted: ${classInfo.isRefcounted},');
+        o.p('constructObjectDefault: () => ${classInfo.dartName}(),');
+        o.p('constructFromGodotObject: (ptr) => ${classInfo.dartName}.withNonNullOwner(ptr),');
+        o.b('methods: <MethodInfo<${classInfo.dartName}>>[', () {
+          _writeMethodInfo(o, classInfo);
+        }, '],');
       }, ');');
       o.p('static final _bindings = _${classInfo.name}Bindings();');
       o.p("static const String nativeTypeName = '${classInfo.name}';");
       o.nl();
 
       o.p('@override');
-      o.p('TypeInfo get typeInfo => sTypeInfo;');
+      o.p('ExtensionTypeInfo<${classInfo.dartName}> get typeInfo => sTypeInfo;');
 
       o.nl();
 
@@ -81,7 +87,7 @@ Future<void> generateEngineBindings(
       _writeConstructors(o, classInfo);
       _writeMethods(o, classInfo);
       //_writeMethodTable(o, classInfo);
-      _writeVirtualFunctions(o, classInfo);
+      //_writeVirtualFunctions(o, classInfo);
     }, '}');
     o.nl();
 
@@ -144,6 +150,44 @@ String _generateImportsFor(GodotApiInfo apiInfo,
   return buffer.toString();
 }
 
+void _writeMethodInfo(CodeSink o, GodotExtensionApiJsonClass classInfo) {
+  if (classInfo.methods == null) return;
+
+  // Only the virtual methods that need to be in the MethodInfo table,
+  // because all other methods won't be called from Godot => Dart.
+  for (final method in classInfo.methods!.where((m) => m.isVirtual)) {
+    final dartMethodName = getDartMethodName(method.name, true);
+    o.b('MethodInfo(', () {
+      o.p("name: '${method.name}',");
+      o.indent();
+      o.write('dartMethodCall: (self, args) => self.$dartMethodName(');
+      if (method.arguments case final args?) {
+        for (final (i, arg) in args.indexed) {
+          o.write('args[$i] as ${arg.proxy.dartType},');
+        }
+      }
+      o.write('),');
+      o.nl();
+      o.b('args: <PropertyInfo>[', () {
+        if (method.arguments case final args?) {
+          for (final arg in args) {
+            o.b('PropertyInfo(', () {
+              o.p('typeInfo: ${arg.proxy.typeInfo},'); // Need to get the type info for this item
+              o.p("name: '${arg.name}',");
+            }, '),');
+          }
+        }
+      }, '],');
+      if (method.returnValue case final returnValue?) {
+        o.b('returnInfo: PropertyInfo(', () {
+          o.p('typeInfo: ${returnValue.proxy.typeInfo},'); // Need to get the type info for this item
+          o.p("name: 'return',");
+        }, '),');
+      }
+    }, '),');
+  }
+}
+
 void _writeSignals(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   if (classInfo.signals == null) return;
 
@@ -175,8 +219,7 @@ void _writeSingleton(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.b('static ${classInfo.dartName} get singleton {', () {
     o.b('if (_singletonPtr == null) {', () {
       o.p('_singletonPtr = gde.globalGetSingleton(sTypeInfo.className);');
-      o.p('_singletonObj = gde.dartBindings.gdObjectToDartObject(');
-      o.p('    _singletonPtr!.cast()) as ${classInfo.dartName};');
+      o.p('_singletonObj = _singletonPtr!.toDart() as ${classInfo.dartName};');
     }, '}');
 
     o.p('return _singletonObj!;');
@@ -188,6 +231,7 @@ void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   // Constructors
   o.p('${classInfo.dartName}() : super();');
   o.nl();
+  o.p("@pragma('vm:entry-point')");
   o.p('${classInfo.dartName}.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);');
   o.nl();
 }
@@ -246,11 +290,11 @@ void _generateVarargMethod(CodeSink o, ClassMethod method) {
 
   if (hasReturn) {
     if (returnInfo.typeCategory == TypeCategory.enumType) {
-      o.p('return ${returnInfo.rawDartType}.fromValue(convertFromVariant(ret) as int);');
+      o.p('return ${returnInfo.rawDartType}.fromValue(ret.cast<int>());');
     } else if (returnInfo.dartType == 'Variant') {
       o.p('return ret;');
     } else {
-      o.p('return convertFromVariant(ret) as ${returnInfo.dartType};');
+      o.p('return ret.cast<${returnInfo.dartType}>()');
     }
   }
 }
@@ -279,48 +323,48 @@ void _generatePtrcallMethod(CodeSink o, ClassMethod method) {
   }, '});');
 }
 
-void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
-  final virtualMethods = classInfo.methods?.where((e) => e.isVirtual) ?? [];
+// void _writeVirtualFunctions(CodeSink o, GodotExtensionApiJsonClass classInfo) {
+//   final virtualMethods = classInfo.methods?.where((e) => e.isVirtual) ?? [];
 
-  o.p('// Virtual functions');
-  o.b('static Map<String, Pointer<GodotVirtualFunction>> _getVTable() {', () {
-    o.p('Map<String, Pointer<GodotVirtualFunction>> vTable = {};');
+//   o.p('// Virtual functions');
+//   o.b('static Map<String, Pointer<GodotVirtualFunction>> _getVTable() {', () {
+//     o.p('Map<String, Pointer<GodotVirtualFunction>> vTable = {};');
 
-    if (classInfo.inherits != null) {
-      final correctedInherits = getCorrectedType(classInfo.inherits!);
-      o.p('vTable.addAll($correctedInherits.sTypeInfo.vTable);\n');
-    }
+//     if (classInfo.inherits != null) {
+//       final correctedInherits = getCorrectedType(classInfo.inherits!);
+//       o.p('vTable.addAll($correctedInherits.sTypeInfo.vTable);\n');
+//     }
 
-    for (final method in virtualMethods) {
-      final methodName = escapeMethodName(method.name).toLowerCamelCase();
-      o.p("vTable['${method.name}'] = Pointer.fromFunction(__$methodName);");
-    }
-    o.p('return vTable;');
-  }, '}');
-  o.nl();
+//     for (final method in virtualMethods) {
+//       final methodName = escapeMethodName(method.name).toLowerCamelCase();
+//       o.p("vTable['${method.name}'] = Pointer.fromFunction(__$methodName);");
+//     }
+//     o.p('return vTable;');
+//   }, '}');
+//   o.nl();
 
-  for (final method in virtualMethods) {
-    final methodName = escapeMethodName(method.name).toLowerCamelCase();
-    final dartMethodName = getDartMethodName(method.name, true);
-    final arguments = method.arguments?.map((e) => e.proxy) ?? [];
-    final returnInfo = method.returnValue?.proxy;
-    final hasReturn =
-        returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
+//   for (final method in virtualMethods) {
+//     final methodName = escapeMethodName(method.name).toLowerCamelCase();
+//     final dartMethodName = getDartMethodName(method.name, true);
+//     final arguments = method.arguments?.map((e) => e.proxy) ?? [];
+//     final returnInfo = method.returnValue?.proxy;
+//     final hasReturn =
+//         returnInfo != null && returnInfo.typeCategory != TypeCategory.voidType;
 
-    o.b('static void __$methodName(GDExtensionClassInstancePtr instance, Pointer<GDExtensionConstTypePtr> args, GDExtensionTypePtr retPtr) {',
-        () {
-      o.p('final self = gde.dartBindings.objectFromInstanceBinding(instance) as ${classInfo.dartName};');
-      arguments.forEachIndexed((i, e) {
-        convertPtrArgumentToDart('(args + $i)', e, o);
-      });
-      o.p("${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => escapeName(e.name).toLowerCamelCase()).join(',')});");
-      if (hasReturn) {
-        writePtrReturn(returnInfo, o);
-      }
-    }, '}');
-    o.nl();
-  }
-}
+//     o.b('static void __$methodName(GDExtensionClassInstancePtr instance, Pointer<GDExtensionConstTypePtr> args, GDExtensionTypePtr retPtr) {',
+//         () {
+//       o.p('final self = GDNativeInterface.objectFromInstanceBinding(instance) as ${classInfo.dartName};');
+//       arguments.forEachIndexed((i, e) {
+//         convertPtrArgumentToDart('(args + $i)', e, o);
+//       });
+//       o.p("${hasReturn ? 'final ret = ' : ''}self.$dartMethodName(${arguments.map((e) => escapeName(e.name).toLowerCamelCase()).join(',')});");
+//       if (hasReturn) {
+//         writePtrReturn(returnInfo, o);
+//       }
+//     }, '}');
+//     o.nl();
+//   }
+// }
 
 void _writeBindingsClass(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   o.b('class _${classInfo.name}Bindings {', () {

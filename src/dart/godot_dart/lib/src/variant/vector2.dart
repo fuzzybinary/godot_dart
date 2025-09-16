@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-import '../core/type_info.dart';
 import '../core/core_types.dart';
 import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/math_extensions.dart' as mathe;
+import '../core/type_info.dart';
 import '../gen/builtins.dart';
 import 'variant.dart';
 
@@ -25,12 +25,12 @@ enum Vector2Axis {
 
 class Vector2 extends BuiltinType {
   static const int _size = 8;
-  static TypeInfo sTypeInfo = TypeInfo(
-    Vector2,
-    StringName.fromString('Vector2'),
-    StringName(),
+  static final sTypeInfo = BuiltinTypeInfo<Vector2>(
+    className: StringName.fromString('Vector2'),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2,
     size: _size,
+    constructObjectDefault: () => Vector2(),
+    constructCopy: (ptr) => Vector2.copyPtr(ptr),
   );
 
   @override
@@ -47,7 +47,7 @@ class Vector2 extends BuiltinType {
   }
 
   @override
-  TypeInfo get typeInfo => sTypeInfo;
+  BuiltinTypeInfo<Vector2> get typeInfo => sTypeInfo;
 
   final Float32List _data = Float32List(2);
 

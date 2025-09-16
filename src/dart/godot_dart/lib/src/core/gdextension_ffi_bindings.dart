@@ -556,7 +556,7 @@ class GDExtensionFFI {
 
   int gde_string_to_utf16_chars(
     GDExtensionConstStringPtr p_self,
-    ffi.Pointer<char16_t> r_text,
+    ffi.Pointer<ffi.Uint16> r_text,
     int p_max_write_length,
   ) {
     return _gde_string_to_utf16_chars(
@@ -570,12 +570,12 @@ class GDExtensionFFI {
       ffi.NativeFunction<
           GDExtensionInt Function(
               GDExtensionConstStringPtr,
-              ffi.Pointer<char16_t>,
+              ffi.Pointer<ffi.Uint16>,
               GDExtensionInt)>>('gde_string_to_utf16_chars');
   late final _gde_string_to_utf16_chars =
       _gde_string_to_utf16_charsPtr.asFunction<
           int Function(
-              GDExtensionConstStringPtr, ffi.Pointer<char16_t>, int)>();
+              GDExtensionConstStringPtr, ffi.Pointer<ffi.Uint16>, int)>();
 
   GDExtensionObjectPtr gde_global_get_singleton(
     GDExtensionConstStringNamePtr p_name,
@@ -984,12 +984,30 @@ class GDExtensionFFI {
               GDExtensionConstObjectPtr, GDExtensionObjectPtr)>();
 }
 
-final class max_align_t extends ffi.Opaque {}
-
-final class __fsid_t extends ffi.Struct {
-  @ffi.Array.multi([2])
-  external ffi.Array<ffi.Int> __val;
-}
+typedef GDExtensionInterfaceGetProcAddress = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionInterfaceGetProcAddressFunction>>;
+typedef GDExtensionInterfaceGetProcAddressFunction
+    = GDExtensionInterfaceFunctionPtr Function(
+        ffi.Pointer<ffi.Char> p_function_name);
+typedef GDExtensionInterfaceFunctionPtr
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionInterfaceFunctionPtrFunction>>;
+typedef GDExtensionInterfaceFunctionPtrFunction = ffi.Void Function();
+typedef DartGDExtensionInterfaceFunctionPtrFunction = void Function();
+typedef GDExtensionClassLibraryPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionUninitializedStringPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionBool = ffi.Uint8;
+typedef DartGDExtensionBool = int;
+typedef GDExtensionVariantPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionPtrConstructor
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrConstructorFunction>>;
+typedef GDExtensionPtrConstructorFunction = ffi.Void Function(
+    GDExtensionUninitializedTypePtr p_base,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args);
+typedef DartGDExtensionPtrConstructorFunction = void Function(
+    GDExtensionUninitializedTypePtr p_base,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args);
+typedef GDExtensionUninitializedTypePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionConstTypePtr = ffi.Pointer<ffi.Void>;
 
 abstract class GDExtensionVariantType {
   static const int GDEXTENSION_VARIANT_TYPE_NIL = 0;
@@ -1034,1132 +1052,15 @@ abstract class GDExtensionVariantType {
   static const int GDEXTENSION_VARIANT_TYPE_VARIANT_MAX = 39;
 }
 
-abstract class GDExtensionVariantOperator {
-  static const int GDEXTENSION_VARIANT_OP_EQUAL = 0;
-  static const int GDEXTENSION_VARIANT_OP_NOT_EQUAL = 1;
-  static const int GDEXTENSION_VARIANT_OP_LESS = 2;
-  static const int GDEXTENSION_VARIANT_OP_LESS_EQUAL = 3;
-  static const int GDEXTENSION_VARIANT_OP_GREATER = 4;
-  static const int GDEXTENSION_VARIANT_OP_GREATER_EQUAL = 5;
-  static const int GDEXTENSION_VARIANT_OP_ADD = 6;
-  static const int GDEXTENSION_VARIANT_OP_SUBTRACT = 7;
-  static const int GDEXTENSION_VARIANT_OP_MULTIPLY = 8;
-  static const int GDEXTENSION_VARIANT_OP_DIVIDE = 9;
-  static const int GDEXTENSION_VARIANT_OP_NEGATE = 10;
-  static const int GDEXTENSION_VARIANT_OP_POSITIVE = 11;
-  static const int GDEXTENSION_VARIANT_OP_MODULE = 12;
-  static const int GDEXTENSION_VARIANT_OP_POWER = 13;
-  static const int GDEXTENSION_VARIANT_OP_SHIFT_LEFT = 14;
-  static const int GDEXTENSION_VARIANT_OP_SHIFT_RIGHT = 15;
-  static const int GDEXTENSION_VARIANT_OP_BIT_AND = 16;
-  static const int GDEXTENSION_VARIANT_OP_BIT_OR = 17;
-  static const int GDEXTENSION_VARIANT_OP_BIT_XOR = 18;
-  static const int GDEXTENSION_VARIANT_OP_BIT_NEGATE = 19;
-  static const int GDEXTENSION_VARIANT_OP_AND = 20;
-  static const int GDEXTENSION_VARIANT_OP_OR = 21;
-  static const int GDEXTENSION_VARIANT_OP_XOR = 22;
-  static const int GDEXTENSION_VARIANT_OP_NOT = 23;
-  static const int GDEXTENSION_VARIANT_OP_IN = 24;
-  static const int GDEXTENSION_VARIANT_OP_MAX = 25;
-}
-
-abstract class GDExtensionCallErrorType {
-  static const int GDEXTENSION_CALL_OK = 0;
-  static const int GDEXTENSION_CALL_ERROR_INVALID_METHOD = 1;
-  static const int GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT = 2;
-  static const int GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS = 3;
-  static const int GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS = 4;
-  static const int GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL = 5;
-  static const int GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST = 6;
-}
-
-final class GDExtensionCallError extends ffi.Struct {
-  @ffi.Int32()
-  external int error;
-
-  @ffi.Int32()
-  external int argument;
-
-  @ffi.Int32()
-  external int expected;
-}
-
-final class GDExtensionInstanceBindingCallbacks extends ffi.Struct {
-  external GDExtensionInstanceBindingCreateCallback create_callback;
-
-  external GDExtensionInstanceBindingFreeCallback free_callback;
-
-  external GDExtensionInstanceBindingReferenceCallback reference_callback;
-}
-
-typedef GDExtensionInstanceBindingCreateCallback = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionInstanceBindingCreateCallbackFunction>>;
-typedef GDExtensionInstanceBindingCreateCallbackFunction = ffi.Pointer<ffi.Void>
-    Function(ffi.Pointer<ffi.Void> p_token, ffi.Pointer<ffi.Void> p_instance);
-typedef GDExtensionInstanceBindingFreeCallback = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionInstanceBindingFreeCallbackFunction>>;
-typedef GDExtensionInstanceBindingFreeCallbackFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> p_token,
-    ffi.Pointer<ffi.Void> p_instance,
-    ffi.Pointer<ffi.Void> p_binding);
-typedef DartGDExtensionInstanceBindingFreeCallbackFunction = void Function(
-    ffi.Pointer<ffi.Void> p_token,
-    ffi.Pointer<ffi.Void> p_instance,
-    ffi.Pointer<ffi.Void> p_binding);
-typedef GDExtensionInstanceBindingReferenceCallback = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionInstanceBindingReferenceCallbackFunction>>;
-typedef GDExtensionInstanceBindingReferenceCallbackFunction
-    = GDExtensionBool Function(ffi.Pointer<ffi.Void> p_token,
-        ffi.Pointer<ffi.Void> p_binding, GDExtensionBool p_reference);
-typedef DartGDExtensionInstanceBindingReferenceCallbackFunction
-    = DartGDExtensionBool Function(ffi.Pointer<ffi.Void> p_token,
-        ffi.Pointer<ffi.Void> p_binding, DartGDExtensionBool p_reference);
-typedef GDExtensionBool = ffi.Uint8;
-typedef DartGDExtensionBool = int;
-
-final class GDExtensionPropertyInfo extends ffi.Struct {
-  @ffi.Int32()
-  external int type;
-
-  external GDExtensionStringNamePtr name;
-
-  external GDExtensionStringNamePtr class_name;
-
-  @ffi.Uint32()
-  external int hint;
-
-  external GDExtensionStringPtr hint_string;
-
-  @ffi.Uint32()
-  external int usage;
-}
-
-typedef GDExtensionStringNamePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionStringPtr = ffi.Pointer<ffi.Void>;
-
-final class GDExtensionMethodInfo extends ffi.Struct {
-  external GDExtensionStringNamePtr name;
-
-  external GDExtensionPropertyInfo return_value;
-
-  @ffi.Uint32()
-  external int flags;
-
-  @ffi.Int32()
-  external int id;
-
-  @ffi.Uint32()
-  external int argument_count;
-
-  external ffi.Pointer<GDExtensionPropertyInfo> arguments;
-
-  @ffi.Uint32()
-  external int default_argument_count;
-
-  external ffi.Pointer<GDExtensionVariantPtr> default_arguments;
-}
-
-typedef GDExtensionVariantPtr = ffi.Pointer<ffi.Void>;
-
-final class GDExtensionClassCreationInfo extends ffi.Struct {
-  @GDExtensionBool()
-  external int is_virtual;
-
-  @GDExtensionBool()
-  external int is_abstract;
-
-  external GDExtensionClassSet set_func;
-
-  external GDExtensionClassGet get_func;
-
-  external GDExtensionClassGetPropertyList get_property_list_func;
-
-  external GDExtensionClassFreePropertyList free_property_list_func;
-
-  external GDExtensionClassPropertyCanRevert property_can_revert_func;
-
-  external GDExtensionClassPropertyGetRevert property_get_revert_func;
-
-  external GDExtensionClassNotification notification_func;
-
-  external GDExtensionClassToString to_string_func;
-
-  external GDExtensionClassReference reference_func;
-
-  external GDExtensionClassUnreference unreference_func;
-
-  external GDExtensionClassCreateInstance create_instance_func;
-
-  external GDExtensionClassFreeInstance free_instance_func;
-
-  external GDExtensionClassGetVirtual get_virtual_func;
-
-  external GDExtensionClassGetRID get_rid_func;
-
-  external ffi.Pointer<ffi.Void> class_userdata;
-}
-
-typedef GDExtensionClassSet
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassSetFunction>>;
-typedef GDExtensionClassSetFunction = GDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value);
-typedef DartGDExtensionClassSetFunction = DartGDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value);
-typedef GDExtensionClassInstancePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionConstStringNamePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionConstVariantPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionClassGet
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetFunction>>;
-typedef GDExtensionClassGetFunction = GDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionVariantPtr r_ret);
-typedef DartGDExtensionClassGetFunction = DartGDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionVariantPtr r_ret);
-typedef GDExtensionClassGetPropertyList
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetPropertyListFunction>>;
-typedef GDExtensionClassGetPropertyListFunction
-    = ffi.Pointer<GDExtensionPropertyInfo> Function(
-        GDExtensionClassInstancePtr p_instance,
-        ffi.Pointer<ffi.Uint32> r_count);
-typedef GDExtensionClassFreePropertyList
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassFreePropertyListFunction>>;
-typedef GDExtensionClassFreePropertyListFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list);
-typedef DartGDExtensionClassFreePropertyListFunction = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list);
-typedef GDExtensionClassPropertyCanRevert = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionClassPropertyCanRevertFunction>>;
-typedef GDExtensionClassPropertyCanRevertFunction = GDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name);
-typedef DartGDExtensionClassPropertyCanRevertFunction
-    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
-        GDExtensionConstStringNamePtr p_name);
-typedef GDExtensionClassPropertyGetRevert = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionClassPropertyGetRevertFunction>>;
-typedef GDExtensionClassPropertyGetRevertFunction = GDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionVariantPtr r_ret);
-typedef DartGDExtensionClassPropertyGetRevertFunction
-    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
-        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
-typedef GDExtensionClassNotification
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassNotificationFunction>>;
-typedef GDExtensionClassNotificationFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance, ffi.Int32 p_what);
-typedef DartGDExtensionClassNotificationFunction = void Function(
-    GDExtensionClassInstancePtr p_instance, int p_what);
-typedef GDExtensionClassToString
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassToStringFunction>>;
-typedef GDExtensionClassToStringFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr p_out);
-typedef DartGDExtensionClassToStringFunction = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr p_out);
-typedef GDExtensionClassReference
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassReferenceFunction>>;
-typedef GDExtensionClassReferenceFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance);
-typedef DartGDExtensionClassReferenceFunction = void Function(
-    GDExtensionClassInstancePtr p_instance);
-typedef GDExtensionClassUnreference
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassUnreferenceFunction>>;
-typedef GDExtensionClassUnreferenceFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance);
-typedef DartGDExtensionClassUnreferenceFunction = void Function(
-    GDExtensionClassInstancePtr p_instance);
-typedef GDExtensionClassCreateInstance
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassCreateInstanceFunction>>;
-typedef GDExtensionClassCreateInstanceFunction = GDExtensionObjectPtr Function(
-    ffi.Pointer<ffi.Void> p_class_userdata);
-typedef GDExtensionObjectPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionClassFreeInstance
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassFreeInstanceFunction>>;
-typedef GDExtensionClassFreeInstanceFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> p_class_userdata,
-    GDExtensionClassInstancePtr p_instance);
-typedef DartGDExtensionClassFreeInstanceFunction = void Function(
-    ffi.Pointer<ffi.Void> p_class_userdata,
-    GDExtensionClassInstancePtr p_instance);
-typedef GDExtensionClassGetVirtual
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetVirtualFunction>>;
-typedef GDExtensionClassGetVirtualFunction
-    = GDExtensionClassCallVirtual Function(
-        ffi.Pointer<ffi.Void> p_class_userdata,
-        GDExtensionConstStringNamePtr p_name);
-typedef GDExtensionClassCallVirtual
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassCallVirtualFunction>>;
-typedef GDExtensionClassCallVirtualFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-typedef DartGDExtensionClassCallVirtualFunction = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-typedef GDExtensionConstTypePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionTypePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionClassGetRID
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetRIDFunction>>;
-typedef GDExtensionClassGetRIDFunction = ffi.Uint64 Function(
-    GDExtensionClassInstancePtr p_instance);
-typedef DartGDExtensionClassGetRIDFunction = int Function(
-    GDExtensionClassInstancePtr p_instance);
-
-final class GDExtensionClassCreationInfo2 extends ffi.Struct {
-  @GDExtensionBool()
-  external int is_virtual;
-
-  @GDExtensionBool()
-  external int is_abstract;
-
-  @GDExtensionBool()
-  external int is_exposed;
-
-  external GDExtensionClassSet set_func;
-
-  external GDExtensionClassGet get_func;
-
-  external GDExtensionClassGetPropertyList get_property_list_func;
-
-  external GDExtensionClassFreePropertyList free_property_list_func;
-
-  external GDExtensionClassPropertyCanRevert property_can_revert_func;
-
-  external GDExtensionClassPropertyGetRevert property_get_revert_func;
-
-  external GDExtensionClassValidateProperty validate_property_func;
-
-  external GDExtensionClassNotification2 notification_func;
-
-  external GDExtensionClassToString to_string_func;
-
-  external GDExtensionClassReference reference_func;
-
-  external GDExtensionClassUnreference unreference_func;
-
-  external GDExtensionClassCreateInstance create_instance_func;
-
-  external GDExtensionClassFreeInstance free_instance_func;
-
-  external GDExtensionClassRecreateInstance recreate_instance_func;
-
-  external GDExtensionClassGetVirtual get_virtual_func;
-
-  external GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
-
-  external GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
-
-  external GDExtensionClassGetRID get_rid_func;
-
-  external ffi.Pointer<ffi.Void> class_userdata;
-}
-
-typedef GDExtensionClassValidateProperty
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassValidatePropertyFunction>>;
-typedef GDExtensionClassValidatePropertyFunction = GDExtensionBool Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_property);
-typedef DartGDExtensionClassValidatePropertyFunction
-    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
-        ffi.Pointer<GDExtensionPropertyInfo> p_property);
-typedef GDExtensionClassNotification2
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassNotification2Function>>;
-typedef GDExtensionClassNotification2Function = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Int32 p_what,
-    GDExtensionBool p_reversed);
-typedef DartGDExtensionClassNotification2Function = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    int p_what,
-    DartGDExtensionBool p_reversed);
-typedef GDExtensionClassRecreateInstance
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassRecreateInstanceFunction>>;
-typedef GDExtensionClassRecreateInstanceFunction
-    = GDExtensionClassInstancePtr Function(
-        ffi.Pointer<ffi.Void> p_class_userdata, GDExtensionObjectPtr p_object);
-typedef GDExtensionClassGetVirtualCallData = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionClassGetVirtualCallDataFunction>>;
-typedef GDExtensionClassGetVirtualCallDataFunction
-    = ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void> p_class_userdata,
-        GDExtensionConstStringNamePtr p_name);
-typedef GDExtensionClassCallVirtualWithData = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionClassCallVirtualWithDataFunction>>;
-typedef GDExtensionClassCallVirtualWithDataFunction = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    ffi.Pointer<ffi.Void> p_virtual_call_userdata,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-typedef DartGDExtensionClassCallVirtualWithDataFunction = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    ffi.Pointer<ffi.Void> p_virtual_call_userdata,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-
-final class GDExtensionClassCreationInfo3 extends ffi.Struct {
-  @GDExtensionBool()
-  external int is_virtual;
-
-  @GDExtensionBool()
-  external int is_abstract;
-
-  @GDExtensionBool()
-  external int is_exposed;
-
-  @GDExtensionBool()
-  external int is_runtime;
-
-  external GDExtensionClassSet set_func;
-
-  external GDExtensionClassGet get_func;
-
-  external GDExtensionClassGetPropertyList get_property_list_func;
-
-  external GDExtensionClassFreePropertyList2 free_property_list_func;
-
-  external GDExtensionClassPropertyCanRevert property_can_revert_func;
-
-  external GDExtensionClassPropertyGetRevert property_get_revert_func;
-
-  external GDExtensionClassValidateProperty validate_property_func;
-
-  external GDExtensionClassNotification2 notification_func;
-
-  external GDExtensionClassToString to_string_func;
-
-  external GDExtensionClassReference reference_func;
-
-  external GDExtensionClassUnreference unreference_func;
-
-  external GDExtensionClassCreateInstance create_instance_func;
-
-  external GDExtensionClassFreeInstance free_instance_func;
-
-  external GDExtensionClassRecreateInstance recreate_instance_func;
-
-  external GDExtensionClassGetVirtual get_virtual_func;
-
-  external GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
-
-  external GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
-
-  external GDExtensionClassGetRID get_rid_func;
-
-  external ffi.Pointer<ffi.Void> class_userdata;
-}
-
-typedef GDExtensionClassFreePropertyList2 = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionClassFreePropertyList2Function>>;
-typedef GDExtensionClassFreePropertyList2Function = ffi.Void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list,
-    ffi.Uint32 p_count);
-typedef DartGDExtensionClassFreePropertyList2Function = void Function(
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list,
-    int p_count);
-
-abstract class GDExtensionClassMethodFlags {
-  static const int GDEXTENSION_METHOD_FLAG_NORMAL = 1;
-  static const int GDEXTENSION_METHOD_FLAG_EDITOR = 2;
-  static const int GDEXTENSION_METHOD_FLAG_CONST = 4;
-  static const int GDEXTENSION_METHOD_FLAG_VIRTUAL = 8;
-  static const int GDEXTENSION_METHOD_FLAG_VARARG = 16;
-  static const int GDEXTENSION_METHOD_FLAG_STATIC = 32;
-  static const int GDEXTENSION_METHOD_FLAGS_DEFAULT = 1;
-}
-
-abstract class GDExtensionClassMethodArgumentMetadata {
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE = 0;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT8 = 1;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT16 = 2;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT32 = 3;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT64 = 4;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT8 = 5;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT16 = 6;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT32 = 7;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT64 = 8;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_FLOAT = 9;
-  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_DOUBLE = 10;
-}
-
-final class GDExtensionClassMethodInfo extends ffi.Struct {
-  external GDExtensionStringNamePtr name;
-
-  external ffi.Pointer<ffi.Void> method_userdata;
-
-  external GDExtensionClassMethodCall call_func;
-
-  external GDExtensionClassMethodPtrCall ptrcall_func;
-
-  @ffi.Uint32()
-  external int method_flags;
-
-  @GDExtensionBool()
-  external int has_return_value;
-
-  external ffi.Pointer<GDExtensionPropertyInfo> return_value_info;
-
-  @ffi.Int32()
-  external int return_value_metadata;
-
-  @ffi.Uint32()
-  external int argument_count;
-
-  external ffi.Pointer<GDExtensionPropertyInfo> arguments_info;
-
-  external ffi.Pointer<ffi.Int32> arguments_metadata;
-
-  @ffi.Uint32()
-  external int default_argument_count;
-
-  external ffi.Pointer<GDExtensionVariantPtr> default_arguments;
-}
-
-typedef GDExtensionClassMethodCall
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassMethodCallFunction>>;
-typedef GDExtensionClassMethodCallFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> method_userdata,
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    GDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef DartGDExtensionClassMethodCallFunction = void Function(
-    ffi.Pointer<ffi.Void> method_userdata,
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    DartGDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef GDExtensionInt = ffi.Int64;
-typedef DartGDExtensionInt = int;
-typedef GDExtensionClassMethodPtrCall
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassMethodPtrCallFunction>>;
-typedef GDExtensionClassMethodPtrCallFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> method_userdata,
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-typedef DartGDExtensionClassMethodPtrCallFunction = void Function(
-    ffi.Pointer<ffi.Void> method_userdata,
-    GDExtensionClassInstancePtr p_instance,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args,
-    GDExtensionTypePtr r_ret);
-
-final class GDExtensionClassVirtualMethodInfo extends ffi.Struct {
-  external GDExtensionStringNamePtr name;
-
-  @ffi.Uint32()
-  external int method_flags;
-
-  external GDExtensionPropertyInfo return_value;
-
-  @ffi.Int32()
-  external int return_value_metadata;
-
-  @ffi.Uint32()
-  external int argument_count;
-
-  external ffi.Pointer<GDExtensionPropertyInfo> arguments;
-
-  external ffi.Pointer<ffi.Int32> arguments_metadata;
-}
-
-final class GDExtensionCallableCustomInfo extends ffi.Struct {
-  external ffi.Pointer<ffi.Void> callable_userdata;
-
-  external ffi.Pointer<ffi.Void> token;
-
-  @GDObjectInstanceID()
-  external int object_id;
-
-  external GDExtensionCallableCustomCall call_func;
-
-  external GDExtensionCallableCustomIsValid is_valid_func;
-
-  external GDExtensionCallableCustomFree free_func;
-
-  external GDExtensionCallableCustomHash hash_func;
-
-  external GDExtensionCallableCustomEqual equal_func;
-
-  external GDExtensionCallableCustomLessThan less_than_func;
-
-  external GDExtensionCallableCustomToString to_string_func;
-}
-
-typedef GDObjectInstanceID = ffi.Uint64;
-typedef DartGDObjectInstanceID = int;
-typedef GDExtensionCallableCustomCall
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionCallableCustomCallFunction>>;
-typedef GDExtensionCallableCustomCallFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> callable_userdata,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    GDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef DartGDExtensionCallableCustomCallFunction = void Function(
-    ffi.Pointer<ffi.Void> callable_userdata,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    DartGDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef GDExtensionCallableCustomIsValid
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionCallableCustomIsValidFunction>>;
-typedef GDExtensionCallableCustomIsValidFunction = GDExtensionBool Function(
-    ffi.Pointer<ffi.Void> callable_userdata);
-typedef DartGDExtensionCallableCustomIsValidFunction = DartGDExtensionBool
-    Function(ffi.Pointer<ffi.Void> callable_userdata);
-typedef GDExtensionCallableCustomFree
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionCallableCustomFreeFunction>>;
-typedef GDExtensionCallableCustomFreeFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> callable_userdata);
-typedef DartGDExtensionCallableCustomFreeFunction = void Function(
-    ffi.Pointer<ffi.Void> callable_userdata);
-typedef GDExtensionCallableCustomHash
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionCallableCustomHashFunction>>;
-typedef GDExtensionCallableCustomHashFunction = ffi.Uint32 Function(
-    ffi.Pointer<ffi.Void> callable_userdata);
-typedef DartGDExtensionCallableCustomHashFunction = int Function(
-    ffi.Pointer<ffi.Void> callable_userdata);
-typedef GDExtensionCallableCustomEqual
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionCallableCustomEqualFunction>>;
-typedef GDExtensionCallableCustomEqualFunction = GDExtensionBool Function(
-    ffi.Pointer<ffi.Void> callable_userdata_a,
-    ffi.Pointer<ffi.Void> callable_userdata_b);
-typedef DartGDExtensionCallableCustomEqualFunction
-    = DartGDExtensionBool Function(ffi.Pointer<ffi.Void> callable_userdata_a,
-        ffi.Pointer<ffi.Void> callable_userdata_b);
-typedef GDExtensionCallableCustomLessThan = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionCallableCustomLessThanFunction>>;
-typedef GDExtensionCallableCustomLessThanFunction = GDExtensionBool Function(
-    ffi.Pointer<ffi.Void> callable_userdata_a,
-    ffi.Pointer<ffi.Void> callable_userdata_b);
-typedef DartGDExtensionCallableCustomLessThanFunction
-    = DartGDExtensionBool Function(ffi.Pointer<ffi.Void> callable_userdata_a,
-        ffi.Pointer<ffi.Void> callable_userdata_b);
-typedef GDExtensionCallableCustomToString = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionCallableCustomToStringFunction>>;
-typedef GDExtensionCallableCustomToStringFunction = ffi.Void Function(
-    ffi.Pointer<ffi.Void> callable_userdata,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr r_out);
-typedef DartGDExtensionCallableCustomToStringFunction = void Function(
-    ffi.Pointer<ffi.Void> callable_userdata,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr r_out);
-
-final class GDExtensionCallableCustomInfo2 extends ffi.Struct {
-  external ffi.Pointer<ffi.Void> callable_userdata;
-
-  external ffi.Pointer<ffi.Void> token;
-
-  @GDObjectInstanceID()
-  external int object_id;
-
-  external GDExtensionCallableCustomCall call_func;
-
-  external GDExtensionCallableCustomIsValid is_valid_func;
-
-  external GDExtensionCallableCustomFree free_func;
-
-  external GDExtensionCallableCustomHash hash_func;
-
-  external GDExtensionCallableCustomEqual equal_func;
-
-  external GDExtensionCallableCustomLessThan less_than_func;
-
-  external GDExtensionCallableCustomToString to_string_func;
-
-  external GDExtensionCallableCustomGetArgumentCount get_argument_count_func;
-}
-
-typedef GDExtensionCallableCustomGetArgumentCount = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionCallableCustomGetArgumentCountFunction>>;
-typedef GDExtensionCallableCustomGetArgumentCountFunction
-    = GDExtensionInt Function(ffi.Pointer<ffi.Void> callable_userdata,
-        ffi.Pointer<GDExtensionBool> r_is_valid);
-typedef DartGDExtensionCallableCustomGetArgumentCountFunction
-    = DartGDExtensionInt Function(ffi.Pointer<ffi.Void> callable_userdata,
-        ffi.Pointer<GDExtensionBool> r_is_valid);
-
-final class GDExtensionScriptInstanceInfo extends ffi.Struct {
-  external GDExtensionScriptInstanceSet set_func;
-
-  external GDExtensionScriptInstanceGet get_func;
-
-  external GDExtensionScriptInstanceGetPropertyList get_property_list_func;
-
-  external GDExtensionScriptInstanceFreePropertyList free_property_list_func;
-
-  external GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
-
-  external GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
-  external GDExtensionScriptInstanceGetOwner get_owner_func;
-
-  external GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
-  external GDExtensionScriptInstanceGetMethodList get_method_list_func;
-
-  external GDExtensionScriptInstanceFreeMethodList free_method_list_func;
-
-  external GDExtensionScriptInstanceGetPropertyType get_property_type_func;
-
-  external GDExtensionScriptInstanceHasMethod has_method_func;
-
-  external GDExtensionScriptInstanceCall call_func;
-
-  external GDExtensionScriptInstanceNotification notification_func;
-
-  external GDExtensionScriptInstanceToString to_string_func;
-
-  external GDExtensionScriptInstanceRefCountIncremented
-      refcount_incremented_func;
-
-  external GDExtensionScriptInstanceRefCountDecremented
-      refcount_decremented_func;
-
-  external GDExtensionScriptInstanceGetScript get_script_func;
-
-  external GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
-  external GDExtensionScriptInstanceSet set_fallback_func;
-
-  external GDExtensionScriptInstanceGet get_fallback_func;
-
-  external GDExtensionScriptInstanceGetLanguage get_language_func;
-
-  external GDExtensionScriptInstanceFree free_func;
-}
-
-typedef GDExtensionScriptInstanceSet
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceSetFunction>>;
-typedef GDExtensionScriptInstanceSetFunction = GDExtensionBool Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value);
-typedef DartGDExtensionScriptInstanceSetFunction = DartGDExtensionBool Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value);
-typedef GDExtensionScriptInstanceDataPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionScriptInstanceGet
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetFunction>>;
-typedef GDExtensionScriptInstanceGetFunction = GDExtensionBool Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionVariantPtr r_ret);
-typedef DartGDExtensionScriptInstanceGetFunction = DartGDExtensionBool Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionVariantPtr r_ret);
-typedef GDExtensionScriptInstanceGetPropertyList = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyListFunction>>;
-typedef GDExtensionScriptInstanceGetPropertyListFunction
-    = ffi.Pointer<GDExtensionPropertyInfo> Function(
-        GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<ffi.Uint32> r_count);
-typedef GDExtensionScriptInstanceFreePropertyList = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceFreePropertyListFunction>>;
-typedef GDExtensionScriptInstanceFreePropertyListFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list);
-typedef DartGDExtensionScriptInstanceFreePropertyListFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list);
-typedef GDExtensionScriptInstancePropertyCanRevert = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstancePropertyCanRevertFunction>>;
-typedef GDExtensionScriptInstancePropertyCanRevertFunction
-    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name);
-typedef DartGDExtensionScriptInstancePropertyCanRevertFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name);
-typedef GDExtensionScriptInstancePropertyGetRevert = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstancePropertyGetRevertFunction>>;
-typedef GDExtensionScriptInstancePropertyGetRevertFunction
-    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
-typedef DartGDExtensionScriptInstancePropertyGetRevertFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
-typedef GDExtensionScriptInstanceGetOwner = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetOwnerFunction>>;
-typedef GDExtensionScriptInstanceGetOwnerFunction = GDExtensionObjectPtr
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptInstanceGetPropertyState = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyStateFunction>>;
-typedef GDExtensionScriptInstanceGetPropertyStateFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionScriptInstancePropertyStateAdd p_add_func,
-    ffi.Pointer<ffi.Void> p_userdata);
-typedef DartGDExtensionScriptInstanceGetPropertyStateFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionScriptInstancePropertyStateAdd p_add_func,
-    ffi.Pointer<ffi.Void> p_userdata);
-typedef GDExtensionScriptInstancePropertyStateAdd = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstancePropertyStateAddFunction>>;
-typedef GDExtensionScriptInstancePropertyStateAddFunction = ffi.Void Function(
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value,
-    ffi.Pointer<ffi.Void> p_userdata);
-typedef DartGDExtensionScriptInstancePropertyStateAddFunction = void Function(
-    GDExtensionConstStringNamePtr p_name,
-    GDExtensionConstVariantPtr p_value,
-    ffi.Pointer<ffi.Void> p_userdata);
-typedef GDExtensionScriptInstanceGetMethodList = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceGetMethodListFunction>>;
-typedef GDExtensionScriptInstanceGetMethodListFunction
-    = ffi.Pointer<GDExtensionMethodInfo> Function(
-        GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<ffi.Uint32> r_count);
-typedef GDExtensionScriptInstanceFreeMethodList = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceFreeMethodListFunction>>;
-typedef GDExtensionScriptInstanceFreeMethodListFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionMethodInfo> p_list);
-typedef DartGDExtensionScriptInstanceFreeMethodListFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionMethodInfo> p_list);
-typedef GDExtensionScriptInstanceGetPropertyType = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyTypeFunction>>;
-typedef GDExtensionScriptInstanceGetPropertyTypeFunction = ffi.Int32 Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    ffi.Pointer<GDExtensionBool> r_is_valid);
-typedef DartGDExtensionScriptInstanceGetPropertyTypeFunction = int Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name,
-    ffi.Pointer<GDExtensionBool> r_is_valid);
-typedef GDExtensionScriptInstanceHasMethod = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceHasMethodFunction>>;
-typedef GDExtensionScriptInstanceHasMethodFunction = GDExtensionBool Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    GDExtensionConstStringNamePtr p_name);
-typedef DartGDExtensionScriptInstanceHasMethodFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name);
-typedef GDExtensionScriptInstanceCall
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceCallFunction>>;
-typedef GDExtensionScriptInstanceCallFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_self,
-    GDExtensionConstStringNamePtr p_method,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    GDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef DartGDExtensionScriptInstanceCallFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_self,
-    GDExtensionConstStringNamePtr p_method,
-    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
-    DartGDExtensionInt p_argument_count,
-    GDExtensionVariantPtr r_return,
-    ffi.Pointer<GDExtensionCallError> r_error);
-typedef GDExtensionScriptInstanceNotification = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceNotificationFunction>>;
-typedef GDExtensionScriptInstanceNotificationFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance, ffi.Int32 p_what);
-typedef DartGDExtensionScriptInstanceNotificationFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance, int p_what);
-typedef GDExtensionScriptInstanceToString = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceToStringFunction>>;
-typedef GDExtensionScriptInstanceToStringFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr r_out);
-typedef DartGDExtensionScriptInstanceToStringFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionBool> r_is_valid,
-    GDExtensionStringPtr r_out);
-typedef GDExtensionScriptInstanceRefCountIncremented = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceRefCountIncrementedFunction>>;
-typedef GDExtensionScriptInstanceRefCountIncrementedFunction = ffi.Void
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef DartGDExtensionScriptInstanceRefCountIncrementedFunction = void
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptInstanceRefCountDecremented = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceRefCountDecrementedFunction>>;
-typedef GDExtensionScriptInstanceRefCountDecrementedFunction = GDExtensionBool
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef DartGDExtensionScriptInstanceRefCountDecrementedFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptInstanceGetScript = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetScriptFunction>>;
-typedef GDExtensionScriptInstanceGetScriptFunction = GDExtensionObjectPtr
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptInstanceIsPlaceholder = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceIsPlaceholderFunction>>;
-typedef GDExtensionScriptInstanceIsPlaceholderFunction = GDExtensionBool
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef DartGDExtensionScriptInstanceIsPlaceholderFunction = DartGDExtensionBool
-    Function(GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptInstanceGetLanguage = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetLanguageFunction>>;
-typedef GDExtensionScriptInstanceGetLanguageFunction
-    = GDExtensionScriptLanguagePtr Function(
-        GDExtensionScriptInstanceDataPtr p_instance);
-typedef GDExtensionScriptLanguagePtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionScriptInstanceFree
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceFreeFunction>>;
-typedef GDExtensionScriptInstanceFreeFunction = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance);
-typedef DartGDExtensionScriptInstanceFreeFunction = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance);
-
-final class GDExtensionScriptInstanceInfo2 extends ffi.Struct {
-  external GDExtensionScriptInstanceSet set_func;
-
-  external GDExtensionScriptInstanceGet get_func;
-
-  external GDExtensionScriptInstanceGetPropertyList get_property_list_func;
-
-  external GDExtensionScriptInstanceFreePropertyList free_property_list_func;
-
-  external GDExtensionScriptInstanceGetClassCategory get_class_category_func;
-
-  external GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
-
-  external GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
-  external GDExtensionScriptInstanceGetOwner get_owner_func;
-
-  external GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
-  external GDExtensionScriptInstanceGetMethodList get_method_list_func;
-
-  external GDExtensionScriptInstanceFreeMethodList free_method_list_func;
-
-  external GDExtensionScriptInstanceGetPropertyType get_property_type_func;
-
-  external GDExtensionScriptInstanceValidateProperty validate_property_func;
-
-  external GDExtensionScriptInstanceHasMethod has_method_func;
-
-  external GDExtensionScriptInstanceCall call_func;
-
-  external GDExtensionScriptInstanceNotification2 notification_func;
-
-  external GDExtensionScriptInstanceToString to_string_func;
-
-  external GDExtensionScriptInstanceRefCountIncremented
-      refcount_incremented_func;
-
-  external GDExtensionScriptInstanceRefCountDecremented
-      refcount_decremented_func;
-
-  external GDExtensionScriptInstanceGetScript get_script_func;
-
-  external GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
-  external GDExtensionScriptInstanceSet set_fallback_func;
-
-  external GDExtensionScriptInstanceGet get_fallback_func;
-
-  external GDExtensionScriptInstanceGetLanguage get_language_func;
-
-  external GDExtensionScriptInstanceFree free_func;
-}
-
-typedef GDExtensionScriptInstanceGetClassCategory = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceGetClassCategoryFunction>>;
-typedef GDExtensionScriptInstanceGetClassCategoryFunction
-    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<GDExtensionPropertyInfo> p_class_category);
-typedef DartGDExtensionScriptInstanceGetClassCategoryFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<GDExtensionPropertyInfo> p_class_category);
-typedef GDExtensionScriptInstanceValidateProperty = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceValidatePropertyFunction>>;
-typedef GDExtensionScriptInstanceValidatePropertyFunction
-    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<GDExtensionPropertyInfo> p_property);
-typedef DartGDExtensionScriptInstanceValidatePropertyFunction
-    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
-        ffi.Pointer<GDExtensionPropertyInfo> p_property);
-typedef GDExtensionScriptInstanceNotification2 = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceNotification2Function>>;
-typedef GDExtensionScriptInstanceNotification2Function = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Int32 p_what,
-    GDExtensionBool p_reversed);
-typedef DartGDExtensionScriptInstanceNotification2Function = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    int p_what,
-    DartGDExtensionBool p_reversed);
-
-final class GDExtensionScriptInstanceInfo3 extends ffi.Struct {
-  external GDExtensionScriptInstanceSet set_func;
-
-  external GDExtensionScriptInstanceGet get_func;
-
-  external GDExtensionScriptInstanceGetPropertyList get_property_list_func;
-
-  external GDExtensionScriptInstanceFreePropertyList2 free_property_list_func;
-
-  external GDExtensionScriptInstanceGetClassCategory get_class_category_func;
-
-  external GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
-
-  external GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
-  external GDExtensionScriptInstanceGetOwner get_owner_func;
-
-  external GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
-  external GDExtensionScriptInstanceGetMethodList get_method_list_func;
-
-  external GDExtensionScriptInstanceFreeMethodList2 free_method_list_func;
-
-  external GDExtensionScriptInstanceGetPropertyType get_property_type_func;
-
-  external GDExtensionScriptInstanceValidateProperty validate_property_func;
-
-  external GDExtensionScriptInstanceHasMethod has_method_func;
-
-  external GDExtensionScriptInstanceGetMethodArgumentCount
-      get_method_argument_count_func;
-
-  external GDExtensionScriptInstanceCall call_func;
-
-  external GDExtensionScriptInstanceNotification2 notification_func;
-
-  external GDExtensionScriptInstanceToString to_string_func;
-
-  external GDExtensionScriptInstanceRefCountIncremented
-      refcount_incremented_func;
-
-  external GDExtensionScriptInstanceRefCountDecremented
-      refcount_decremented_func;
-
-  external GDExtensionScriptInstanceGetScript get_script_func;
-
-  external GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
-  external GDExtensionScriptInstanceSet set_fallback_func;
-
-  external GDExtensionScriptInstanceGet get_fallback_func;
-
-  external GDExtensionScriptInstanceGetLanguage get_language_func;
-
-  external GDExtensionScriptInstanceFree free_func;
-}
-
-typedef GDExtensionScriptInstanceFreePropertyList2 = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceFreePropertyList2Function>>;
-typedef GDExtensionScriptInstanceFreePropertyList2Function = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list,
-    ffi.Uint32 p_count);
-typedef DartGDExtensionScriptInstanceFreePropertyList2Function = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionPropertyInfo> p_list,
-    int p_count);
-typedef GDExtensionScriptInstanceFreeMethodList2 = ffi.Pointer<
-    ffi.NativeFunction<GDExtensionScriptInstanceFreeMethodList2Function>>;
-typedef GDExtensionScriptInstanceFreeMethodList2Function = ffi.Void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionMethodInfo> p_list,
-    ffi.Uint32 p_count);
-typedef DartGDExtensionScriptInstanceFreeMethodList2Function = void Function(
-    GDExtensionScriptInstanceDataPtr p_instance,
-    ffi.Pointer<GDExtensionMethodInfo> p_list,
-    int p_count);
-typedef GDExtensionScriptInstanceGetMethodArgumentCount = ffi.Pointer<
-    ffi
-    .NativeFunction<GDExtensionScriptInstanceGetMethodArgumentCountFunction>>;
-typedef GDExtensionScriptInstanceGetMethodArgumentCountFunction
-    = GDExtensionInt Function(
-        GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name,
-        ffi.Pointer<GDExtensionBool> r_is_valid);
-typedef DartGDExtensionScriptInstanceGetMethodArgumentCountFunction
-    = DartGDExtensionInt Function(
-        GDExtensionScriptInstanceDataPtr p_instance,
-        GDExtensionConstStringNamePtr p_name,
-        ffi.Pointer<GDExtensionBool> r_is_valid);
-
-abstract class GDExtensionInitializationLevel {
-  static const int GDEXTENSION_INITIALIZATION_CORE = 0;
-  static const int GDEXTENSION_INITIALIZATION_SERVERS = 1;
-  static const int GDEXTENSION_INITIALIZATION_SCENE = 2;
-  static const int GDEXTENSION_INITIALIZATION_EDITOR = 3;
-  static const int GDEXTENSION_MAX_INITIALIZATION_LEVEL = 4;
-}
-
-final class GDExtensionInitialization extends ffi.Struct {
-  @ffi.Int32()
-  external int minimum_initialization_level;
-
-  external ffi.Pointer<ffi.Void> userdata;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Void> userdata, ffi.Int32 p_level)>> initialize;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Void> userdata, ffi.Int32 p_level)>> deinitialize;
-}
-
-final class GDExtensionGodotVersion extends ffi.Struct {
-  @ffi.Uint32()
-  external int major;
-
-  @ffi.Uint32()
-  external int minor;
-
-  @ffi.Uint32()
-  external int patch;
-
-  external ffi.Pointer<ffi.Char> string;
-}
-
-typedef GDExtensionInterfaceGetProcAddress = ffi
-    .Pointer<ffi.NativeFunction<GDExtensionInterfaceGetProcAddressFunction>>;
-typedef GDExtensionInterfaceGetProcAddressFunction
-    = GDExtensionInterfaceFunctionPtr Function(
-        ffi.Pointer<ffi.Char> p_function_name);
-typedef GDExtensionInterfaceFunctionPtr
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionInterfaceFunctionPtrFunction>>;
-typedef GDExtensionInterfaceFunctionPtrFunction = ffi.Void Function();
-typedef DartGDExtensionInterfaceFunctionPtrFunction = void Function();
-typedef GDExtensionClassLibraryPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionUninitializedStringPtr = ffi.Pointer<ffi.Void>;
-typedef GDExtensionPtrConstructor
-    = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrConstructorFunction>>;
-typedef GDExtensionPtrConstructorFunction = ffi.Void Function(
-    GDExtensionUninitializedTypePtr p_base,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args);
-typedef DartGDExtensionPtrConstructorFunction = void Function(
-    GDExtensionUninitializedTypePtr p_base,
-    ffi.Pointer<GDExtensionConstTypePtr> p_args);
-typedef GDExtensionUninitializedTypePtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionPtrDestructor
     = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrDestructorFunction>>;
 typedef GDExtensionPtrDestructorFunction = ffi.Void Function(
     GDExtensionTypePtr p_base);
 typedef DartGDExtensionPtrDestructorFunction = void Function(
     GDExtensionTypePtr p_base);
+typedef GDExtensionTypePtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionUninitializedVariantPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionConstVariantPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionPtrBuiltInMethod
     = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrBuiltInMethodFunction>>;
 typedef GDExtensionPtrBuiltInMethodFunction = ffi.Void Function(
@@ -2172,6 +1073,9 @@ typedef DartGDExtensionPtrBuiltInMethodFunction = void Function(
     ffi.Pointer<GDExtensionConstTypePtr> p_args,
     GDExtensionTypePtr r_return,
     int p_argument_count);
+typedef GDExtensionConstStringNamePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionInt = ffi.Int64;
+typedef DartGDExtensionInt = int;
 typedef GDExtensionVariantFromTypeConstructorFunc = ffi.Pointer<
     ffi.NativeFunction<GDExtensionVariantFromTypeConstructorFuncFunction>>;
 typedef GDExtensionVariantFromTypeConstructorFuncFunction = ffi.Void Function(
@@ -2184,6 +1088,28 @@ typedef GDExtensionTypeFromVariantConstructorFuncFunction = ffi.Void Function(
     GDExtensionUninitializedTypePtr, GDExtensionVariantPtr);
 typedef DartGDExtensionTypeFromVariantConstructorFuncFunction = void Function(
     GDExtensionUninitializedTypePtr, GDExtensionVariantPtr);
+
+final class GDExtensionCallError extends ffi.Struct {
+  @ffi.Int32()
+  external int error;
+
+  @ffi.Int32()
+  external int argument;
+
+  @ffi.Int32()
+  external int expected;
+}
+
+abstract class GDExtensionCallErrorType {
+  static const int GDEXTENSION_CALL_OK = 0;
+  static const int GDEXTENSION_CALL_ERROR_INVALID_METHOD = 1;
+  static const int GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT = 2;
+  static const int GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS = 3;
+  static const int GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS = 4;
+  static const int GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL = 5;
+  static const int GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST = 6;
+}
+
 typedef GDExtensionPtrGetter
     = ffi.Pointer<ffi.NativeFunction<GDExtensionPtrGetterFunction>>;
 typedef GDExtensionPtrGetterFunction = ffi.Void Function(
@@ -2253,240 +1179,608 @@ typedef DartGDExtensionPtrUtilityFunctionFunction = void Function(
     ffi.Pointer<GDExtensionConstTypePtr> p_args,
     int p_argument_count);
 typedef GDExtensionConstStringPtr = ffi.Pointer<ffi.Void>;
-typedef char16_t = ffi.Uint16;
-typedef Dartchar16_t = int;
+typedef GDExtensionObjectPtr = ffi.Pointer<ffi.Void>;
+
+final class GDExtensionClassCreationInfo2 extends ffi.Struct {
+  @GDExtensionBool()
+  external int is_virtual;
+
+  @GDExtensionBool()
+  external int is_abstract;
+
+  @GDExtensionBool()
+  external int is_exposed;
+
+  external GDExtensionClassSet set_func;
+
+  external GDExtensionClassGet get_func;
+
+  external GDExtensionClassGetPropertyList get_property_list_func;
+
+  external GDExtensionClassFreePropertyList free_property_list_func;
+
+  external GDExtensionClassPropertyCanRevert property_can_revert_func;
+
+  external GDExtensionClassPropertyGetRevert property_get_revert_func;
+
+  external GDExtensionClassValidateProperty validate_property_func;
+
+  external GDExtensionClassNotification2 notification_func;
+
+  external GDExtensionClassToString to_string_func;
+
+  external GDExtensionClassReference reference_func;
+
+  external GDExtensionClassUnreference unreference_func;
+
+  external GDExtensionClassCreateInstance create_instance_func;
+
+  external GDExtensionClassFreeInstance free_instance_func;
+
+  external GDExtensionClassRecreateInstance recreate_instance_func;
+
+  external GDExtensionClassGetVirtual get_virtual_func;
+
+  external GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
+
+  external GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
+
+  external GDExtensionClassGetRID get_rid_func;
+
+  external ffi.Pointer<ffi.Void> class_userdata;
+}
+
+typedef GDExtensionClassSet
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassSetFunction>>;
+typedef GDExtensionClassSetFunction = GDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value);
+typedef DartGDExtensionClassSetFunction = DartGDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value);
+typedef GDExtensionClassInstancePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionClassGet
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetFunction>>;
+typedef GDExtensionClassGetFunction = GDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionVariantPtr r_ret);
+typedef DartGDExtensionClassGetFunction = DartGDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionVariantPtr r_ret);
+typedef GDExtensionClassGetPropertyList
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetPropertyListFunction>>;
+typedef GDExtensionClassGetPropertyListFunction
+    = ffi.Pointer<GDExtensionPropertyInfo> Function(
+        GDExtensionClassInstancePtr p_instance,
+        ffi.Pointer<ffi.Uint32> r_count);
+
+final class GDExtensionPropertyInfo extends ffi.Struct {
+  @ffi.Int32()
+  external int type;
+
+  external GDExtensionStringNamePtr name;
+
+  external GDExtensionStringNamePtr class_name;
+
+  @ffi.Uint32()
+  external int hint;
+
+  external GDExtensionStringPtr hint_string;
+
+  @ffi.Uint32()
+  external int usage;
+}
+
+typedef GDExtensionStringNamePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionStringPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionClassFreePropertyList
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassFreePropertyListFunction>>;
+typedef GDExtensionClassFreePropertyListFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list);
+typedef DartGDExtensionClassFreePropertyListFunction = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list);
+typedef GDExtensionClassPropertyCanRevert = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionClassPropertyCanRevertFunction>>;
+typedef GDExtensionClassPropertyCanRevertFunction = GDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name);
+typedef DartGDExtensionClassPropertyCanRevertFunction
+    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
+        GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionClassPropertyGetRevert = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionClassPropertyGetRevertFunction>>;
+typedef GDExtensionClassPropertyGetRevertFunction = GDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionVariantPtr r_ret);
+typedef DartGDExtensionClassPropertyGetRevertFunction
+    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
+        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
+typedef GDExtensionClassValidateProperty
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassValidatePropertyFunction>>;
+typedef GDExtensionClassValidatePropertyFunction = GDExtensionBool Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_property);
+typedef DartGDExtensionClassValidatePropertyFunction
+    = DartGDExtensionBool Function(GDExtensionClassInstancePtr p_instance,
+        ffi.Pointer<GDExtensionPropertyInfo> p_property);
+typedef GDExtensionClassNotification2
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassNotification2Function>>;
+typedef GDExtensionClassNotification2Function = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Int32 p_what,
+    GDExtensionBool p_reversed);
+typedef DartGDExtensionClassNotification2Function = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    int p_what,
+    DartGDExtensionBool p_reversed);
+typedef GDExtensionClassToString
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassToStringFunction>>;
+typedef GDExtensionClassToStringFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionBool> r_is_valid,
+    GDExtensionStringPtr p_out);
+typedef DartGDExtensionClassToStringFunction = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionBool> r_is_valid,
+    GDExtensionStringPtr p_out);
+typedef GDExtensionClassReference
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassReferenceFunction>>;
+typedef GDExtensionClassReferenceFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance);
+typedef DartGDExtensionClassReferenceFunction = void Function(
+    GDExtensionClassInstancePtr p_instance);
+typedef GDExtensionClassUnreference
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassUnreferenceFunction>>;
+typedef GDExtensionClassUnreferenceFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance);
+typedef DartGDExtensionClassUnreferenceFunction = void Function(
+    GDExtensionClassInstancePtr p_instance);
+typedef GDExtensionClassCreateInstance
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassCreateInstanceFunction>>;
+typedef GDExtensionClassCreateInstanceFunction = GDExtensionObjectPtr Function(
+    ffi.Pointer<ffi.Void> p_class_userdata);
+typedef GDExtensionClassFreeInstance
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassFreeInstanceFunction>>;
+typedef GDExtensionClassFreeInstanceFunction = ffi.Void Function(
+    ffi.Pointer<ffi.Void> p_class_userdata,
+    GDExtensionClassInstancePtr p_instance);
+typedef DartGDExtensionClassFreeInstanceFunction = void Function(
+    ffi.Pointer<ffi.Void> p_class_userdata,
+    GDExtensionClassInstancePtr p_instance);
+typedef GDExtensionClassRecreateInstance
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassRecreateInstanceFunction>>;
+typedef GDExtensionClassRecreateInstanceFunction
+    = GDExtensionClassInstancePtr Function(
+        ffi.Pointer<ffi.Void> p_class_userdata, GDExtensionObjectPtr p_object);
+typedef GDExtensionClassGetVirtual
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetVirtualFunction>>;
+typedef GDExtensionClassGetVirtualFunction
+    = GDExtensionClassCallVirtual Function(
+        ffi.Pointer<ffi.Void> p_class_userdata,
+        GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionClassCallVirtual
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassCallVirtualFunction>>;
+typedef GDExtensionClassCallVirtualFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+typedef DartGDExtensionClassCallVirtualFunction = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+typedef GDExtensionClassGetVirtualCallData = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionClassGetVirtualCallDataFunction>>;
+typedef GDExtensionClassGetVirtualCallDataFunction
+    = ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void> p_class_userdata,
+        GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionClassCallVirtualWithData = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionClassCallVirtualWithDataFunction>>;
+typedef GDExtensionClassCallVirtualWithDataFunction = ffi.Void Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    ffi.Pointer<ffi.Void> p_virtual_call_userdata,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+typedef DartGDExtensionClassCallVirtualWithDataFunction = void Function(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    ffi.Pointer<ffi.Void> p_virtual_call_userdata,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+typedef GDExtensionClassGetRID
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassGetRIDFunction>>;
+typedef GDExtensionClassGetRIDFunction = ffi.Uint64 Function(
+    GDExtensionClassInstancePtr p_instance);
+typedef DartGDExtensionClassGetRIDFunction = int Function(
+    GDExtensionClassInstancePtr p_instance);
+
+final class GDExtensionClassMethodInfo extends ffi.Struct {
+  external GDExtensionStringNamePtr name;
+
+  external ffi.Pointer<ffi.Void> method_userdata;
+
+  external GDExtensionClassMethodCall call_func;
+
+  external GDExtensionClassMethodPtrCall ptrcall_func;
+
+  @ffi.Uint32()
+  external int method_flags;
+
+  @GDExtensionBool()
+  external int has_return_value;
+
+  external ffi.Pointer<GDExtensionPropertyInfo> return_value_info;
+
+  @ffi.Int32()
+  external int return_value_metadata;
+
+  @ffi.Uint32()
+  external int argument_count;
+
+  external ffi.Pointer<GDExtensionPropertyInfo> arguments_info;
+
+  external ffi.Pointer<ffi.Int32> arguments_metadata;
+
+  @ffi.Uint32()
+  external int default_argument_count;
+
+  external ffi.Pointer<GDExtensionVariantPtr> default_arguments;
+}
+
+typedef GDExtensionClassMethodCall
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassMethodCallFunction>>;
+typedef GDExtensionClassMethodCallFunction = ffi.Void Function(
+    ffi.Pointer<ffi.Void> method_userdata,
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    GDExtensionInt p_argument_count,
+    GDExtensionVariantPtr r_return,
+    ffi.Pointer<GDExtensionCallError> r_error);
+typedef DartGDExtensionClassMethodCallFunction = void Function(
+    ffi.Pointer<ffi.Void> method_userdata,
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    DartGDExtensionInt p_argument_count,
+    GDExtensionVariantPtr r_return,
+    ffi.Pointer<GDExtensionCallError> r_error);
+typedef GDExtensionClassMethodPtrCall
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionClassMethodPtrCallFunction>>;
+typedef GDExtensionClassMethodPtrCallFunction = ffi.Void Function(
+    ffi.Pointer<ffi.Void> method_userdata,
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+typedef DartGDExtensionClassMethodPtrCallFunction = void Function(
+    ffi.Pointer<ffi.Void> method_userdata,
+    GDExtensionClassInstancePtr p_instance,
+    ffi.Pointer<GDExtensionConstTypePtr> p_args,
+    GDExtensionTypePtr r_ret);
+
+abstract class GDExtensionClassMethodArgumentMetadata {
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE = 0;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT8 = 1;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT16 = 2;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT32 = 3;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT64 = 4;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT8 = 5;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT16 = 6;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT32 = 7;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT64 = 8;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_FLOAT = 9;
+  static const int GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_DOUBLE = 10;
+}
+
 typedef GDExtensionMethodBindPtr = ffi.Pointer<ffi.Void>;
+
+final class GDExtensionInstanceBindingCallbacks extends ffi.Struct {
+  external GDExtensionInstanceBindingCreateCallback create_callback;
+
+  external GDExtensionInstanceBindingFreeCallback free_callback;
+
+  external GDExtensionInstanceBindingReferenceCallback reference_callback;
+}
+
+typedef GDExtensionInstanceBindingCreateCallback = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionInstanceBindingCreateCallbackFunction>>;
+typedef GDExtensionInstanceBindingCreateCallbackFunction = ffi.Pointer<ffi.Void>
+    Function(ffi.Pointer<ffi.Void> p_token, ffi.Pointer<ffi.Void> p_instance);
+typedef GDExtensionInstanceBindingFreeCallback = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionInstanceBindingFreeCallbackFunction>>;
+typedef GDExtensionInstanceBindingFreeCallbackFunction = ffi.Void Function(
+    ffi.Pointer<ffi.Void> p_token,
+    ffi.Pointer<ffi.Void> p_instance,
+    ffi.Pointer<ffi.Void> p_binding);
+typedef DartGDExtensionInstanceBindingFreeCallbackFunction = void Function(
+    ffi.Pointer<ffi.Void> p_token,
+    ffi.Pointer<ffi.Void> p_instance,
+    ffi.Pointer<ffi.Void> p_binding);
+typedef GDExtensionInstanceBindingReferenceCallback = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionInstanceBindingReferenceCallbackFunction>>;
+typedef GDExtensionInstanceBindingReferenceCallbackFunction
+    = GDExtensionBool Function(ffi.Pointer<ffi.Void> p_token,
+        ffi.Pointer<ffi.Void> p_binding, GDExtensionBool p_reference);
+typedef DartGDExtensionInstanceBindingReferenceCallbackFunction
+    = DartGDExtensionBool Function(ffi.Pointer<ffi.Void> p_token,
+        ffi.Pointer<ffi.Void> p_binding, DartGDExtensionBool p_reference);
 typedef GDExtensionConstObjectPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionConstRefPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionRefPtr = ffi.Pointer<ffi.Void>;
 typedef GDExtensionScriptInstancePtr = ffi.Pointer<ffi.Void>;
 
-const int NULL = 0;
-
-const int _STDINT_H = 1;
-
-const int _FEATURES_H = 1;
-
-const int _DEFAULT_SOURCE = 1;
-
-const int __GLIBC_USE_ISOC2X = 1;
-
-const int __USE_ISOC11 = 1;
-
-const int __USE_ISOC99 = 1;
-
-const int __USE_ISOC95 = 1;
-
-const int _POSIX_SOURCE = 1;
-
-const int _POSIX_C_SOURCE = 200809;
-
-const int __USE_POSIX = 1;
-
-const int __USE_POSIX2 = 1;
-
-const int __USE_POSIX199309 = 1;
-
-const int __USE_POSIX199506 = 1;
-
-const int __USE_XOPEN2K = 1;
-
-const int __USE_XOPEN2K8 = 1;
-
-const int _ATFILE_SOURCE = 1;
-
-const int __WORDSIZE = 64;
-
-const int __WORDSIZE_TIME64_COMPAT32 = 1;
-
-const int __SYSCALL_WORDSIZE = 64;
-
-const int __TIMESIZE = 64;
-
-const int __USE_MISC = 1;
-
-const int __USE_ATFILE = 1;
-
-const int __USE_FORTIFY_LEVEL = 0;
-
-const int __GLIBC_USE_DEPRECATED_GETS = 0;
-
-const int __GLIBC_USE_DEPRECATED_SCANF = 0;
-
-const int __GLIBC_USE_C2X_STRTOL = 1;
-
-const int _STDC_PREDEF_H = 1;
-
-const int __STDC_IEC_559__ = 1;
-
-const int __STDC_IEC_60559_BFP__ = 201404;
-
-const int __STDC_IEC_559_COMPLEX__ = 1;
-
-const int __STDC_IEC_60559_COMPLEX__ = 201404;
-
-const int __STDC_ISO_10646__ = 201706;
-
-const int __GNU_LIBRARY__ = 6;
-
-const int __GLIBC__ = 2;
-
-const int __GLIBC_MINOR__ = 39;
-
-const int _SYS_CDEFS_H = 1;
-
-const int __THROW = 1;
-
-const int __THROWNL = 1;
-
-const int __glibc_c99_flexarr_available = 1;
-
-const int __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI = 0;
-
-const int __HAVE_GENERIC_SELECTION = 0;
-
-const int __GLIBC_USE_LIB_EXT2 = 1;
-
-const int __GLIBC_USE_IEC_60559_BFP_EXT = 1;
-
-const int __GLIBC_USE_IEC_60559_BFP_EXT_C2X = 1;
-
-const int __GLIBC_USE_IEC_60559_EXT = 1;
-
-const int __GLIBC_USE_IEC_60559_FUNCS_EXT = 1;
-
-const int __GLIBC_USE_IEC_60559_FUNCS_EXT_C2X = 1;
-
-const int __GLIBC_USE_IEC_60559_TYPES_EXT = 1;
-
-const int _BITS_TYPES_H = 1;
-
-const int _BITS_TYPESIZES_H = 1;
-
-const int __OFF_T_MATCHES_OFF64_T = 1;
-
-const int __INO_T_MATCHES_INO64_T = 1;
-
-const int __RLIM_T_MATCHES_RLIM64_T = 1;
-
-const int __STATFS_MATCHES_STATFS64 = 1;
-
-const int __KERNEL_OLD_TIMEVAL_MATCHES_TIMEVAL64 = 1;
-
-const int __FD_SETSIZE = 1024;
-
-const int _BITS_TIME64_H = 1;
-
-const int _BITS_WCHAR_H = 1;
-
-const int __WCHAR_MAX = 2147483647;
-
-const int __WCHAR_MIN = -2147483648;
-
-const int _BITS_STDINT_INTN_H = 1;
-
-const int _BITS_STDINT_UINTN_H = 1;
-
-const int _BITS_STDINT_LEAST_H = 1;
-
-const int INT8_MIN = -128;
-
-const int INT16_MIN = -32768;
-
-const int INT32_MIN = -2147483648;
-
-const int INT64_MIN = -9223372036854775808;
-
-const int INT8_MAX = 127;
-
-const int INT16_MAX = 32767;
-
-const int INT32_MAX = 2147483647;
-
-const int INT64_MAX = 9223372036854775807;
-
-const int UINT8_MAX = 255;
-
-const int UINT16_MAX = 65535;
-
-const int UINT32_MAX = 4294967295;
-
-const int UINT64_MAX = -1;
-
-const int INT_LEAST8_MIN = -128;
-
-const int INT_LEAST16_MIN = -32768;
-
-const int INT_LEAST32_MIN = -2147483648;
-
-const int INT_LEAST64_MIN = -9223372036854775808;
-
-const int INT_LEAST8_MAX = 127;
-
-const int INT_LEAST16_MAX = 32767;
-
-const int INT_LEAST32_MAX = 2147483647;
-
-const int INT_LEAST64_MAX = 9223372036854775807;
-
-const int UINT_LEAST8_MAX = 255;
-
-const int UINT_LEAST16_MAX = 65535;
-
-const int UINT_LEAST32_MAX = 4294967295;
-
-const int UINT_LEAST64_MAX = -1;
-
-const int INT_FAST8_MIN = -128;
-
-const int INT_FAST16_MIN = -9223372036854775808;
-
-const int INT_FAST32_MIN = -9223372036854775808;
-
-const int INT_FAST64_MIN = -9223372036854775808;
-
-const int INT_FAST8_MAX = 127;
-
-const int INT_FAST16_MAX = 9223372036854775807;
-
-const int INT_FAST32_MAX = 9223372036854775807;
-
-const int INT_FAST64_MAX = 9223372036854775807;
-
-const int UINT_FAST8_MAX = 255;
-
-const int UINT_FAST16_MAX = -1;
-
-const int UINT_FAST32_MAX = -1;
-
-const int UINT_FAST64_MAX = -1;
-
-const int INTPTR_MIN = -9223372036854775808;
-
-const int INTPTR_MAX = 9223372036854775807;
-
-const int UINTPTR_MAX = -1;
-
-const int INTMAX_MIN = -9223372036854775808;
-
-const int INTMAX_MAX = 9223372036854775807;
-
-const int UINTMAX_MAX = -1;
-
-const int PTRDIFF_MIN = -9223372036854775808;
-
-const int PTRDIFF_MAX = 9223372036854775807;
-
-const int SIG_ATOMIC_MIN = -2147483648;
-
-const int SIG_ATOMIC_MAX = 2147483647;
-
-const int SIZE_MAX = -1;
-
-const int WCHAR_MIN = -2147483648;
-
-const int WCHAR_MAX = 2147483647;
-
-const int WINT_MIN = 0;
-
-const int WINT_MAX = 4294967295;
+final class GDExtensionScriptInstanceInfo2 extends ffi.Struct {
+  external GDExtensionScriptInstanceSet set_func;
+
+  external GDExtensionScriptInstanceGet get_func;
+
+  external GDExtensionScriptInstanceGetPropertyList get_property_list_func;
+
+  external GDExtensionScriptInstanceFreePropertyList free_property_list_func;
+
+  external GDExtensionScriptInstanceGetClassCategory get_class_category_func;
+
+  external GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
+
+  external GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
+
+  external GDExtensionScriptInstanceGetOwner get_owner_func;
+
+  external GDExtensionScriptInstanceGetPropertyState get_property_state_func;
+
+  external GDExtensionScriptInstanceGetMethodList get_method_list_func;
+
+  external GDExtensionScriptInstanceFreeMethodList free_method_list_func;
+
+  external GDExtensionScriptInstanceGetPropertyType get_property_type_func;
+
+  external GDExtensionScriptInstanceValidateProperty validate_property_func;
+
+  external GDExtensionScriptInstanceHasMethod has_method_func;
+
+  external GDExtensionScriptInstanceCall call_func;
+
+  external GDExtensionScriptInstanceNotification2 notification_func;
+
+  external GDExtensionScriptInstanceToString to_string_func;
+
+  external GDExtensionScriptInstanceRefCountIncremented
+      refcount_incremented_func;
+
+  external GDExtensionScriptInstanceRefCountDecremented
+      refcount_decremented_func;
+
+  external GDExtensionScriptInstanceGetScript get_script_func;
+
+  external GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
+
+  external GDExtensionScriptInstanceSet set_fallback_func;
+
+  external GDExtensionScriptInstanceGet get_fallback_func;
+
+  external GDExtensionScriptInstanceGetLanguage get_language_func;
+
+  external GDExtensionScriptInstanceFree free_func;
+}
+
+typedef GDExtensionScriptInstanceSet
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceSetFunction>>;
+typedef GDExtensionScriptInstanceSetFunction = GDExtensionBool Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value);
+typedef DartGDExtensionScriptInstanceSetFunction = DartGDExtensionBool Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value);
+typedef GDExtensionScriptInstanceDataPtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionScriptInstanceGet
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetFunction>>;
+typedef GDExtensionScriptInstanceGetFunction = GDExtensionBool Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionVariantPtr r_ret);
+typedef DartGDExtensionScriptInstanceGetFunction = DartGDExtensionBool Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionVariantPtr r_ret);
+typedef GDExtensionScriptInstanceGetPropertyList = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyListFunction>>;
+typedef GDExtensionScriptInstanceGetPropertyListFunction
+    = ffi.Pointer<GDExtensionPropertyInfo> Function(
+        GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<ffi.Uint32> r_count);
+typedef GDExtensionScriptInstanceFreePropertyList = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceFreePropertyListFunction>>;
+typedef GDExtensionScriptInstanceFreePropertyListFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list);
+typedef DartGDExtensionScriptInstanceFreePropertyListFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionPropertyInfo> p_list);
+typedef GDExtensionScriptInstanceGetClassCategory = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceGetClassCategoryFunction>>;
+typedef GDExtensionScriptInstanceGetClassCategoryFunction
+    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<GDExtensionPropertyInfo> p_class_category);
+typedef DartGDExtensionScriptInstanceGetClassCategoryFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<GDExtensionPropertyInfo> p_class_category);
+typedef GDExtensionScriptInstancePropertyCanRevert = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstancePropertyCanRevertFunction>>;
+typedef GDExtensionScriptInstancePropertyCanRevertFunction
+    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name);
+typedef DartGDExtensionScriptInstancePropertyCanRevertFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionScriptInstancePropertyGetRevert = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstancePropertyGetRevertFunction>>;
+typedef GDExtensionScriptInstancePropertyGetRevertFunction
+    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
+typedef DartGDExtensionScriptInstancePropertyGetRevertFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
+typedef GDExtensionScriptInstanceGetOwner = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetOwnerFunction>>;
+typedef GDExtensionScriptInstanceGetOwnerFunction = GDExtensionObjectPtr
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptInstanceGetPropertyState = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyStateFunction>>;
+typedef GDExtensionScriptInstanceGetPropertyStateFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionScriptInstancePropertyStateAdd p_add_func,
+    ffi.Pointer<ffi.Void> p_userdata);
+typedef DartGDExtensionScriptInstanceGetPropertyStateFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionScriptInstancePropertyStateAdd p_add_func,
+    ffi.Pointer<ffi.Void> p_userdata);
+typedef GDExtensionScriptInstancePropertyStateAdd = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstancePropertyStateAddFunction>>;
+typedef GDExtensionScriptInstancePropertyStateAddFunction = ffi.Void Function(
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value,
+    ffi.Pointer<ffi.Void> p_userdata);
+typedef DartGDExtensionScriptInstancePropertyStateAddFunction = void Function(
+    GDExtensionConstStringNamePtr p_name,
+    GDExtensionConstVariantPtr p_value,
+    ffi.Pointer<ffi.Void> p_userdata);
+typedef GDExtensionScriptInstanceGetMethodList = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceGetMethodListFunction>>;
+typedef GDExtensionScriptInstanceGetMethodListFunction
+    = ffi.Pointer<GDExtensionMethodInfo> Function(
+        GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<ffi.Uint32> r_count);
+
+final class GDExtensionMethodInfo extends ffi.Struct {
+  external GDExtensionStringNamePtr name;
+
+  external GDExtensionPropertyInfo return_value;
+
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Int32()
+  external int id;
+
+  @ffi.Uint32()
+  external int argument_count;
+
+  external ffi.Pointer<GDExtensionPropertyInfo> arguments;
+
+  @ffi.Uint32()
+  external int default_argument_count;
+
+  external ffi.Pointer<GDExtensionVariantPtr> default_arguments;
+}
+
+typedef GDExtensionScriptInstanceFreeMethodList = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceFreeMethodListFunction>>;
+typedef GDExtensionScriptInstanceFreeMethodListFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionMethodInfo> p_list);
+typedef DartGDExtensionScriptInstanceFreeMethodListFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionMethodInfo> p_list);
+typedef GDExtensionScriptInstanceGetPropertyType = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceGetPropertyTypeFunction>>;
+typedef GDExtensionScriptInstanceGetPropertyTypeFunction = ffi.Int32 Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    ffi.Pointer<GDExtensionBool> r_is_valid);
+typedef DartGDExtensionScriptInstanceGetPropertyTypeFunction = int Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    ffi.Pointer<GDExtensionBool> r_is_valid);
+typedef GDExtensionScriptInstanceValidateProperty = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceValidatePropertyFunction>>;
+typedef GDExtensionScriptInstanceValidatePropertyFunction
+    = GDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<GDExtensionPropertyInfo> p_property);
+typedef DartGDExtensionScriptInstanceValidatePropertyFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        ffi.Pointer<GDExtensionPropertyInfo> p_property);
+typedef GDExtensionScriptInstanceHasMethod = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceHasMethodFunction>>;
+typedef GDExtensionScriptInstanceHasMethodFunction = GDExtensionBool Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    GDExtensionConstStringNamePtr p_name);
+typedef DartGDExtensionScriptInstanceHasMethodFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance,
+        GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionScriptInstanceCall
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceCallFunction>>;
+typedef GDExtensionScriptInstanceCallFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_self,
+    GDExtensionConstStringNamePtr p_method,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    GDExtensionInt p_argument_count,
+    GDExtensionVariantPtr r_return,
+    ffi.Pointer<GDExtensionCallError> r_error);
+typedef DartGDExtensionScriptInstanceCallFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_self,
+    GDExtensionConstStringNamePtr p_method,
+    ffi.Pointer<GDExtensionConstVariantPtr> p_args,
+    DartGDExtensionInt p_argument_count,
+    GDExtensionVariantPtr r_return,
+    ffi.Pointer<GDExtensionCallError> r_error);
+typedef GDExtensionScriptInstanceNotification2 = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceNotification2Function>>;
+typedef GDExtensionScriptInstanceNotification2Function = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Int32 p_what,
+    GDExtensionBool p_reversed);
+typedef DartGDExtensionScriptInstanceNotification2Function = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    int p_what,
+    DartGDExtensionBool p_reversed);
+typedef GDExtensionScriptInstanceToString = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceToStringFunction>>;
+typedef GDExtensionScriptInstanceToStringFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionBool> r_is_valid,
+    GDExtensionStringPtr r_out);
+typedef DartGDExtensionScriptInstanceToStringFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance,
+    ffi.Pointer<GDExtensionBool> r_is_valid,
+    GDExtensionStringPtr r_out);
+typedef GDExtensionScriptInstanceRefCountIncremented = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceRefCountIncrementedFunction>>;
+typedef GDExtensionScriptInstanceRefCountIncrementedFunction = ffi.Void
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef DartGDExtensionScriptInstanceRefCountIncrementedFunction = void
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptInstanceRefCountDecremented = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceRefCountDecrementedFunction>>;
+typedef GDExtensionScriptInstanceRefCountDecrementedFunction = GDExtensionBool
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef DartGDExtensionScriptInstanceRefCountDecrementedFunction
+    = DartGDExtensionBool Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptInstanceGetScript = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetScriptFunction>>;
+typedef GDExtensionScriptInstanceGetScriptFunction = GDExtensionObjectPtr
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptInstanceIsPlaceholder = ffi.Pointer<
+    ffi.NativeFunction<GDExtensionScriptInstanceIsPlaceholderFunction>>;
+typedef GDExtensionScriptInstanceIsPlaceholderFunction = GDExtensionBool
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef DartGDExtensionScriptInstanceIsPlaceholderFunction = DartGDExtensionBool
+    Function(GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptInstanceGetLanguage = ffi
+    .Pointer<ffi.NativeFunction<GDExtensionScriptInstanceGetLanguageFunction>>;
+typedef GDExtensionScriptInstanceGetLanguageFunction
+    = GDExtensionScriptLanguagePtr Function(
+        GDExtensionScriptInstanceDataPtr p_instance);
+typedef GDExtensionScriptLanguagePtr = ffi.Pointer<ffi.Void>;
+typedef GDExtensionScriptInstanceFree
+    = ffi.Pointer<ffi.NativeFunction<GDExtensionScriptInstanceFreeFunction>>;
+typedef GDExtensionScriptInstanceFreeFunction = ffi.Void Function(
+    GDExtensionScriptInstanceDataPtr p_instance);
+typedef DartGDExtensionScriptInstanceFreeFunction = void Function(
+    GDExtensionScriptInstanceDataPtr p_instance);

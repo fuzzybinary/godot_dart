@@ -367,7 +367,7 @@ Dart_Handle DartScriptLanguage::get_type_for_script(const godot::String &path) c
     Dart_Handle dart_path = to_dart_string(path);
     Dart_Handle args[] = {dart_path};
 
-    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("typeFromPath"), 1, args),
+    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("scriptTypeFromPath"), 1, args),
                "Failed to invoke resolver!");
     ret = value;
   });
@@ -391,7 +391,7 @@ godot::String DartScriptLanguage::get_script_for_type(Dart_Handle dart_type) con
     Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);
     Dart_Handle args[] = {dart_type};
 
-    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("pathFromType"), 1, args),
+    DART_CHECK(value, Dart_Invoke(resolver, Dart_NewStringFromCString("scriptPathFromType"), 1, args),
                "Failed to invoke resolver!");
     if (!Dart_IsNull(value)) {
       ret = create_godot_string(value);

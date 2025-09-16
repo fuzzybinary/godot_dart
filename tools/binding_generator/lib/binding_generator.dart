@@ -8,6 +8,7 @@ import 'src/common_helpers.dart';
 import 'src/generators/builtin_type_generator.dart';
 import 'src/generators/engine_type_generator.dart';
 import 'src/generators/native_structures_generator.dart';
+import 'src/generators/type_resolver_generator.dart';
 import 'src/godot_api_info.dart';
 import 'src/string_extensions.dart';
 import 'src/type_helpers.dart';
@@ -59,6 +60,9 @@ Future<void> generate(GenerationOptions options) async {
   print('Generating native structures...');
   await generateNativeStructures(
       apiInfo, options.outputDirectory, genDirectory, options.buildConfig);
+
+  print('Generating type resolver....');
+  await generateTypeResolver(apiInfo, genDirectory);
 }
 
 Future<void> generateGlobalConstants(
@@ -67,6 +71,15 @@ Future<void> generateGlobalConstants(
   final o = CodeSink(file);
 
   o.write(header);
+
+  o.nl();
+  o.write("""
+import 'dart:ffi';
+
+import '../core/gdextension_ffi_bindings.dart';
+import '../core/type_info.dart';
+import 'variant/string_name.dart';
+""");
 
   final globalConstants = apiInfo.api.globalConstants;
   for (Map<String, dynamic> constant

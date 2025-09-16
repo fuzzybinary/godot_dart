@@ -38,6 +38,12 @@ class CodeSink {
     _sink.writeln(line);
   }
 
+  // Indent to the proper level, but don't print anything
+  void indent() {
+    _checkBlockNewline();
+    _sink.write(' ' * _indentLevel);
+  }
+
   // Write a newline, ignoring indentation level (used for blank lines)
   void nl() {
     _checkBlockNewline();

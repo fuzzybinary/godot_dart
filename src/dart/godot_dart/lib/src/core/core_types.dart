@@ -4,20 +4,23 @@ import 'package:meta/meta.dart';
 
 import '../gen/engine_classes.dart';
 import 'gdextension.dart';
-import 'signals.dart';
 import 'gdextension_ffi_bindings.dart';
+import 'godot_dart_native_bridge.dart';
+import 'signals.dart';
 import 'type_info.dart';
 
 /// Core interface for types that can convert to Variant (the builtin types)
 abstract class BuiltinType implements Finalizable {
   @internal
-  static final finalizer =
-      NativeFinalizer(gde.dartBindings.finalizeBuiltinObject);
+  static final finalizer = NativeFinalizer(GDNativeInterface
+      .finalizeBuiltinObject as Pointer<NativeFinalizerFunction>);
 
   Pointer<Uint8> _opaque = nullptr;
 
-  TypeInfo get typeInfo;
+  BuiltinTypeInfo<dynamic> get typeInfo;
+
   // Overrideable
+  @pragma('vm:entry-point')
   Pointer<Uint8> get nativePtr {
     return nativeDataPtr;
   }
@@ -30,6 +33,11 @@ abstract class BuiltinType implements Finalizable {
     }
     return _opaque + GodotDart.destructorSize;
   }
+
+  /// Since [Pointer.address] isn's tagged 'vm:entry-point', supply an
+  /// entry point that can get the raw pointer address for this object
+  @pragma('vm:entry-point')
+  int get nativePointerAddress => nativePtr.address;
 
   BuiltinType(int size, GDExtensionPtrDestructor? destructor) {
     allocateOpaque(size, destructor);
@@ -61,13 +69,18 @@ abstract class ExtensionType implements Finalizable {
   // This finalizer is used for objects we own in Dart world, and for
   // RefCounted objects that we own the last reference to. It has Godot
   // delete the object
-  static final _finalizer =
-      NativeFinalizer(gde.dartBindings.finalizeExtensionObject);
+  static final _finalizer = NativeFinalizer(GDNativeInterface
+      .finalizeExtensionObject as Pointer<NativeFinalizerFunction>);
 
   GDExtensionObjectPtr _owner = nullptr;
   GDExtensionObjectPtr get nativePtr => _owner;
 
-  TypeInfo get typeInfo;
+  /// Since [Pointer.address] isn's tagged 'vm:entry-point', supply an
+  /// entry point that can get the raw pointer address for this object
+  @pragma('vm:entry-point')
+  int get nativePointerAddress => nativePtr.address;
+
+  ExtensionTypeInfo<dynamic> get typeInfo;
 
   final Set<SignalCallable> _referencedSignals = {};
 
@@ -108,15 +121,16 @@ abstract class ExtensionType implements Finalizable {
   void _tieDartToNative() {
     // Script instance should take care of this. Should we assert that the
     // object has a script instance?
-    if (typeInfo.scriptInfo == null) {
-      bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
-          typeInfo.className.toDartString();
-      gde.dartBindings
-          .tieDartToNative(this, _owner, this is RefCounted, isGodotType);
-    }
+    //if (typeInfo.scriptInfo == null) {
+    bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
+        typeInfo.className.toDartString();
+    GDNativeInterface.tieDartToNative(
+        this, _owner, this is RefCounted, isGodotType);
+    //}
   }
 
   @internal
+  @pragma('vm:entry-point')
   void detachOwner() {
     for (final signal in _referencedSignals) {
       signal.unsubscribeAll(this as GodotObject);

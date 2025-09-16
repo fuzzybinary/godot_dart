@@ -3,11 +3,10 @@ library godot_dart;
 
 import 'dart:ffi';
 
-import 'src/core/gdextension.dart';
-import 'src/core/gdextension_ffi_bindings.dart';
-import 'src/core/type_info.dart';
+import 'src/core/core.dart';
 import 'src/extensions/async_extensions.dart';
 import 'src/gen/engine_classes.dart';
+import 'src/gen/type_resolver.g.dart';
 import 'src/gen/utility_functions.dart';
 import 'src/reloader/hot_reloader.dart';
 import 'src/variant/variant.dart';
@@ -44,19 +43,17 @@ void _reloadCode() async {
 }
 
 @pragma('vm:entry-point')
-void _registerGodot(int extensionToken, int bindingCallbacks) {
+void _registerGodot(int extensionToken) {
   final godotDart = DynamicLibrary.process();
   final ffiInterface = GDExtensionFFI(godotDart);
 
   final extensionPtr = GDExtensionClassLibraryPtr.fromAddress(extensionToken);
-  final bindingCallbackPtr =
-      Pointer<GDExtensionInstanceBindingCallbacks>.fromAddress(
-          bindingCallbacks);
   // TODO: Assert everything is how we expect.
-  _globalExtension = GodotDart(ffiInterface, extensionPtr, bindingCallbackPtr);
+  _globalExtension = GodotDart(ffiInterface, extensionPtr);
 
-  initVariantBindings(ffiInterface);
-  TypeInfo.initTypeMappings();
+  initVariantBindings(ffiInterface, _globalExtension.typeResolver);
+  PrimitiveTypeInfo.initTypeMappings();
+  _globalExtension.typeResolver.addGodotStandardLibrary();
 
   GD.initBindings();
   SignalAwaiter.bind();
@@ -79,5 +76,5 @@ void _unregisterGodot() {
 typedef PrintClosure = void Function(String line);
 @pragma('vm:entry-point')
 PrintClosure _getPrintClosure() {
-  return (s) => _globalExtension.dartBindings.printNative(s);
+  return (s) => GDNativeInterface.dartPrint(s);
 }

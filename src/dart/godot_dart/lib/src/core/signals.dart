@@ -7,7 +7,7 @@ import '../gen/classes/object.dart';
 import '../gen/variant/callable.dart';
 import '../variant/variant.dart';
 import 'core_types.dart';
-import 'gdextension.dart';
+import 'godot_dart_native_bridge.dart';
 
 final Random _rand = Random();
 
@@ -30,6 +30,7 @@ class _SubscriptionMap<F extends Function> {
     }
   }
 
+  @pragma('vm:entry-point')
   void clear() {
     _map.clear();
     for (final target in _targetSubscriptions.keys) {
@@ -95,8 +96,8 @@ abstract class SignalCallable {
 
   Callable _createSignalCallableBinding(
       SignalCallable callable, GodotObject binding) {
-    final result = gde.dartBindings
-        .createSignalCallable(callable, binding.getInstanceId());
+    final result = GDNativeInterface.createSignalCallable(
+        callable, binding.getInstanceId());
     return result as Callable;
   }
 
@@ -159,7 +160,7 @@ class Signal1<P1> extends SignalCallable {
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
-      sub(args[0].cast<P1>() as P1);
+      sub(args[0].cast<P1>());
     }
   }
 
@@ -205,8 +206,8 @@ class Signal2<P1, P2> extends SignalCallable {
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
       sub(
-        args[0].cast<P1>() as P1,
-        args[1].cast<P2>() as P2,
+        args[0].cast<P1>(),
+        args[1].cast<P2>(),
       );
     }
   }
@@ -253,9 +254,9 @@ class Signal3<P1, P2, P3> extends SignalCallable {
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
       sub(
-        args[0].cast<P1>() as P1,
-        args[1].cast<P2>() as P2,
-        args[2].cast<P3>() as P3,
+        args[0].cast<P1>(),
+        args[1].cast<P2>(),
+        args[2].cast<P3>(),
       );
     }
   }
@@ -302,10 +303,10 @@ class Signal4<P1, P2, P3, P4> extends SignalCallable {
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
       sub(
-        args[0].cast<P1>() as P1,
-        args[1].cast<P2>() as P2,
-        args[2].cast<P3>() as P3,
-        args[3].cast<P4>() as P4,
+        args[0].cast<P1>(),
+        args[1].cast<P2>(),
+        args[2].cast<P3>(),
+        args[3].cast<P4>(),
       );
     }
   }
@@ -352,11 +353,11 @@ class Signal5<P1, P2, P3, P4, P5> extends SignalCallable {
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
       sub(
-        args[0].cast<P1>() as P1,
-        args[1].cast<P2>() as P2,
-        args[2].cast<P3>() as P3,
-        args[3].cast<P4>() as P4,
-        args[4].cast<P5>() as P5,
+        args[0].cast<P1>(),
+        args[1].cast<P2>(),
+        args[2].cast<P3>(),
+        args[3].cast<P4>(),
+        args[4].cast<P5>(),
       );
     }
   }

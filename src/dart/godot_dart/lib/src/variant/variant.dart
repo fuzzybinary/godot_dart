@@ -7,9 +7,11 @@ import 'package:meta/meta.dart';
 import '../core/core_types.dart';
 import '../core/gdextension.dart';
 import '../core/gdextension_ffi_bindings.dart';
+import '../core/godot_dart_native_bridge.dart';
 import '../core/type_info.dart';
+import '../core/type_resolver.dart';
 import '../gen/builtins.dart';
-
+import '../gen/classes/graph_edit.dart';
 import '../gen/global_constants.dart';
 import 'vector2.dart';
 import 'vector3.dart';
@@ -30,7 +32,8 @@ late List<GDExtensionTypeFromVariant?> _toTypeConstructor;
 typedef BuiltinConstructor = BuiltinType Function(GDExtensionVariantPtr);
 Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
-void initVariantBindings(GDExtensionFFI ffIinterface) {
+void initVariantBindings(
+    GDExtensionFFI ffIinterface, TypeResolver typeResolver) {
   _fromTypeConstructor = List.generate(
     GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
     (variantType) {
@@ -59,123 +62,162 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();
   GDString.initBindings();
+  typeResolver.addType(GDString.sTypeInfo);
 
   StringName.initBindings();
+  typeResolver.addType(StringName.sTypeInfo);
   _dartBuiltinConstructors[StringName.sTypeInfo.variantType] =
       StringName.fromVariantPtr;
-
   // Generate this?
   Vector2.initBindings();
+  typeResolver.addType(Vector2.sTypeInfo);
   _dartBuiltinConstructors[Vector2.sTypeInfo.variantType] =
       Vector2.fromVariantPtr;
   Vector2i.initBindings();
+  typeResolver.addType(Vector2i.sTypeInfo);
   _dartBuiltinConstructors[Vector2i.sTypeInfo.variantType] =
       Vector2i.fromVariantPtr;
   Vector3.initBindings();
+  typeResolver.addType(Vector3.sTypeInfo);
+  _dartBuiltinConstructors[Vector3.sTypeInfo.variantType] =
+      Vector3.fromVariantPtr;
   Vector3i.initBindings();
+  typeResolver.addType(Vector3i.sTypeInfo);
   _dartBuiltinConstructors[Vector3i.sTypeInfo.variantType] =
       Vector3i.fromVariantPtr;
   Vector4.initBindings();
+  typeResolver.addType(Vector4.sTypeInfo);
   _dartBuiltinConstructors[Vector4.sTypeInfo.variantType] =
       Vector4.fromVariantPtr;
   Vector4i.initBindings();
+  typeResolver.addType(Vector4i.sTypeInfo);
   _dartBuiltinConstructors[Vector4i.sTypeInfo.variantType] =
       Vector4i.fromVariantPtr;
   Quaternion.initBindings();
+  typeResolver.addType(Quaternion.sTypeInfo);
   _dartBuiltinConstructors[Quaternion.sTypeInfo.variantType] =
       Quaternion.fromVariantPtr;
   Rect2.initBindings();
+  typeResolver.addType(Rect2.sTypeInfo);
   _dartBuiltinConstructors[Rect2.sTypeInfo.variantType] = Rect2.fromVariantPtr;
   Rect2i.initBindings();
+  typeResolver.addType(Rect2i.sTypeInfo);
   _dartBuiltinConstructors[Rect2i.sTypeInfo.variantType] =
       Rect2i.fromVariantPtr;
   Transform2D.initBindings();
+  typeResolver.addType(Transform2D.sTypeInfo);
   _dartBuiltinConstructors[Transform2D.sTypeInfo.variantType] =
       Transform2D.fromVariantPtr;
   Plane.initBindings();
+  typeResolver.addType(Plane.sTypeInfo);
   _dartBuiltinConstructors[Plane.sTypeInfo.variantType] = Plane.fromVariantPtr;
   AABB.initBindings();
+  typeResolver.addType(AABB.sTypeInfo);
   _dartBuiltinConstructors[AABB.sTypeInfo.variantType] = AABB.fromVariantPtr;
   Basis.initBindings();
+  typeResolver.addType(Basis.sTypeInfo);
   _dartBuiltinConstructors[Basis.sTypeInfo.variantType] = Basis.fromVariantPtr;
   Transform3D.initBindings();
+  typeResolver.addType(Transform3D.sTypeInfo);
   _dartBuiltinConstructors[Transform3D.sTypeInfo.variantType] =
       Transform3D.fromVariantPtr;
   Projection.initBindings();
+  typeResolver.addType(Projection.sTypeInfo);
   _dartBuiltinConstructors[Projection.sTypeInfo.variantType] =
       Projection.fromVariantPtr;
   Color.initBindings();
+  typeResolver.addType(Color.sTypeInfo);
   _dartBuiltinConstructors[Color.sTypeInfo.variantType] = Color.fromVariantPtr;
   NodePath.initBindings();
+  typeResolver.addType(NodePath.sTypeInfo);
   _dartBuiltinConstructors[NodePath.sTypeInfo.variantType] =
       NodePath.fromVariantPtr;
   RID.initBindings();
+  typeResolver.addType(RID.sTypeInfo);
   _dartBuiltinConstructors[RID.sTypeInfo.variantType] = RID.fromVariantPtr;
   Callable.initBindings();
+  typeResolver.addType(Callable.sTypeInfo);
   _dartBuiltinConstructors[Callable.sTypeInfo.variantType] =
       Callable.fromVariantPtr;
   Signal.initBindings();
+  typeResolver.addType(Signal.sTypeInfo);
   _dartBuiltinConstructors[Signal.sTypeInfo.variantType] =
       Signal.fromVariantPtr;
   Dictionary.initBindings();
+  typeResolver.addType(Dictionary.sTypeInfo);
   _dartBuiltinConstructors[Dictionary.sTypeInfo.variantType] =
       Dictionary.fromVariantPtr;
   Array.initBindings();
+  typeResolver.addType(Array.sTypeInfo);
   _dartBuiltinConstructors[Array.sTypeInfo.variantType] = Array.fromVariantPtr;
   PackedByteArray.initBindings();
+  typeResolver.addType(PackedByteArray.sTypeInfo);
   _dartBuiltinConstructors[PackedByteArray.sTypeInfo.variantType] =
       PackedByteArray.fromVariantPtr;
   PackedInt32Array.initBindings();
+  typeResolver.addType(PackedInt32Array.sTypeInfo);
   _dartBuiltinConstructors[PackedInt32Array.sTypeInfo.variantType] =
       PackedInt32Array.fromVariantPtr;
   PackedInt64Array.initBindings();
+  typeResolver.addType(PackedInt64Array.sTypeInfo);
   _dartBuiltinConstructors[PackedInt64Array.sTypeInfo.variantType] =
       PackedInt64Array.fromVariantPtr;
   PackedFloat32Array.initBindings();
+  typeResolver.addType(PackedFloat32Array.sTypeInfo);
   _dartBuiltinConstructors[PackedFloat32Array.sTypeInfo.variantType] =
       PackedFloat32Array.fromVariantPtr;
   PackedFloat64Array.initBindings();
+  typeResolver.addType(PackedFloat64Array.sTypeInfo);
   _dartBuiltinConstructors[PackedFloat64Array.sTypeInfo.variantType] =
       PackedFloat64Array.fromVariantPtr;
   PackedStringArray.initBindings();
+  typeResolver.addType(PackedStringArray.sTypeInfo);
   _dartBuiltinConstructors[PackedStringArray.sTypeInfo.variantType] =
       PackedStringArray.fromVariantPtr;
   PackedVector2Array.initBindings();
+  typeResolver.addType(PackedVector2Array.sTypeInfo);
   _dartBuiltinConstructors[PackedVector2Array.sTypeInfo.variantType] =
       PackedVector2Array.fromVariantPtr;
   PackedVector3Array.initBindings();
+  typeResolver.addType(PackedVector3Array.sTypeInfo);
   _dartBuiltinConstructors[PackedVector3Array.sTypeInfo.variantType] =
       PackedVector3Array.fromVariantPtr;
   PackedColorArray.initBindings();
+  typeResolver.addType(PackedColorArray.sTypeInfo);
   _dartBuiltinConstructors[PackedColorArray.sTypeInfo.variantType] =
       PackedColorArray.fromVariantPtr;
 }
 
 @internal
+@pragma('vm:entry-point')
 GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
   return _toTypeConstructor[type];
 }
 
+@pragma('vm:entry-point')
 class Variant implements Finalizable {
-  static final finalizer = NativeFinalizer(gde.dartBindings.finalizeVariant);
+  static final finalizer = NativeFinalizer(
+      GDNativeInterface.finalizeVariant as Pointer<NativeFinalizerFunction>);
 
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
   static const int _size = 24;
-  static final TypeInfo sTypeInfo = TypeInfo(
-    Variant,
-    StringName.fromString('Variant'),
-    StringName.fromString('Variant'),
+  static final sTypeInfo = BuiltinTypeInfo<Variant>(
+    className: StringName.fromString('Variant'),
     variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
     size: _size,
+    constructObjectDefault: () => Variant(),
+    constructCopy: (ptr) => Variant.fromVariantPtr(ptr),
   );
 
+  @pragma('vm:entry-point')
   TypeInfo get typeInfo => sTypeInfo;
 
   final Pointer<Uint8> _opaque = gde.ffiBindings.gde_mem_alloc(_size).cast();
 
   Pointer<Uint8> get nativePtr => _opaque;
 
+  @pragma('vm:entry-point')
   Variant([Object? obj]) {
     if (obj == null) {
       gde.ffiBindings.gde_variant_new_nil(nativePtr.cast());
@@ -188,6 +230,7 @@ class Variant implements Finalizable {
     _attachFinalizer();
   }
 
+  @pragma('vm:entry-point')
   Variant.fromVariantPtr(Pointer<void> ptr) {
     gde.ffiBindings.gde_variant_new_copy(nativePtr.cast(), ptr.cast());
     _attachFinalizer();
@@ -202,15 +245,25 @@ class Variant implements Finalizable {
     gde.ffiBindings.gde_variant_new_copy(ptr, nativePtr.cast());
   }
 
-  T? cast<T>() {
-    final value = convertFromVariant(this);
-    if (value is T) {
-      return value;
-    }
+  T cast<T>() {
+    final value = convertFromVariantPtr(nativePtr.cast());
     // Allow weak conversion from StringName / GDString to Dart Strings
     if (T == String) {
       if (value is StringName) return value.toDartString() as T;
       if (value is GDString) return value.toDartString() as T;
+    }
+    return value as T;
+  }
+
+  T? as<T>() {
+    final value = convertFromVariantPtr(nativePtr.cast());
+    // Allow weak conversion from StringName / GDString to Dart Strings
+    if (T == String) {
+      if (value is StringName) return value.toDartString() as T;
+      if (value is GDString) return value.toDartString() as T;
+    }
+    if (value is T) {
+      return value;
     }
     return null;
   }
@@ -356,19 +409,20 @@ Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
       // Or a hand-implemented object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
         return Vector3.fromVariantPtr(variantPtr);
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2:
+        return Vector2.fromVariantPtr(variantPtr);
 
       // Or a wrapped object
       case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
-        final scriptInstance = gde.dartBindings.getScriptInstance(ptr.value);
+        final scriptInstance = GDNativeInterface.getScriptInstance(ptr.value);
         if (scriptInstance != nullptr) {
-          return gde.dartBindings.objectFromScriptInstance(scriptInstance);
+          return GDNativeInterface.objectFromScriptInstance(scriptInstance);
         }
 
-        //Should not need the binding token anymore
-        return gde.dartBindings.gdObjectToDartObject(ptr.value);
+        return ptr.value.toDart();
 
       // TODO: all the other variant types
       default:
@@ -377,9 +431,4 @@ Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
   });
 
   return ret;
-}
-
-// Use in all cases where you already have a Dart Variant.
-Object? convertFromVariant(Variant variant) {
-  return convertFromVariantPtr(variant.nativePtr.cast());
 }

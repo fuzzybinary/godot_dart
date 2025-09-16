@@ -136,13 +136,10 @@ void DartGodotInstanceBinding::create_dart_object() {
   }
 
   bindings->execute_on_dart_thread([&] {
-    Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(_dart_type);
-    Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
+    Dart_Handle dart_type_info = Dart_HandleFromPersistent(_dart_type_info);
+    DART_CHECK(type_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")), "Failed to get name from class info");
 
-    Dart_Handle dart_pointer = bindings->new_dart_void_pointer(_godot_object);
-    Dart_Handle args[1] = {dart_pointer};
-    DART_CHECK(new_obj, Dart_New(dart_type, Dart_NewStringFromCString("withNonNullOwner"), 1, args),
-               "Error creating bindings");
+    DART_CHECK(new_obj, bindings->new_dart_object(type_name), "Error creating bindings");
   });
 
   // tie_dart_to_native should have called back in during creation
@@ -162,10 +159,10 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
       Dart_EnterScope();
 
       Dart_Handle type_name = to_dart_string(class_name);
-      DART_CHECK(type, bindings->find_dart_type(type_name), "Error finding Dart type");
-      if (!Dart_IsNull(type)) {
-        Dart_PersistentHandle persistent_type = Dart_NewPersistentHandle(type);
-        binding = new DartGodotInstanceBinding(persistent_type, p_instance);
+      DART_CHECK(type_info, bindings->get_dart_type_info(type_name), "Error finding Dart type");
+      if (!Dart_IsNull(type_info)) {
+        Dart_PersistentHandle persistent_type_info = Dart_NewPersistentHandle(type_info);
+        binding = new DartGodotInstanceBinding(persistent_type_info, p_instance);
       }
 
       Dart_ExitScope();

@@ -65,13 +65,23 @@ Future<void> generateBuiltinBindings(
     o.nl();
 
     // Class
+    o.p("@pragma('vm:entry-point')");
     o.b('class ${builtin.dartName} extends BuiltinType {', () {
       o.p('static const int _size = $size;');
       o.p('static final _${builtin.name}Bindings _bindings = _${builtin.name}Bindings();');
-      o.p('static late TypeInfo sTypeInfo;');
+      o.b('static final sTypeInfo = BuiltinTypeInfo<${builtin.dartName}>(', () {
+        var variantEnum =
+            'GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()}';
+        o.p("className: StringName.fromString('${builtin.name}'),");
+        o.p('variantType: $variantEnum,');
+        o.p('size: _size,');
+        o.p('constructObjectDefault: () => ${builtin.dartName}(),');
+        o.p('constructCopy: (ptr) => ${builtin.dartName}.copyPtr(ptr),');
+      }, ');');
+
       o.nl();
       o.p('@override');
-      o.p('TypeInfo get typeInfo => sTypeInfo;');
+      o.p('BuiltinTypeInfo<${builtin.dartName}> get typeInfo => sTypeInfo;');
       o.nl();
 
       o.b('static void initBindingsConstructorDestructor() {', () {
@@ -146,14 +156,6 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
   o.b('static void initBindings() {', () {
     o.p('initBindingsConstructorDestructor();');
     o.nl();
-    o.b('sTypeInfo = TypeInfo(', () {
-      o.p('${builtin.dartName},');
-      o.p("StringName.fromString('${builtin.name}'),");
-      o.p('StringName(),');
-      o.p('variantType: $variantEnum,');
-      o.p('size: _size,');
-    }, ');');
-
     final members = builtin.members ?? [];
     for (final member in members) {
       o.p('_bindings.member${member.name.toUpperCamelCase()}Getter = gde.variantGetPtrGetter(');
@@ -355,7 +357,7 @@ void _writeMethods(CodeSink o, BuiltinClass builtin) {
       if (dartReturnType == 'Variant') {
         o.p('return ret;');
       } else {
-        o.p('return convertFromVariant(ret) as $dartReturnType;');
+        o.p('return ret.cast<$dartReturnType>();');
       }
     }, '}');
     o.nl();
@@ -414,7 +416,7 @@ void _generateVarargMethod(CodeSink o, BuiltinClassMethod method) {
     if (method.returnType == 'Variant') {
       o.p('return retVal;');
     } else {
-      o.p('return convertFromVariant(retVal) as ${method.returnType};');
+      o.p('return retVal.cast<${method.returnType}>();');
     }
   }
 }

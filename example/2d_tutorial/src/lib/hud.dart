@@ -6,12 +6,13 @@ part 'hud.g.dart';
 
 @GodotScript()
 class Hud extends CanvasLayer {
-  static TypeInfo get sTypeInfo => _$HudTypeInfo();
+  static ExtensionTypeInfo<Hud> get sTypeInfo => _$HudTypeInfo();
   @override
-  TypeInfo get typeInfo => Hud.sTypeInfo;
+  ExtensionTypeInfo<Hud> get typeInfo => Hud.sTypeInfo;
 
   Hud() : super();
 
+  @pragma('vm:entry-point')
   Hud.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @GodotSignal('start_game')

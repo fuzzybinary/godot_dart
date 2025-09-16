@@ -39,15 +39,17 @@ public:
     return _fully_initialized;
   }
   void shutdown();
-  
+  void set_type_resolver(Dart_Handle type_resolver);
   void reload_code();
 
-  void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
-                   Dart_Handle args_list, MethodFlags method_flags);
-  Dart_Handle find_dart_type(Dart_Handle type_name);
-  void add_property(const TypeInfo &bind_type, Dart_Handle dart_prop_info);
+  Dart_Handle new_dart_object(Dart_Handle type_name);
+  Dart_Handle new_godot_owned_object(Dart_Handle type, void *ptr);
+  Dart_Handle new_object_copy(Dart_Handle type_name, GDExtensionConstObjectPtr ptr);
+  Dart_Handle get_dart_type_info(Dart_Handle type_info);
+
+  void bind_method(Dart_Handle dart_type_info, Dart_Handle dart_method_info);
+  void add_property(Dart_Handle dart_type_info, Dart_Handle dart_prop_info);
   void execute_on_dart_thread(std::function<void()> work);
-  Dart_Handle new_dart_void_pointer(const void *ptr);
   void perform_frame_maintanance();
 
   void add_pending_ref_change(DartGodotInstanceBinding *bindings);
@@ -86,10 +88,8 @@ public:
   Dart_PersistentHandle _engine_classes_library;
   Dart_PersistentHandle _variant_classes_library;
   Dart_PersistentHandle _native_library;
+  Dart_PersistentHandle _type_resolver;
 
   // Some things we need often
-  Dart_PersistentHandle _void_pointer_type;
-  Dart_PersistentHandle _void_pointer_optional_type;
-  Dart_PersistentHandle _void_pointer_pointer_type;
   Dart_PersistentHandle _variant_type;
 };

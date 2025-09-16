@@ -104,12 +104,12 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
       final question = returnType.isOptional ? '?' : '';
       if (returnType.isRefCounted) {
         o.p('final realObj = gde.ffiBindings.gde_ref_get_object(retPtr.cast());');
-        o.p('final retVal = gde.dartBindings.gdObjectToDartObject(realObj.cast()) as ${returnType.rawDartType}$question;');
+        o.p('final retVal = (realObj.cast<GDExtensionObjectPtr>().toDart()) as ${returnType.rawDartType}$question;');
         // Need to unreference the Ref<T> as its destructor is never called
         o.p('retVal$question.unreference();');
         o.p('return retVal;');
       } else {
-        o.p('return gde.dartBindings.gdObjectToDartObject(retPtr.value) as ${returnType.rawDartType}$question;');
+        o.p('return retPtr.value.toDart() as ${returnType.rawDartType}$question;');
       }
       break;
     case TypeCategory.builtinClass:
@@ -544,9 +544,9 @@ void convertPtrArgumentToDart(
     case TypeCategory.engineClass:
       final question = argument.isOptional ? '?' : '';
       if (argument.isRefCounted) {
-        o.p('$decl = gde.dartBindings.gdObjectToDartObject(gde.ffiBindings.gde_ref_get_object($argumentName.value)) as ${argument.rawDartType}$question;');
+        o.p('$decl = gde.ffiBindings.gde_ref_get_object($argumentName.value).toDart() as ${argument.rawDartType}$question;');
       } else {
-        o.p('$decl = gde.dartBindings.gdObjectToDartObject($argumentName.cast<Pointer<Pointer<Void>>>().value.value) as ${argument.rawDartType}$question;');
+        o.p('$decl = $argumentName.cast<Pointer<GDExtensionObjectPtr>>().value.value.toDart() as ${argument.rawDartType}$question;');
       }
       break;
     case TypeCategory.builtinClass:
@@ -819,5 +819,12 @@ void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
     o.b('factory $enumName.fromValue(int value) {', () {
       o.p('return values.firstWhere((e) => e.value == value);');
     }, '}');
+
+    o.b('static final sTypeInfo = PrimitiveTypeInfo<$enumName>(', () {
+      o.p("className: StringName.fromString('$enumName'),");
+      o.p('variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT,');
+      o.p('fromPointer: (ptr) => $enumName.fromValue(ptr.cast<Int32>().value),');
+      o.p('toPointer: (self, ptr) => ptr.cast<Int32>().value = self.value');
+    }, ');');
   }, '}');
 }

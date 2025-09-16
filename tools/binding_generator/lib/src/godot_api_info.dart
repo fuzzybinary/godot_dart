@@ -378,6 +378,30 @@ class ArgumentProxy {
         typeCategory == TypeCategory.enumType ||
         typeCategory == TypeCategory.nativeStructure;
   }
+
+  String get typeInfo {
+    switch (typeCategory) {
+      case TypeCategory.builtinClass:
+        if (rawDartType == 'String') {
+          return 'GDString.sTypeInfo';
+        } else {
+          return '$rawDartType.sTypeInfo';
+        }
+      case TypeCategory.typedArray:
+        return 'TypedArray.sTypeInfo';
+      case TypeCategory.engineClass:
+      case TypeCategory.enumType:
+        return '$rawDartType.sTypeInfo';
+      case TypeCategory.nativeStructure:
+        return 's${rawDartType}TypeInfo';
+      case TypeCategory.primitive:
+        return 'PrimitiveTypeInfo.forType($dartType)!';
+      case TypeCategory.bitfieldType:
+        return 'PrimitiveTypeInfo.forType(Int32)!';
+      default:
+        return 'unknown';
+    }
+  }
 }
 
 extension DartSingletonExtensions on Singleton {
