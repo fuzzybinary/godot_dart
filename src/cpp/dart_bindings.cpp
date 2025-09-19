@@ -242,12 +242,11 @@ void GodotDartBindings::bind_method(Dart_Handle dart_type_info, Dart_Handle dart
 
   GDEWrapper *gde = GDEWrapper::instance();
 
-  auto gd_empty_string_name = new godot::StringName();
-
   // Class name
   DART_CHECK(dart_class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")),
              "Failed to get className from TypeInfo");
-  godot::StringName class_name = create_godot_string_name(dart_class_name);
+  godot::StringName class_name = *(godot::StringName *)get_object_address(dart_class_name);
+  
 
   GDExtensionClassMethodInfo method_info;
   method_info.call_func = GodotDartBindings::bind_call;
@@ -341,7 +340,7 @@ Dart_Handle GodotDartBindings::new_godot_owned_object(Dart_Handle type, void *pt
   Dart_Handle args[] = {type, Dart_NewInteger(int64_t(ptr))};
 
   DART_CHECK_RET(dart_object,
-                 Dart_Invoke(type_resolver, Dart_NewStringFromCString("constructObjectFromGodotObject"), 2, args),
+                 Dart_Invoke(type_resolver, Dart_NewStringFromCString("constructFromGodotObject"), 2, args),
                  Dart_Null(), "Failed to construct object");
 
   return dart_object;
@@ -452,28 +451,11 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
         dart_method_info,
         Dart_NewInteger(int64_t(args)),
         Dart_NewInteger(int64_t(argument_count)),
+        Dart_NewInteger(int64_t(r_return)),
     };
     DART_CHECK(type_resolver, Dart_HandleFromPersistent(gde->_type_resolver), "Failed to get typeResolver");
-    DART_CHECK(result,
-               Dart_Invoke(type_resolver, Dart_NewStringFromCString("invokeMethodVariantCall"), 4, dart_args),
+    DART_CHECK(result, Dart_Invoke(type_resolver, Dart_NewStringFromCString("invokeMethodVariantCall"), 5, dart_args),
                "Dart invoke failed");
-
-    if (!Dart_IsError(result)) {
-      // Call back into Dart to convert to Variant. This may get moved back into C at some point but
-      // the logic and type checking is easier in Dart.
-      Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
-      Dart_Handle args[] = {result};
-      Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);
-      if (Dart_IsError(variant_result)) {
-        GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
-        GD_PRINT_ERROR(Dart_GetError(variant_result));
-      } else {
-        void *variantDataPtr = get_object_address(variant_result);
-        if (variantDataPtr) {
-          gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
-        }
-      }
-    }
   });
 }
 
@@ -511,7 +493,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
 
     DART_CHECK(new_object, Dart_InvokeClosure(constructor_tearoff, 0, nullptr), "Error creating object");
     DART_CHECK(owner_address, Dart_GetField(new_object, Dart_NewStringFromCString("nativePointerAddress")),
-               "Error finding owner member for object");    
+               "Error finding owner member for object");
 
     Dart_IntegerToUint64(owner_address, &real_address);
   });
@@ -578,28 +560,11 @@ void GodotDartBindings::call_virtual_func(void *p_instance, GDExtensionConstStri
         dart_instance,
         dart_method_info,
         Dart_NewInteger(int64_t(p_args)),
+        Dart_NewInteger(int64_t(r_ret)),
     };
     DART_CHECK(type_resolver, Dart_HandleFromPersistent(gde->_type_resolver), "Failed to get typeResolver");
     DART_CHECK(result, Dart_Invoke(type_resolver, Dart_NewStringFromCString("invokeMethodPtrCall"), 4, dart_args),
                "Dart invoke failed");
-
-
-    //if (!Dart_IsError(result)) {
-    //  // Call back into Dart to convert to Variant. This may get moved back into C at some point but
-    //  // the logic and type checking is easier in Dart.
-    //  Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
-    //  Dart_Handle args[] = {result};
-    //  Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);
-    //  if (Dart_IsError(variant_result)) {
-    //    GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
-    //    GD_PRINT_ERROR(Dart_GetError(variant_result));
-    //  } else {
-    //    void *variantDataPtr = get_object_address(variant_result);
-    //    if (variantDataPtr) {
-    //      gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
-    //    }
-    //  }
-    //}
   });
 }
 

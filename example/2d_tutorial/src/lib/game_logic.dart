@@ -23,7 +23,6 @@ class GameLogic extends Node {
 
   GameLogic() : super();
 
-  @pragma('vm:entry-point')
   GameLogic.withNonNullOwner(Pointer<Void> owner)
       : super.withNonNullOwner(owner);
 

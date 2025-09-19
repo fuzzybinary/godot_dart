@@ -6,7 +6,7 @@ import '../core/godot_dart_native_bridge.dart';
 class SignalAwaiter extends GodotObject {
   static final sTypeInfo = ExtensionTypeInfo<SignalAwaiter>(
     className: StringName.fromString('SignalAwaiter'),
-    parentTypeName: GodotObject.sTypeInfo.className,
+    parentTypeInfo: GodotObject.sTypeInfo,
     nativeTypeName: GodotObject.sTypeInfo.nativeTypeName,
     isRefCounted: false,
     constructObjectDefault: () => SignalAwaiter(),
@@ -14,6 +14,7 @@ class SignalAwaiter extends GodotObject {
   );
 
   @override
+  @pragma('vm:entry-point')
   ExtensionTypeInfo<SignalAwaiter> get typeInfo => sTypeInfo;
 
   static void bind() {
@@ -59,7 +60,7 @@ class OperationCanceledError extends Error {}
 class CallbackAwaiter extends GodotObject {
   static final sTypeInfo = ExtensionTypeInfo<CallbackAwaiter>(
     className: StringName.fromString('CallbackAwaiter'),
-    parentTypeName: GodotObject.sTypeInfo.className,
+    parentTypeInfo: GodotObject.sTypeInfo,
     nativeTypeName: GodotObject.sTypeInfo.nativeTypeName,
     isRefCounted: false,
     constructObjectDefault: () => CallbackAwaiter(),
@@ -67,6 +68,7 @@ class CallbackAwaiter extends GodotObject {
   );
 
   @override
+  @pragma('vm:entry-point')
   ExtensionTypeInfo<CallbackAwaiter> get typeInfo => sTypeInfo;
 
   static void bind() {

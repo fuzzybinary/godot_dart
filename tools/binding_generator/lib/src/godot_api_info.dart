@@ -395,7 +395,11 @@ class ArgumentProxy {
       case TypeCategory.nativeStructure:
         return 's${rawDartType}TypeInfo';
       case TypeCategory.primitive:
-        return 'PrimitiveTypeInfo.forType($dartType)!';
+        if (isPointer) {
+          return 'PrimitiveTypeInfo.forType(Pointer<Void>)!';
+        } else {
+          return 'PrimitiveTypeInfo.forType($dartType)!';
+        }
       case TypeCategory.bitfieldType:
         return 'PrimitiveTypeInfo.forType(Int32)!';
       default:

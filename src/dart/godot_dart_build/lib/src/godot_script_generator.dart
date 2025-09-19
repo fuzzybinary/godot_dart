@@ -66,38 +66,21 @@ class GodotScriptAnnotationGenerator
     final isGlobalClassReader = annotation.read('isGlobal');
 
     buffer.writeln(
-        'ExtensionTypeInfo<${element.name}> _\$${element.name}TypeInfo() => ExtensionTypeInfo(');
-    buffer.writeln('  className: StringName.fromString(\'${element.name}\'),');
+        'ExtensionTypeInfo<${element.name}> _\$${element.name}TypeInfo() {');
+    buffer.writeln('  final typeInfo = ExtensionTypeInfo<${element.name}>(');
     buffer
-        .writeln('  parentTypeName: ${element.supertype}.sTypeInfo.className,');
+        .writeln('    className: StringName.fromString(\'${element.name}\'),');
+    buffer.writeln('    parentTypeInfo: ${element.supertype}.sTypeInfo,');
     buffer.writeln(
-        '  nativeTypeName: StringName.fromString(${nativeType?.name}.nativeTypeName),');
-    buffer.writeln('  isRefCounted: $isRefCounted,');
-    buffer.writeln('  constructObjectDefault: () => ${element.name}(),');
+        '    nativeTypeName: StringName.fromString(${nativeType?.name}.nativeTypeName),');
+    buffer.writeln('    isRefCounted: $isRefCounted,');
+    buffer.writeln('    constructObjectDefault: () => ${element.name}(),');
     buffer.writeln(
-        '  constructFromGodotObject: (ptr) => ${element.name}.withNonNullOwner(ptr),');
+        '    constructFromGodotObject: (ptr) => ${element.name}.withNonNullOwner(ptr),');
     buffer.writeln(
-        '  isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
+        '    isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
 
-    // Methods
-    buffer.writeln('    methods: [');
-    for (final method in element.methods) {
-      final exportAnnotation = _godotExportChecker.firstAnnotationOf(method,
-          throwOnUnresolved: false);
-      if (method.hasOverride || exportAnnotation != null) {
-        buffer.write(_buildMethodInfo(method, exportAnnotation));
-        buffer.writeln(',');
-      }
-      // Automatically export all RPC methods as well
-      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
-          throwOnUnresolved: false);
-      if (rpcAnnotation != null) {
-        buffer.write(_buildMethodInfo(method, rpcAnnotation));
-        buffer.write(',');
-      }
-    }
-    buffer.writeln('    ],');
-
+    // TODO sepearate out signals and properties in case they self reference
     List<FieldElement> signalFields = [];
     List<Element> propertyFields = [];
     for (final field in element.fields) {
@@ -117,7 +100,6 @@ class GodotScriptAnnotationGenerator
       }
       // TODO: Warn on properties having annotations on setters.
     }
-
     buffer.writeln('    signals: [');
     for (final signalField in signalFields) {
       final signalAnnotation =
@@ -146,7 +128,29 @@ class GodotScriptAnnotationGenerator
       }
     }
     buffer.writeln('    ],');
-    buffer.writeln(');');
+    buffer.writeln('  );');
+
+    buffer.writeln('  typeInfo.methods = [');
+
+    // Methods
+    for (final method in element.methods) {
+      final exportAnnotation = _godotExportChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+      if (method.hasOverride || exportAnnotation != null) {
+        buffer.write(_buildMethodInfo(method, exportAnnotation));
+        buffer.writeln(',');
+      }
+      // Automatically export all RPC methods as well
+      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+      if (rpcAnnotation != null) {
+        buffer.write(_buildMethodInfo(method, rpcAnnotation));
+        buffer.write(',');
+      }
+    }
+    buffer.writeln('  ];');
+    buffer.writeln('  return typeInfo;');
+    buffer.writeln('}');
 
     buffer.writeln();
 

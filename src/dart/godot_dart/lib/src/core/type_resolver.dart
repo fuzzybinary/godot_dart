@@ -34,6 +34,7 @@ class TypeResolver {
 
   @pragma('vm:entry-point')
   TypeInfo? getTypeInfoByName(String typeName) {
+    print('Looking for $typeName....');
     return _stringTypeInfoLookup[typeName];
   }
 
@@ -108,8 +109,8 @@ class TypeResolver {
   }
 
   @pragma('vm:entry-point')
-  Object? invokeMethodVariantCall(Object target, MethodInfo<dynamic> methodInfo,
-      int argsPtr, int argsCount) {
+  void invokeMethodVariantCall(Object target, MethodInfo<dynamic> methodInfo,
+      int argsPtr, int argsCount, int variantReturnAddresss) {
     assert(methodInfo.args.length == argsCount);
     final Pointer<Pointer<Void>> variantsPtr =
         Pointer<Pointer<Void>>.fromAddress(argsPtr);
@@ -121,7 +122,31 @@ class TypeResolver {
       dartArgs.add(variantPtrToDart(variantPtr, argInfo.typeInfo));
     }
 
-    return methodInfo.dartMethodCall(target, dartArgs);
+    final object = methodInfo.dartMethodCall(target, dartArgs);
+    if (methodInfo.returnInfo != null) {
+      final retPtr = Pointer<Void>.fromAddress(variantReturnAddresss);
+      final retVariant = Variant(object);
+      retVariant.constructCopy(retPtr);
+    }
+  }
+
+  @pragma('vm:entry-point')
+  MethodInfo<dynamic>? findVirtualFunction(
+      ExtensionTypeInfo<dynamic> typeInfo, String name) {
+    MethodInfo<dynamic>? foundMethod;
+    ExtensionTypeInfo<dynamic>? checkTypeInfo = typeInfo;
+    while (checkTypeInfo != null) {
+      final method =
+          checkTypeInfo.methods.firstWhereOrNull((m) => m.name == name);
+      if (method != null) {
+        foundMethod = method;
+        break;
+      }
+
+      checkTypeInfo = checkTypeInfo.parentTypeInfo;
+    }
+
+    return foundMethod;
   }
 
   Object? _ptrToDart(Pointer<Void> ptrArg, PropertyInfo argInfo) {

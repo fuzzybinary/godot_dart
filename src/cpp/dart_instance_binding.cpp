@@ -137,9 +137,8 @@ void DartGodotInstanceBinding::create_dart_object() {
 
   bindings->execute_on_dart_thread([&] {
     Dart_Handle dart_type_info = Dart_HandleFromPersistent(_dart_type_info);
-    DART_CHECK(type_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")), "Failed to get name from class info");
-
-    DART_CHECK(new_obj, bindings->new_dart_object(type_name), "Error creating bindings");
+    DART_CHECK(dart_type, Dart_GetField(dart_type_info, Dart_NewStringFromCString("type")), "Failed to get name from class info");
+    DART_CHECK(new_obj, bindings->new_godot_owned_object(dart_type, _godot_object), "Error creating bindings");
   });
 
   // tie_dart_to_native should have called back in during creation

@@ -21,24 +21,6 @@ void *get_object_address(Dart_Handle engine_handle) {
   return reinterpret_cast<void *>(object_ptr);
 }
 
-//void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
-//  DartBlockScope scope;
-//
-//  Dart_Handle class_name = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
-//  Dart_Handle parent_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("parentType"));
-//  Dart_Handle variant_type = Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType"));
-//
-//  type_info->type_name = get_object_address(class_name);
-//  type_info->parent_type = parent_type;
-//
-//  int64_t temp;
-//  Dart_IntegerToInt64(variant_type, &temp);
-//  type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
-//  type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
-//
-//  Dart_ExitScope();
-//}
-
 void gde_method_info_from_dart(Dart_Handle dart_method_info, GDExtensionMethodInfo *method_info) {
   DART_CHECK(dart_name, Dart_GetField(dart_method_info, Dart_NewStringFromCString("name")), "Failed to get name");
   method_info->name = create_godot_string_name_ptr(dart_name);
@@ -132,10 +114,14 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
 
   DART_CHECK(dart_type_info, Dart_GetField(dart_property_info, Dart_NewStringFromCString("typeInfo")),
              "Failed to get type info");
-  TypeInfo type_info;
-  type_info_from_dart(&type_info, dart_type_info);
-  prop_info->type = type_info.variant_type;
-  prop_info->class_name = type_info.type_name;
+  DART_CHECK(dart_variant_type, Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType")),
+             "Failed to get variantType");
+  int64_t temp;
+  Dart_IntegerToInt64(dart_variant_type, &temp);
+  prop_info->type = static_cast<GDExtensionVariantType>(temp);
+
+  DART_CHECK(class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")), "Failed to get className!");
+  prop_info->class_name = get_object_address(class_name);
 
   DART_CHECK(dart_name, Dart_GetField(dart_property_info, Dart_NewStringFromCString("name")), "Failed to get name");
   godot::StringName *name = create_godot_string_name_ptr(dart_name);

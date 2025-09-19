@@ -295,7 +295,6 @@ class SignalInfo {
 ///
 /// For types assignable to Variants, use [BuiltinTypeInfo]. For Dart pimitive
 /// types, use [PrimitiveTypeInfo].
-@immutable
 class ExtensionTypeInfo<T> implements TypeInfo {
   @override
   @pragma('vm:entry-point')
@@ -311,10 +310,13 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   int get variantType => GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT;
 
   @pragma('vm:entry-point')
-  final StringName? parentTypeName;
+  final ExtensionTypeInfo<dynamic>? parentTypeInfo;
 
   /// The first class in the inheritance tree that is implemented
   /// natively in Godot. Can be the class itself.
+  ///
+  /// TODO: Potentially remove this as it can be determined by a scan up the
+  /// class hierarchy.
   @pragma('vm:entry-point')
   final StringName nativeTypeName;
 
@@ -333,7 +335,7 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   /// A list of Dart methods callable from Godot. For the Godot
   /// standard library, this will be empty, as Godot will never
   /// call into Dart for non-virtal methods.
-  final List<MethodInfo<T>> methods;
+  List<MethodInfo<T>> methods;
 
   /// A list of Dart Signals callable from Godot. For the Godot
   /// standard library, this will be empty.
@@ -348,7 +350,7 @@ class ExtensionTypeInfo<T> implements TypeInfo {
 
   ExtensionTypeInfo({
     required this.className,
-    required this.parentTypeName,
+    required this.parentTypeInfo,
     required this.nativeTypeName,
     required this.isRefCounted,
     required this.constructObjectDefault,

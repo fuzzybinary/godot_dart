@@ -12,8 +12,8 @@ import 'type_info.dart';
 /// Core interface for types that can convert to Variant (the builtin types)
 abstract class BuiltinType implements Finalizable {
   @internal
-  static final finalizer = NativeFinalizer(GDNativeInterface
-      .finalizeBuiltinObject as Pointer<NativeFinalizerFunction>);
+  static final finalizer = NativeFinalizer(
+      Native.addressOf(GDNativeInterface.finalizeBuiltinObject));
 
   Pointer<Uint8> _opaque = nullptr;
 
@@ -69,8 +69,8 @@ abstract class ExtensionType implements Finalizable {
   // This finalizer is used for objects we own in Dart world, and for
   // RefCounted objects that we own the last reference to. It has Godot
   // delete the object
-  static final _finalizer = NativeFinalizer(GDNativeInterface
-      .finalizeExtensionObject as Pointer<NativeFinalizerFunction>);
+  static final _finalizer = NativeFinalizer(
+      Native.addressOf(GDNativeInterface.finalizeExtensionObject));
 
   GDExtensionObjectPtr _owner = nullptr;
   GDExtensionObjectPtr get nativePtr => _owner;

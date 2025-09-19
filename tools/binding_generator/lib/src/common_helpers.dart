@@ -525,69 +525,6 @@ List<String> getUsedTypes(Map<String, dynamic> api) {
   return usedTypes.toList();
 }
 
-void convertPtrArgumentToDart(
-    String argumentName, ArgumentProxy argument, CodeSink o) {
-  // Special case, converting to Dart strings from GDString or StringName
-  final varName = escapeName(argument.name).toLowerCamelCase();
-  var decl = 'final ${argument.dartType} $varName';
-  if (argument.type == 'String') {
-    o.p('final GDString gd$varName = GDString.copyPtr($argumentName.value);');
-    o.p('$decl = gd$varName.toDartString();');
-    return;
-  } else if (argument.type == 'StringName') {
-    o.p('final StringName gd$varName = StringName.copyPtr($argumentName.value);');
-    o.p('$decl = GDString.fromStringName(gd$varName).toDartString();');
-    return;
-  }
-
-  switch (argument.typeCategory) {
-    case TypeCategory.engineClass:
-      final question = argument.isOptional ? '?' : '';
-      if (argument.isRefCounted) {
-        o.p('$decl = gde.ffiBindings.gde_ref_get_object($argumentName.value).toDart() as ${argument.rawDartType}$question;');
-      } else {
-        o.p('$decl = $argumentName.cast<Pointer<GDExtensionObjectPtr>>().value.value.toDart() as ${argument.rawDartType}$question;');
-      }
-      break;
-    case TypeCategory.builtinClass:
-      if (argument.type == 'Variant') {
-        o.p('$decl = Variant.fromVariantPtr($argumentName.value);');
-      } else {
-        o.p('$decl = ${argument.rawDartType}.copyPtr($argumentName.value);');
-      }
-      break;
-    case TypeCategory.primitive:
-      final castType =
-          argument.isPointer ? argument.dartType : getFFIType(argument);
-      o.p('$decl = $argumentName.cast<Pointer<$castType>>().value.value;');
-      break;
-    case TypeCategory.nativeStructure:
-      if (argument.isOptional) {
-        o.p('final ${argument.name}Ptr = $argumentName.cast<Pointer<${argument.dartType}>>().value;');
-        o.p('$decl = ${argument.name}Ptr == nullptr ? null : ${argument.name}Ptr.ref;');
-      } else if (argument.isPointer) {
-        o.p('$decl = $argumentName.cast<Pointer<${argument.dartType}>>().value.value;');
-      } else {
-        o.p('$decl = $argumentName.cast<Pointer<${argument.dartType}>>().value.ref;');
-      }
-      break;
-    case TypeCategory.enumType:
-      o.p('$decl = ${argument.dartType}.fromValue($argumentName.cast<Pointer<Uint32>>().value.value);');
-      break;
-    case TypeCategory.bitfieldType:
-      o.p('$decl = $argumentName.cast<Pointer<Uint32>>().value.value;');
-      break;
-    case TypeCategory.typedArray:
-      o.p('$decl = ${argument.dartType}.copyPtr($argumentName.value);');
-      break;
-    case TypeCategory.voidType:
-      if (argument.dartType.startsWith('Pointer')) {
-        o.p('$decl = $argumentName.value;');
-      }
-      break;
-  }
-}
-
 String createPtrcallArguments(CodeSink o, List<ArgumentProxy>? arguments) {
   final variableName = 'ptrArgArray';
   if (arguments == null || arguments.isEmpty) {
@@ -672,57 +609,6 @@ void convertDartToPtrArgument(
       }
       break;
   }
-}
-
-void writePtrReturn(ArgumentProxy argument, CodeSink o) {
-  if (argument.type == 'String') {
-    o.p('final retGdString = GDString.fromString(ret);');
-    o.p('retGdString.constructCopy(retPtr);');
-    return;
-  } else if (argument.type == 'StringName') {
-    o.p('final retGdStringName = StringName.fromString(ret);');
-    o.p('retGdStringName.constructCopy(retPtr);');
-    return;
-  }
-
-  var ret = '';
-  switch (argument.typeCategory) {
-    case TypeCategory.engineClass:
-      ret += 'retPtr.cast<GDExtensionTypePtr>().value = ';
-      ret +=
-          argument.isOptional ? 'ret?.nativePtr ?? nullptr' : 'ret.nativePtr';
-      break;
-    case TypeCategory.builtinClass:
-      ret += 'ret.constructCopy(retPtr)';
-      break;
-    case TypeCategory.primitive:
-      final castType =
-          argument.isPointer ? argument.dartType : getFFIType(argument);
-      ret += 'retPtr.cast<$castType>().value = ret';
-      break;
-    case TypeCategory.nativeStructure:
-      if (argument.isPointer) {
-        ret += 'retPtr.cast<${argument.dartType}>().value = ret';
-      } else {
-        ret += 'retPtr.cast<${argument.dartType}>().ref = ret';
-      }
-      break;
-    case TypeCategory.enumType:
-      // TODO: Determine if enums and bitfields are variable width?
-      ret += 'retPtr.cast<Uint32>().value = ret.value';
-      break;
-    case TypeCategory.bitfieldType:
-      // TODO: Determine if enums and bitfields are variable width?
-      ret += 'retPtr.cast<Uint32>().value = ret';
-      break;
-    case TypeCategory.typedArray:
-      ret += 'ret.constructCopy(retPtr)';
-      break;
-    case TypeCategory.voidType:
-      return;
-  }
-
-  o.p('$ret;');
 }
 
 // A map of enumTypes to prefixes that are different from their type name, and

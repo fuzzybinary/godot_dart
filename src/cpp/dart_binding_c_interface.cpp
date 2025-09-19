@@ -35,7 +35,8 @@ GDE_EXPORT void bind_class(Dart_Handle type_info) {
     return;
   }
 
-  Dart_Handle parent_type_name = Dart_GetField(type_info, Dart_NewStringFromCString("parentTypeName"));
+  DART_CHECK(parent_type_info, Dart_GetField(type_info, Dart_NewStringFromCString("parentTypeInfo")), "Failed getting parent type info");
+  DART_CHECK(parent_type_name, Dart_GetField(parent_type_info, Dart_NewStringFromCString("className")), "Failed getting parent class name");
   void *sn_parent = get_object_address(parent_type_name);
   if (sn_parent == nullptr) {
     return;
@@ -72,10 +73,11 @@ GDE_EXPORT void add_property(Dart_Handle d_bind_type_info, Dart_Handle d_propert
     return;
   }
 
-  TypeInfo bind_type_info;
+  // TODO: Add property
+  /*TypeInfo bind_type_info;
   type_info_from_dart(&bind_type_info, d_bind_type_info);
 
-  bindings->add_property(bind_type_info, d_property_info);
+  bindings->add_property(bind_type_info, d_property_info);*/
 }
 
 GDE_EXPORT Dart_Handle gd_string_to_dart_string(void *string_ptr) {
@@ -85,7 +87,7 @@ GDE_EXPORT Dart_Handle gd_string_to_dart_string(void *string_ptr) {
     return Dart_Null();
   }
 
-  if (string_ptr) {
+  if (!string_ptr) {
     return Dart_Null();
   }
 
@@ -161,8 +163,8 @@ GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr
     return;
   }
 
-  TypeInfo class_type_info;
-  type_info_from_dart(&class_type_info, d_class_type_info);
+  DART_CHECK(class_name, Dart_GetField(d_class_type_info, Dart_NewStringFromCString("className")),
+             "Failed to get className!");
 
   const GDExtensionInstanceBindingCallbacks *callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
   DartGodotInstanceBinding *binding =
@@ -172,7 +174,7 @@ GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr
   }
 
   if (!is_godot_defined) {
-    gde_object_set_instance(godot_object, class_type_info.type_name, binding);
+    gde_object_set_instance(godot_object, get_object_address(class_name), binding);
   }
 }
 
