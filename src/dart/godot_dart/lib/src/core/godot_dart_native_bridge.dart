@@ -54,10 +54,14 @@ sealed class GDNativeInterface {
   external static Object? objectFromInstanceBinding(
       GDExtensionClassInstancePtr object);
 
-  @Native<Void Function(Handle, GDExtensionObjectPtr, Bool, Bool)>(
+  @Native<Void Function(Handle, Handle, GDExtensionObjectPtr, Bool, Bool)>(
       symbol: 'tie_dart_to_native')
-  external static void tieDartToNative(Object dartObj,
-      GDExtensionObjectPtr godotObj, bool isRefcounted, bool isGodotDefined);
+  external static void tieDartToNative(
+      Object dartObj,
+      ExtensionTypeInfo<dynamic> typeInfo,
+      GDExtensionObjectPtr godotObj,
+      bool isRefcounted,
+      bool isGodotDefined);
 
   @Native<GDExtensionScriptInstanceDataPtr Function(GDExtensionConstObjectPtr)>(
       symbol: 'get_script_instance')

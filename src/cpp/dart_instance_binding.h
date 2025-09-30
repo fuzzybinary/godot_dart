@@ -10,7 +10,8 @@
 class DartGodotInstanceBinding {
 public:
   DartGodotInstanceBinding(Dart_PersistentHandle dart_type_info, GDExtensionObjectPtr godot_object)
-      : _is_refcounted(false), _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object), _dart_type_info(dart_type_info) {
+      : _is_refcounted(false), _is_weak(false), _persistent_handle(nullptr), _godot_object(godot_object),
+        _dart_type_info(dart_type_info) {
   }
 
   ~DartGodotInstanceBinding();
@@ -26,6 +27,7 @@ public:
   }
 
   Dart_Handle get_dart_object();
+  Dart_Handle get_type_info();
   GDExtensionObjectPtr get_godot_object() const {
     return _godot_object;
   }
@@ -37,16 +39,16 @@ public:
 
   static GDExtensionInstanceBindingCallbacks engine_binding_callbacks;
 
-  static std::map<intptr_t, DartGodotInstanceBinding*> s_instanceMap;
+  static std::map<intptr_t, DartGodotInstanceBinding *> s_instanceMap;
 
 private:
   void delete_dart_handle();
-  
+
   bool _is_refcounted;
   bool _is_weak;
   void *_persistent_handle;
   GDExtensionObjectPtr _godot_object;
-  Dart_PersistentHandle _dart_type_info;  
+  Dart_PersistentHandle _dart_type_info;
 };
 
 void gde_weak_finalizer(void *isolate_callback_data, void *peer);

@@ -389,13 +389,13 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
       GD_PRINT_ERROR("Failed to create script instance! Got Null");
     }
 
-    DartScriptInstance *script_instance =
-        new DartScriptInstance(dart_object, const_cast<DartScript *>(this), for_object, is_placeholder, rc != nullptr);
+    Dart_Handle type_info = Dart_HandleFromPersistent(_type_info);
+    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, type_info, const_cast<DartScript *>(this),
+                                                                 for_object, is_placeholder, rc != nullptr);
 
     godot_script_instance =
         gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                     reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-    std::cout << "Did create script instance at " << godot_script_instance;
     if (is_placeholder) {
       _placeholders.insert(script_instance);
     }

@@ -125,7 +125,7 @@ abstract class ExtensionType implements Finalizable {
       bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
           typeInfo.className.toDartString();
       GDNativeInterface.tieDartToNative(
-          this, _owner, this is RefCounted, isGodotType);
+          this, typeInfo, _owner, this is RefCounted, isGodotType);
     }
   }
 

@@ -4,15 +4,15 @@
 #include <godot_cpp/classes/ref_counted.hpp>
 
 #include "dart_instance_binding.h"
-#include "script/dart_script.h"
 #include "godot_string_wrappers.h"
+#include "script/dart_script.h"
 
 class DartScript;
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object* owner, bool is_placeholder,
-                     bool is_refcounted);
+  DartScriptInstance(Dart_Handle for_object, Dart_Handle type_info, godot::Ref<DartScript> script, godot::Object *owner,
+                     bool is_placeholder, bool is_refcounted);
   ~DartScriptInstance();
 
   bool set(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value);
@@ -36,8 +36,7 @@ public:
   GDExtensionBool has_method(const godot::StringName &p_name);
 
   void call(const godot::StringName *p_method, const GDExtensionConstVariantPtr *p_args,
-            GDExtensionInt p_argument_count,
-            GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
+            GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
   void notification(int32_t p_what, bool p_reversed);
   void to_string(GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
 
@@ -64,7 +63,7 @@ public:
 
   static const GDExtensionScriptInstanceInfo2 *get_script_instance_info();
 
-  static std::map<intptr_t, DartScriptInstance*> s_instanceMap; 
+  static std::map<intptr_t, DartScriptInstance *> s_instanceMap;
 
   DartGodotInstanceBinding _binding;
 

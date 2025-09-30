@@ -11,7 +11,6 @@ class Mob extends RigidBody2D {
   static ExtensionTypeInfo<Mob> get sTypeInfo => _$MobTypeInfo();
 
   @override
-  @pragma('vm:entry-point')
   ExtensionTypeInfo<Mob> get typeInfo => Mob.sTypeInfo;
 
   final _random = Random();

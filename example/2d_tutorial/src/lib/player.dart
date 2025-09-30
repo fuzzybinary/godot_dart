@@ -10,7 +10,6 @@ class Player extends Area2D {
   static ExtensionTypeInfo<Player> get sTypeInfo => _$PlayerTypeInfo();
 
   @override
-  @pragma('vm:entry-point')
   ExtensionTypeInfo<Player> get typeInfo => Player.sTypeInfo;
 
   Player() : super();

@@ -13,9 +13,9 @@
 
 std::map<intptr_t, DartScriptInstance *> DartScriptInstance::s_instanceMap;
 
-DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object *owner,
-                                       bool is_placeholder, bool is_refcounted)
-    : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_object(owner) {
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, Dart_Handle type_info, godot::Ref<DartScript> script,
+                                       godot::Object *owner, bool is_placeholder, bool is_refcounted)
+    : _is_placeholder(is_placeholder), _binding(Dart_NewPersistentHandle(type_info), owner), _godot_object(owner) {
 
   s_instanceMap[(intptr_t)this] = this;
   _binding.initialize(for_object, is_refcounted);
@@ -38,7 +38,7 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
 
     Dart_Handle field_name = to_dart_string(p_name);
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
 
     Dart_Handle prop_info_args[] = {field_name};
     DART_CHECK(dart_property_info,
@@ -85,7 +85,7 @@ bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariant
     Dart_Handle field_name = to_dart_string(p_name);
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
 
     Dart_Handle args[] = {field_name};
     DART_CHECK(dart_property_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getPropertyInfo"), 1, args),
@@ -181,7 +181,7 @@ const GDExtensionMethodInfo *DartScriptInstance::get_method_list(uint32_t *r_cou
 
     // This is a lot of work just to get the size of the list
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
     DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t method_count = 0;
@@ -211,7 +211,7 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
 
     // This is a lot of work just to get the size of the list
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
     DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t prop_count = 0;
@@ -238,7 +238,7 @@ GDExtensionBool DartScriptInstance::has_method(const godot::StringName &p_name) 
     DartBlockScope scope;
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
 
     Dart_Handle method_info_args[] = {to_dart_string(p_name)};
     DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
@@ -272,7 +272,7 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
     DartBlockScope scope;
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
-    DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _binding.get_type_info(), "Failed to find typeInfo");
 
     Dart_Handle method_info_args[] = {to_dart_string(*p_method)};
     DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),

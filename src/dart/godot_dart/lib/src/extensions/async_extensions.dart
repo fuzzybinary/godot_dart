@@ -22,9 +22,9 @@ class SignalAwaiter extends GodotObject {
     GDNativeInterface.bindClass(SignalAwaiter.sTypeInfo);
     GDNativeInterface.bindMethod(
       SignalAwaiter.sTypeInfo,
-      MethodInfo(
+      MethodInfo<SignalAwaiter>(
         name: 'signalCalled',
-        dartMethodCall: (self, _) => (self as SignalAwaiter).signalCalled(),
+        dartMethodCall: (self, _) => self.signalCalled(),
         args: [],
       ),
     );

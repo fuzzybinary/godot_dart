@@ -10,7 +10,6 @@ class Hud extends CanvasLayer {
   static ExtensionTypeInfo<Hud> get sTypeInfo => _$HudTypeInfo();
 
   @override
-  @pragma('vm:entry-point')
   ExtensionTypeInfo<Hud> get typeInfo => Hud.sTypeInfo;
 
   Hud() : super();

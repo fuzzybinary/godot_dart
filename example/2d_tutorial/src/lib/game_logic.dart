@@ -15,7 +15,6 @@ class GameLogic extends Node {
   static ExtensionTypeInfo<GameLogic> get sTypeInfo => _$GameLogicTypeInfo();
 
   @override
-  @pragma('vm:entry-point')
   ExtensionTypeInfo<GameLogic> get typeInfo => GameLogic.sTypeInfo;
 
   @GodotProperty()

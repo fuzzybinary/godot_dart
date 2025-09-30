@@ -153,19 +153,12 @@ GDE_EXPORT void set_type_resolver(Dart_Handle resolver) {
   script_language->attach_type_resolver(resolver);
 }
 
-GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr godot_object, bool is_refcounted,
-                                   bool is_godot_defined) {
+GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, Dart_Handle dart_type_info,
+                                   GDExtensionObjectPtr godot_object, bool is_refcounted, bool is_godot_defined) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   DartBlockScope scope;
 
-  Dart_Handle d_class_type_info = Dart_GetField(dart_object, Dart_NewStringFromCString("typeInfo"));
-  if (Dart_IsError(d_class_type_info)) {
-    GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
-    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
-    return;
-  }
-
-  DART_CHECK(class_name, Dart_GetField(d_class_type_info, Dart_NewStringFromCString("className")),
+  DART_CHECK(class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")),
              "Failed to get className!");
 
   const GDExtensionInstanceBindingCallbacks *callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;

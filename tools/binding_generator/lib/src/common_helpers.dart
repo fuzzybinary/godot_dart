@@ -700,6 +700,7 @@ void writeEnum(dynamic godotEnum, String? inClass, CodeSink o) {
     }
     o.nl();
 
+    o.p("@pragma('vm:entry-point')");
     o.p('final int value;');
     o.p('const $enumName(this.value);');
     o.b('factory $enumName.fromValue(int value) {', () {
