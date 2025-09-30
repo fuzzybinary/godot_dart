@@ -20,6 +20,7 @@ class RpcInfo {
     this.transferChannel = 0,
   });
 
+  @pragma('vm:entry-point')
   Dictionary asDict() {
     final dict = Dictionary();
 

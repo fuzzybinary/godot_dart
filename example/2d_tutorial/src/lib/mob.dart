@@ -7,6 +7,7 @@ part 'mob.g.dart';
 
 @GodotScript()
 class Mob extends RigidBody2D {
+  @pragma('vm:entry-point')
   static ExtensionTypeInfo<Mob> get sTypeInfo => _$MobTypeInfo();
 
   @override

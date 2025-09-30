@@ -14,7 +14,7 @@
 
 using namespace godot;
 
-DartScript::DartScript() : _source_code(), _dart_type(nullptr), _script_info(nullptr) {
+DartScript::DartScript() : _source_code(), _dart_type(nullptr), _type_info(nullptr) {
 }
 
 DartScript::~DartScript() {
@@ -31,8 +31,9 @@ DartScript::~DartScript() {
     if (_dart_type != nullptr) {
       Dart_DeletePersistentHandle(_dart_type);
     }
-    if (_script_info != nullptr) {
-      Dart_DeletePersistentHandle(_script_info);
+    if (_type_info != nullptr) {
+      Dart_DeletePersistentHandle(_type_info);
+      _type_info = nullptr;
     }
   });
 }
@@ -73,8 +74,8 @@ bool DartScript::_can_instantiate() const {
     return default_return;                                                                                             \
   }                                                                                                                    \
                                                                                                                        \
-  const_cast<DartScript *>(this)->refresh_type(false);                                                                      \
-  if (_script_info == nullptr) {                                                                                       \
+  const_cast<DartScript *>(this)->refresh_type(false);                                                                 \
+  if (_type_info == nullptr) {                                                                                         \
     return default_return;                                                                                             \
   }
 
@@ -86,7 +87,7 @@ bool DartScript::_has_method(const godot::StringName &method) const {
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
+    Dart_Handle script_info = Dart_HandleFromPersistent(_type_info);
     Dart_Handle args[] = {to_dart_string(method)};
     Dart_Handle method_name = Dart_NewStringFromCString("hasMethod");
     DART_CHECK(dart_has_method, Dart_Invoke(script_info, method_name, 1, args), "Error calling hasMethod");
@@ -109,7 +110,7 @@ godot::Dictionary DartScript::_get_method_info(const godot::StringName &method) 
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
+    Dart_Handle script_info = Dart_HandleFromPersistent(_type_info);
     Dart_Handle getMethodArgs[] = {to_dart_string(method)};
     Dart_Handle d_get_method_info = Dart_NewStringFromCString("getMethodInfo");
 
@@ -139,10 +140,10 @@ bool DartScript::_has_script_signal(const godot::StringName &signal) const {
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
+    Dart_Handle script_info = Dart_HandleFromPersistent(_type_info);
     Dart_Handle args[] = {to_dart_string(signal)};
     Dart_Handle method_name = Dart_NewStringFromCString("hasSignal");
-    DART_CHECK(dart_has_signal, Dart_Invoke(script_info, method_name, 1, args), "Error calling hasMethod");
+    DART_CHECK(dart_has_signal, Dart_Invoke(script_info, method_name, 1, args), "Error calling hasSignal");
 
     Dart_BooleanValue(dart_has_signal, &has_signal);
   });
@@ -155,16 +156,18 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_signal_list() const
 
   godot::TypedArray<godot::Dictionary> ret_val;
 
+  std::cout << "Getting signals for script.\n";
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
+    Dart_Handle type_info = Dart_HandleFromPersistent(_type_info);
 
     Dart_Handle dart_prop_name = Dart_NewStringFromCString("signals");
-    DART_CHECK(dart_signal_list, Dart_GetField(script_info, dart_prop_name), "Error getting field signals");
+    DART_CHECK(dart_signal_list, Dart_GetField(type_info, dart_prop_name), "Error getting field signals");
 
     intptr_t signal_size = 0;
     Dart_ListLength(dart_signal_list, &signal_size);
+    std::cout << "Got a script with " << signal_size << "signals.\n";
     for (intptr_t i = 0; i < signal_size; ++i) {
       Dart_Handle signal_info = Dart_ListGetAt(dart_signal_list, i);
 
@@ -188,7 +191,7 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_method_list() const
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle script_info = Dart_HandleFromPersistent(_script_info);
+    Dart_Handle script_info = Dart_HandleFromPersistent(_type_info);
 
     Dart_Handle dart_prop_name = Dart_NewStringFromCString("methods");
     DART_CHECK(dart_method_list, Dart_GetField(script_info, dart_prop_name), "Error getting field methods");
@@ -287,7 +290,7 @@ godot::Variant DartScript::_get_property_default_value(const godot::StringName &
 
 void DartScript::_update_exports() {
   refresh_type(true);
-  
+
   for (const auto &script_instance : _placeholders) {
     script_instance->notify_property_list_changed();
   }
@@ -381,8 +384,10 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
     DartBlockScope scope;
 
     DART_CHECK(dart_type, Dart_HandleFromPersistent(_dart_type), "Could not get type from persistent handle");
-    DART_CHECK(dart_object, bindings->new_godot_owned_object(dart_type, for_object->_owner),
-               "Error creating bindings");
+    DART_CHECK(dart_object, bindings->new_godot_owned_object(dart_type, for_object->_owner), "Error creating bindings");
+    if (Dart_IsNull(dart_object)) {
+      GD_PRINT_ERROR("Failed to create script instance! Got Null");
+    }
 
     DartScriptInstance *script_instance =
         new DartScriptInstance(dart_object, const_cast<DartScript *>(this), for_object, is_placeholder, rc != nullptr);
@@ -390,7 +395,7 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
     godot_script_instance =
         gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
                                     reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-
+    std::cout << "Did create script instance at " << godot_script_instance;
     if (is_placeholder) {
       _placeholders.insert(script_instance);
     }
@@ -424,15 +429,15 @@ void DartScript::refresh_type(bool force) {
 
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
-    
+
     // Delete old persistent handles
     if (_dart_type != nullptr) {
       Dart_DeletePersistentHandle(_dart_type);
       _dart_type = nullptr;
     }
-    if (_script_info != nullptr) {
-      Dart_DeletePersistentHandle(_script_info);
-      _script_info = nullptr;
+    if (_type_info != nullptr) {
+      Dart_DeletePersistentHandle(_type_info);
+      _type_info = nullptr;
     }
 
     DartScriptLanguage *language = DartScriptLanguage::instance();
@@ -444,22 +449,20 @@ void DartScript::refresh_type(bool force) {
       _dart_type = Dart_NewPersistentHandle(dart_type);
       DART_CHECK(type_info, Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo")),
                  "Failed getting type info");
-      DART_CHECK(script_info, Dart_GetField(type_info, Dart_NewStringFromCString("scriptInfo")),
-                 "Failed to get scriptInfo");
-      if (script_info != nullptr) {
-        _script_info = Dart_NewPersistentHandle(script_info);
-        
+      if (!Dart_IsNull(type_info)) {
+        _type_info = Dart_NewPersistentHandle(type_info);
+
         // Find the base type
         Dart_Handle base_type = Dart_GetField(type_info, Dart_NewStringFromCString("parentType"));
         if (Dart_IsNull(base_type)) {
-          _base_script = language->find_script_for_type(script_info);
+          _base_script = language->find_script_for_type(dart_type);
         }
 
         // Update Properties
         clear_property_cache();
 
         // TODO: Get properties from our base class?
-        DART_CHECK(properties_list, Dart_GetField(script_info, Dart_NewStringFromCString("properties")),
+        DART_CHECK(properties_list, Dart_GetField(_type_info, Dart_NewStringFromCString("properties")),
                    "Failed to get properties info");
         intptr_t prop_count = 0;
         Dart_ListLength(properties_list, &prop_count);
@@ -475,12 +478,12 @@ void DartScript::refresh_type(bool force) {
         }
 
         // Update RPC Methods
-        DART_CHECK(rpc_list, Dart_GetField(script_info, Dart_NewStringFromCString("rpcInfo")), "Failed to get Rpc Info");
+        DART_CHECK(rpc_list, Dart_GetField(type_info, Dart_NewStringFromCString("rpcInfo")), "Failed to get Rpc Info");
         intptr_t rpc_count = 0;
         Dart_ListLength(rpc_list, &rpc_count);
         _rpc_config.clear();
         if (rpc_count > 0) {
-          Dart_Handle rpc_as_dict = Dart_NewStringFromCString("asDict");   
+          Dart_Handle rpc_as_dict = Dart_NewStringFromCString("asDict");
           godot::Dictionary godot_rpc_config;
           for (auto i = 0; i < rpc_count; ++i) {
             DART_CHECK(rpc_info, Dart_ListGetAt(rpc_list, i), "Failed to get rpc at index");
@@ -493,7 +496,6 @@ void DartScript::refresh_type(bool force) {
           }
           _rpc_config = godot_rpc_config;
         }
-
       }
     }
   });

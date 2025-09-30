@@ -6,6 +6,7 @@ part 'hud.g.dart';
 
 @GodotScript()
 class Hud extends CanvasLayer {
+  @pragma('vm:entry-point')
   static ExtensionTypeInfo<Hud> get sTypeInfo => _$HudTypeInfo();
 
   @override
@@ -26,41 +27,41 @@ class Hud extends CanvasLayer {
   void vProcess(double delta) {}
 
   void showMessage(String text) {
-    var message = getNodeT<Label>('Message');
-    message?.setText(text);
-    message?.show();
+	var message = getNodeT<Label>('Message');
+	message?.setText(text);
+	message?.show();
 
-    getNodeT<Timer>('MessageTimer')?.start();
+	getNodeT<Timer>('MessageTimer')?.start();
   }
 
   Future<void> showGameOver() async {
-    showMessage('Game Over');
+	showMessage('Game Over');
 
-    var messageTimer = getNodeT<Timer>('MessageTimer');
-    await messageTimer!.timeout.asFuture(this);
+	var messageTimer = getNodeT<Timer>('MessageTimer');
+	await messageTimer!.timeout.asFuture(this);
 
-    var message = getNodeT<Label>('Message');
-    message?.setText('Dodge the \nCreeps!');
-    message?.show();
+	var message = getNodeT<Label>('Message');
+	message?.setText('Dodge the \nCreeps!');
+	message?.show();
 
-    final timer = getTree()!.createTimer(1.0);
-    await timer!.timeout.asFuture(this);
+	final timer = getTree()!.createTimer(1.0);
+	await timer!.timeout.asFuture(this);
 
-    getNodeT<Button>('StartButton')?.show();
+	getNodeT<Button>('StartButton')?.show();
   }
 
   void updateScore(int score) {
-    getNodeT<Label>('ScoreLabel')?.setText(score.toString());
+	getNodeT<Label>('ScoreLabel')?.setText(score.toString());
   }
 
   @GodotExport()
   void onStartButtonPressed() {
-    getNodeT<Button>('StartButton')?.hide();
-    _startGame.emit();
+	getNodeT<Button>('StartButton')?.hide();
+	_startGame.emit();
   }
 
   @GodotExport()
   void onMessageTimerTimeout() {
-    getNodeT<Label>('Message')?.hide();
+	getNodeT<Label>('Message')?.hide();
   }
 }

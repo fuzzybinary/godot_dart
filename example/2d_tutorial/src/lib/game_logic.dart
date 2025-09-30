@@ -11,8 +11,11 @@ part 'game_logic.g.dart';
 
 @GodotScript()
 class GameLogic extends Node {
+  @pragma('vm:entry-point')
   static ExtensionTypeInfo<GameLogic> get sTypeInfo => _$GameLogicTypeInfo();
+
   @override
+  @pragma('vm:entry-point')
   ExtensionTypeInfo<GameLogic> get typeInfo => GameLogic.sTypeInfo;
 
   @GodotProperty()

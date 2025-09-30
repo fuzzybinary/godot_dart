@@ -35,8 +35,10 @@ GDE_EXPORT void bind_class(Dart_Handle type_info) {
     return;
   }
 
-  DART_CHECK(parent_type_info, Dart_GetField(type_info, Dart_NewStringFromCString("parentTypeInfo")), "Failed getting parent type info");
-  DART_CHECK(parent_type_name, Dart_GetField(parent_type_info, Dart_NewStringFromCString("className")), "Failed getting parent class name");
+  DART_CHECK(parent_type_info, Dart_GetField(type_info, Dart_NewStringFromCString("parentTypeInfo")),
+             "Failed getting parent type info");
+  DART_CHECK(parent_type_name, Dart_GetField(parent_type_info, Dart_NewStringFromCString("className")),
+             "Failed getting parent class name");
   void *sn_parent = get_object_address(parent_type_name);
   if (sn_parent == nullptr) {
     return;
@@ -209,7 +211,8 @@ GDE_EXPORT void call_dart_signal(void *callable_userdata, const GDExtensionConst
     Dart_Handle convert_args[] = {Dart_NewInteger(int64_t(p_args)), Dart_NewInteger(p_argument_count)};
     DART_CHECK(
         signal_args,
-        Dart_Invoke(bindings->_native_library, Dart_NewStringFromCString("_variantsToDartVariants"), 2, convert_args));    
+        Dart_Invoke(bindings->_native_library, Dart_NewStringFromCString("_variantsToDartVariants"), 2, convert_args),
+        "Failed to convert variants to Dart.");
 
     Dart_Handle args[] = {signal_args};
     Dart_Handle result = Dart_Invoke(signal, Dart_NewStringFromCString("call"), 1, args);

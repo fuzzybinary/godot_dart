@@ -10,8 +10,8 @@
 #include <dart_api.h>
 #include <gdextension_interface.h>
 #include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/variant/string.hpp>
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"

@@ -21,7 +21,7 @@ public:
   }
   godot::Ref<Script> _get_base_script() const override;
   godot::ScriptLanguage *_get_language() const override;
-  void _set_source_code(const godot::String& code) override;
+  void _set_source_code(const godot::String &code) override;
   godot::String _get_source_code() const override;
   bool _has_source_code() const override;
   bool _can_instantiate() const override;
@@ -52,14 +52,14 @@ public:
   void *_instance_create(Object *for_object) const override;
   void *_placeholder_instance_create(Object *for_object) const override;
 
-  const std::unordered_map<godot::StringName, GDExtensionPropertyInfo>& get_properties() const {
+  const std::unordered_map<godot::StringName, GDExtensionPropertyInfo> &get_properties() const {
     return _properties_cache;
-  }  
-  
+  }
+
   // ScriptInstances in extensions are never of the type that calls
   // _placeholder_erased, so we handle this manually on instance free
   void dart_placeholder_erased(DartScriptInstance *p_placeholder);
-	
+
 protected:
   static void _bind_methods();
 
@@ -76,5 +76,5 @@ private:
   mutable std::unordered_set<DartScriptInstance *> _placeholders;
   mutable godot::Ref<DartScript> _base_script;
   mutable Dart_PersistentHandle _dart_type;
-  mutable Dart_PersistentHandle _script_info;
+  mutable Dart_PersistentHandle _type_info;
 };

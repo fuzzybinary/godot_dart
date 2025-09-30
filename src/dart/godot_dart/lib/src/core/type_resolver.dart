@@ -34,8 +34,8 @@ class TypeResolver {
 
   @pragma('vm:entry-point')
   TypeInfo? getTypeInfoByName(String typeName) {
-    print('Looking for $typeName....');
-    return _stringTypeInfoLookup[typeName];
+    final ret = _stringTypeInfoLookup[typeName];
+    return ret;
   }
 
   @pragma('vm:entry-point')
@@ -43,12 +43,14 @@ class TypeResolver {
     return _typeTypeInfoLookup[type];
   }
 
-  void addScriptType(String path, Type scriptType, bool isGlobal) {
+  void addScriptType(
+      String path, Type scriptType, ExtensionTypeInfo<dynamic> typeInfo) {
     assert(!_scriptFileTypeMap.containsKey(path));
     assert(!_scriptTypeFileMap.containsKey(scriptType));
     _scriptFileTypeMap[path] = scriptType;
     _scriptTypeFileMap[scriptType] = path;
-    if (isGlobal) {
+    _typeTypeInfoLookup[scriptType] = typeInfo;
+    if (typeInfo.isGlobalClass) {
       _globalClassPaths.add(path);
     }
   }
@@ -100,7 +102,7 @@ class TypeResolver {
       return _ptrToDart((ptrCallArgs + i).value, argInfo);
     }).toList();
 
-    final object = methodInfo.dartMethodCall(target, args);
+    final object = methodInfo.call(target, args);
     if (methodInfo.returnInfo case final returnInfo?) {
       final retPtr = Pointer<Void>.fromAddress(retAddress);
 
@@ -121,9 +123,10 @@ class TypeResolver {
       final argInfo = methodInfo.args[i];
       dartArgs.add(variantPtrToDart(variantPtr, argInfo.typeInfo));
     }
-
-    final object = methodInfo.dartMethodCall(target, dartArgs);
-    if (methodInfo.returnInfo != null) {
+    if (methodInfo.returnInfo == null) {
+      methodInfo.call(target, dartArgs);
+    } else {
+      final object = methodInfo.call(target, dartArgs);
       final retPtr = Pointer<Void>.fromAddress(variantReturnAddresss);
       final retVariant = Variant(object);
       retVariant.constructCopy(retPtr);

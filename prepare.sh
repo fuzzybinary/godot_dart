@@ -5,6 +5,9 @@
 
 [[ $(type -P "dart") ]] || { echo "Could not find dart in your path. It's needed."; exit 1; }
 
+pushd tools/fetch_dart
+dart pub get
+popd
 dart ./tools/fetch_dart/bin/fetch_dart.dart
 
 pushd src/dart/godot_dart
@@ -17,6 +20,7 @@ dart pub get
 popd
 
 pushd tools/binding_generator
+dart pub get
 dart ./bin/binding_generator.dart
 popd
 

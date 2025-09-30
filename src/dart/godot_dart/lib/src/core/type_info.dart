@@ -11,7 +11,7 @@ import 'core.dart';
 // In order to avoid having to place @pragma('vm:entry-point') on
 // every method in Godot, use a function that we can get and invoke
 // without having to invoke the method by name
-typedef GodotMethodCall<T> = Object? Function(T self, List<Object?> args);
+typedef GodotMethodCall<T> = dynamic Function(T self, List<Object?> args);
 typedef ConstructFromGodotObject<T> = T Function(Pointer<Void>);
 typedef ConstructObjectDefault<T> = T Function();
 typedef ConstructCopy<T> = T Function(GDExtensionConstTypePtr);
@@ -241,6 +241,10 @@ class MethodInfo<T> {
     this.flags = MethodFlags.methodFlagsDefault,
   });
 
+  dynamic call(dynamic self, List<Object?> args) {
+    return dartMethodCall(self as T, args);
+  }
+
   @pragma('vm:entry-point')
   Dictionary asDict() {
     var dict = Dictionary();
@@ -335,18 +339,29 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   /// A list of Dart methods callable from Godot. For the Godot
   /// standard library, this will be empty, as Godot will never
   /// call into Dart for non-virtal methods.
+  @pragma('vm:entry-point')
   List<MethodInfo<T>> methods;
 
   /// A list of Dart Signals callable from Godot. For the Godot
   /// standard library, this will be empty.
+  @pragma('vm:entry-point')
   final List<SignalInfo> signals;
 
   /// A list of Dart Properties usable from Godot. For the Godot
   /// standard library, this will be empty.
-  final List<PropertyInfo> properties;
+  @pragma('vm:entry-point')
+  final List<DartPropertyInfo<T, dynamic>> properties;
 
+  @pragma('vm:entry-point')
   final List<RpcInfo> rpcInfo;
+
+  @pragma('vm:entry-point')
   final bool isGlobalClass;
+
+  // TODO: We can likely make this work better by having a ScriptTypeInfo that
+  // inherits from ExtensionTypeInfo instead of this flag.
+  @pragma('vm:entry-point')
+  final bool isScript;
 
   ExtensionTypeInfo({
     required this.className,
@@ -360,6 +375,7 @@ class ExtensionTypeInfo<T> implements TypeInfo {
     this.properties = const [],
     this.rpcInfo = const [],
     this.isGlobalClass = false,
+    this.isScript = false,
   });
 
   @pragma('vm:entry-point')

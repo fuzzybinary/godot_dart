@@ -97,7 +97,7 @@ class GodotDartBuilder extends Builder {
       libraryBuilder.directives.add(c.Directive.import(t.path));
 
       methodBody.writeln(
-          "typeResolver.addScriptType('${t.path}', ${t.type}, ${t.isGlobal});");
+          "typeResolver.addScriptType('$godotPrefix/${t.path}', ${t.type}, ${t.type}.sTypeInfo);");
     }
 
     final method = c.Method((b) => b

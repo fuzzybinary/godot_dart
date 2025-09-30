@@ -7,10 +7,19 @@ import 'type_info.dart';
 
 @immutable
 class PropertyInfo {
+  @pragma('vm:entry-point')
   final TypeInfo typeInfo;
+
+  @pragma('vm:entry-point')
   final String name;
+
+  @pragma('vm:entry-point')
   final PropertyHint hint;
+
+  @pragma('vm:entry-point')
   final String hintString;
+
+  @pragma('vm:entry-point')
   final int flags;
 
   const PropertyInfo({
@@ -33,4 +42,24 @@ class PropertyInfo {
 
     return dict;
   }
+}
+
+// Info for Dart property bound to Godot
+@immutable
+class DartPropertyInfo<C, T> extends PropertyInfo {
+  @pragma('vm:entry-point')
+  final T Function(C) getter;
+
+  @pragma('vm:entry-point')
+  final void Function(C, T) setter;
+
+  const DartPropertyInfo({
+    required super.typeInfo,
+    required super.name,
+    super.hint,
+    super.hintString,
+    super.flags,
+    required this.getter,
+    required this.setter,
+  }) : super();
 }

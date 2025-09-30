@@ -77,6 +77,7 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('    constructObjectDefault: () => ${element.name}(),');
     buffer.writeln(
         '    constructFromGodotObject: (ptr) => ${element.name}.withNonNullOwner(ptr),');
+    buffer.writeln('    isScript: true,');
     buffer.writeln(
         '    isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
 
@@ -114,7 +115,7 @@ class GodotScriptAnnotationGenerator
       final propertyAnnotation =
           _godotPropertyChecker.firstAnnotationOf(propertyField);
       buffer.write(_generatePropertyInfo(
-          propertyField, propertyAnnotation, packageName));
+          element.name, propertyField, propertyAnnotation, packageName));
       buffer.writeln(',');
     }
     buffer.writeln('    ],');
@@ -227,8 +228,8 @@ class GodotScriptAnnotationGenerator
     return buffer.toString();
   }
 
-  String _generatePropertyInfo(
-      Element field, DartObject? propertyAnnotation, String packageName) {
+  String _generatePropertyInfo(String parentType, Element field,
+      DartObject? propertyAnnotation, String packageName) {
     final buffer = StringBuffer();
 
     final reader = ConstantReader(propertyAnnotation);
@@ -240,7 +241,7 @@ class GodotScriptAnnotationGenerator
         ? field.type
         : (field as PropertyAccessorElement).returnType;
 
-    buffer.writeln('PropertyInfo(');
+    buffer.writeln('DartPropertyInfo<$parentType, $type>(');
     buffer.writeln('  name: \'$exportName\',');
     buffer.writeln('  typeInfo: ${_typeInfoForType(type)},');
 
@@ -250,6 +251,8 @@ class GodotScriptAnnotationGenerator
       buffer.writeln(
           '  hintString: \'${_getPropertyHintString(type, packageName)}\',');
     }
+    buffer.writeln('  getter: (self) => self.${field.name},');
+    buffer.writeln('  setter: (self, value) => self.${field.name} = value,');
 
     buffer.write(')');
 

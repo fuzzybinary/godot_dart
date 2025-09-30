@@ -60,6 +60,12 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
                    "package)");
     _godot_dart_library = Dart_NewPersistentHandle(godot_dart_library);
 
+    Dart_Handle godot_native_package_name =
+        Dart_NewStringFromCString("package:godot_dart/src/core/godot_dart_native_bridge.dart");
+    DART_CHECK_RET(godot_native_library, Dart_LookupLibrary(godot_native_package_name), false,
+                   "Could not find godot_dart_native_bridge.dart");
+    _native_library = Dart_NewPersistentHandle(godot_native_library);
+
     // Setup some types we need frequently
     {
       DART_CHECK_RET(core_library,
@@ -144,8 +150,8 @@ void GodotDartBindings::shutdown() {
     GD_PRINT_ERROR(Dart_GetError(result));
   }
 
-  Dart_DeletePersistentHandle(_godot_dart_library);
   Dart_DeletePersistentHandle(_native_library);
+  Dart_DeletePersistentHandle(_godot_dart_library);
 
   DartDll_DrainMicrotaskQueue();
   Dart_ExitScope();
@@ -246,7 +252,6 @@ void GodotDartBindings::bind_method(Dart_Handle dart_type_info, Dart_Handle dart
   DART_CHECK(dart_class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")),
              "Failed to get className from TypeInfo");
   godot::StringName class_name = *(godot::StringName *)get_object_address(dart_class_name);
-  
 
   GDExtensionClassMethodInfo method_info;
   method_info.call_func = GodotDartBindings::bind_call;
@@ -351,7 +356,7 @@ Dart_Handle GodotDartBindings::new_object_copy(Dart_Handle type_name, GDExtensio
 
   Dart_Handle args[] = {type_name, Dart_NewInteger(int64_t(ptr))};
 
-  DART_CHECK_RET(dart_object, Dart_Invoke(type_resolver, Dart_NewStringFromCString("constructObjectCopy"), 1, args),
+  DART_CHECK_RET(dart_object, Dart_Invoke(type_resolver, Dart_NewStringFromCString("constructObjectCopy"), 2, args),
                  Dart_Null(), "Failed to construct object");
 
   return dart_object;

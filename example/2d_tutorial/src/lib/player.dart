@@ -6,6 +6,7 @@ part 'player.g.dart';
 
 @GodotScript()
 class Player extends Area2D {
+  @pragma('vm:entry-point')
   static ExtensionTypeInfo<Player> get sTypeInfo => _$PlayerTypeInfo();
 
   @override

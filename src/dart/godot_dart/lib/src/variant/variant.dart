@@ -196,8 +196,8 @@ GDExtensionTypeFromVariant? getToTypeConstructor(int type) {
 
 @pragma('vm:entry-point')
 class Variant implements Finalizable {
-  static final finalizer = NativeFinalizer(
-      GDNativeInterface.finalizeVariant as Pointer<NativeFinalizerFunction>);
+  static final finalizer =
+      NativeFinalizer(Native.addressOf(GDNativeInterface.finalizeVariant));
 
   // TODO: This is supposed to come from the generator, but we
   // may just need to take the max size
@@ -216,6 +216,8 @@ class Variant implements Finalizable {
   final Pointer<Uint8> _opaque = gde.ffiBindings.gde_mem_alloc(_size).cast();
 
   Pointer<Uint8> get nativePtr => _opaque;
+  @pragma('vm:entry-point')
+  int get nativePointerAddress => nativePtr.address;
 
   @pragma('vm:entry-point')
   Variant([Object? obj]) {

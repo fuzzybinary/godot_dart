@@ -121,12 +121,12 @@ abstract class ExtensionType implements Finalizable {
   void _tieDartToNative() {
     // Script instance should take care of this. Should we assert that the
     // object has a script instance?
-    //if (typeInfo.scriptInfo == null) {
-    bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
-        typeInfo.className.toDartString();
-    GDNativeInterface.tieDartToNative(
-        this, _owner, this is RefCounted, isGodotType);
-    //}
+    if (!typeInfo.isScript) {
+      bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
+          typeInfo.className.toDartString();
+      GDNativeInterface.tieDartToNative(
+          this, _owner, this is RefCounted, isGodotType);
+    }
   }
 
   @internal

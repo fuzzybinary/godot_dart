@@ -11,12 +11,12 @@
 
 #include "script/dart_script_language.h"
 
-std::map<intptr_t, DartScriptInstance*> DartScriptInstance::s_instanceMap;
+std::map<intptr_t, DartScriptInstance *> DartScriptInstance::s_instanceMap;
 
-DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object* owner,
+DartScriptInstance::DartScriptInstance(Dart_Handle for_object, godot::Ref<DartScript> script, godot::Object *owner,
                                        bool is_placeholder, bool is_refcounted)
     : _is_placeholder(is_placeholder), _binding(nullptr, owner), _godot_object(owner) {
-  
+
   s_instanceMap[(intptr_t)this] = this;
   _binding.initialize(for_object, is_refcounted);
   _dart_script = script;
@@ -39,12 +39,10 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
     Dart_Handle field_name = to_dart_string(p_name);
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to find scriptInfo");
 
     Dart_Handle prop_info_args[] = {field_name};
     DART_CHECK(dart_property_info,
-               Dart_Invoke(script_info, Dart_NewStringFromCString("getPropertyInfo"), 1, prop_info_args),
+               Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getPropertyInfo"), 1, prop_info_args),
                "Failed to get property");
     if (Dart_IsNull(dart_property_info)) {
       return;
@@ -61,7 +59,13 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
     DART_CHECK(dart_property_value,
                Dart_Invoke(native_library, Dart_NewStringFromCString("_variantAddressToDart"), 2, args),
                "Failed to convert variant to Dart object");
-    DART_CHECK(result, Dart_SetField(object, field_name, dart_property_value), "Failed to set field");
+    DART_CHECK(prop_setter, Dart_GetField(dart_property_info, Dart_NewStringFromCString("setter")),
+               "Failed to get property setter.");
+    Dart_Handle set_args[] = {
+        object,
+        dart_property_value,
+    };
+    DART_CHECK(_, Dart_InvokeClosure(prop_setter, 2, set_args), "Failed calling setter");
 
     set_value = true;
   });
@@ -82,23 +86,22 @@ bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariant
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to find scriptInfo");
 
+    Dart_Handle args[] = {field_name};
+    DART_CHECK(dart_property_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getPropertyInfo"), 1, args),
+               "Failed to get property");
     // Need to check if the property exists, because Godot asks for properties we never told it about
-    {
-      Dart_Handle args[] = {field_name};
-      DART_CHECK(dart_property_info, Dart_Invoke(script_info, Dart_NewStringFromCString("getPropertyInfo"), 1, args),
-                 "Failed to get property");
-      if (Dart_IsNull(dart_property_info)) {
-        return;
-      }
+    if (Dart_IsNull(dart_property_info)) {
+      return;
     }
 
-    DART_CHECK(dart_value, Dart_GetField(object, field_name), "Failed to get property");
+    DART_CHECK(prop_getter, Dart_GetField(dart_property_info, Dart_NewStringFromCString("getter")),
+               "Failed to get property getter");
+    Dart_Handle getter_args[] = {object};
+    DART_CHECK(dart_value, Dart_InvokeClosure(prop_getter, 1, getter_args), "Failed calling Dart getter");
     Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
-    Dart_Handle args[] = {dart_value};
-    DART_CHECK(variant_result, Dart_New(variant_type, Dart_Null(), 1, args),
+    Dart_Handle convert_args[] = {dart_value};
+    DART_CHECK(variant_result, Dart_New(variant_type, Dart_Null(), 1, convert_args),
                "Failed to convert prop to variant");
 
     void *variantDataPtr = get_object_address(variant_result);
@@ -179,9 +182,7 @@ const GDExtensionMethodInfo *DartScriptInstance::get_method_list(uint32_t *r_cou
     // This is a lot of work just to get the size of the list
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
-    DART_CHECK(dart_method_list, Dart_GetField(dart_script_info, Dart_NewStringFromCString("methods")),
+    DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t method_count = 0;
     Dart_ListLength(dart_method_list, &method_count);
@@ -190,7 +191,7 @@ const GDExtensionMethodInfo *DartScriptInstance::get_method_list(uint32_t *r_cou
     if (method_count > 0) {
       method_list = new GDExtensionMethodInfo[method_count];
       for (auto i = 0; i < method_count; ++i) {
-        DART_CHECK(dart_method, Dart_ListGetAt(dart_method_list, i), "Failed to get property at index");
+        DART_CHECK(dart_method, Dart_ListGetAt(dart_method_list, i), "Failed to get method at index");
         gde_method_info_from_dart(dart_method, &method_list[i]);
       }
     }
@@ -211,9 +212,7 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
     // This is a lot of work just to get the size of the list
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
-    DART_CHECK(dart_method_list, Dart_GetField(dart_script_info, Dart_NewStringFromCString("methods")),
+    DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t prop_count = 0;
     Dart_ListLength(dart_method_list, &prop_count);
@@ -240,12 +239,9 @@ GDExtensionBool DartScriptInstance::has_method(const godot::StringName &p_name) 
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
 
     Dart_Handle method_info_args[] = {to_dart_string(p_name)};
-    DART_CHECK(method_info,
-               Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
+    DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
 
     hasMethod = !Dart_IsNull(method_info);
@@ -277,59 +273,25 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
 
     DART_CHECK(object, _binding.get_dart_object(), "Failed to get instance from persistent handle");
     DART_CHECK(obj_type_info, Dart_GetField(object, Dart_NewStringFromCString("typeInfo")), "Failed to find typeInfo");
-    DART_CHECK(dart_script_info, Dart_GetField(obj_type_info, Dart_NewStringFromCString("scriptInfo")),
-               "Failed to get scirpt info");
 
     Dart_Handle method_info_args[] = {to_dart_string(*p_method)};
-    DART_CHECK(method_info,
-               Dart_Invoke(dart_script_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
+    DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
                "Failed getting method");
     if (Dart_IsNull(method_info)) {
       r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
       return;
     }
 
-    DART_CHECK(dart_method_call, Dart_GetField(method_info, Dart_NewStringFromCString("dartMethodCall")), "Failed to get dart method call");
-
-    DART_CHECK(args_list, Dart_GetField(method_info, Dart_NewStringFromCString("args")),
-               "Failed getting method arguments");
-    intptr_t arg_count = 0;
-    Dart_ListLength(args_list, &arg_count);
-
-    Dart_Handle dart_converted_arg_list;
-    if (arg_count != 0) {
-      Dart_Handle args_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_args));
-      Dart_Handle convert_args[3]{
-          args_address,
-          Dart_NewInteger(arg_count),
-          args_list,
-      };
-      dart_converted_arg_list = Dart_Invoke(gde->_native_library, Dart_NewStringFromCString("_variantsToDart"), 3, convert_args);
-      if (Dart_IsError(dart_converted_arg_list)) {
-        r_error->error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
-        return;
-      }
-    } else {
-      dart_converted_arg_list = Dart_NewList(0);
-    }
-
-    Dart_Handle dart_args[2] = {
-      object, dart_converted_arg_list,
+    Dart_Handle dart_args[] = {
+        object,
+        method_info,
+        Dart_NewInteger(int64_t(p_args)),
+        Dart_NewInteger(int64_t(p_argument_count)),
+        Dart_NewInteger(int64_t(r_return)),
     };
-    DART_CHECK(dart_ret, Dart_InvokeClosure(object, arg_count, dart_args), "Failed to call method");
-    Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
-    Dart_Handle args[] = {dart_ret};
-    Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);
-
-    if (Dart_IsError(variant_result)) {
-      GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
-      GD_PRINT_ERROR(Dart_GetError(variant_result));
-    } else {
-      void *variantDataPtr = get_object_address(variant_result);
-      if (variantDataPtr) {
-        gde_variant_new_copy(r_return, reinterpret_cast<GDExtensionConstVariantPtr>(variantDataPtr));
-      }
-    }
+    DART_CHECK(type_resolver, Dart_HandleFromPersistent(gde->_type_resolver), "Failed to get typeResolver");
+    DART_CHECK(result, Dart_Invoke(type_resolver, Dart_NewStringFromCString("invokeMethodVariantCall"), 5, dart_args),
+               "Dart invoke failed");
 
     r_error->error = GDEXTENSION_CALL_OK;
   });
@@ -393,7 +355,7 @@ GDExtensionScriptLanguagePtr DartScriptInstance::get_language() {
 }
 
 void DartScriptInstance::notify_property_list_changed() {
-  if (_godot_object && _is_placeholder) {    
+  if (_godot_object && _is_placeholder) {
     _godot_object->notify_property_list_changed();
   }
 }
@@ -414,7 +376,8 @@ GDExtensionBool script_instance_get(GDExtensionScriptInstanceDataPtr p_instance,
   return instance->get(*gd_name, r_ret);
 }
 
-GDExtensionBool script_instance_get_class_category(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionPropertyInfo* p_class_category) {
+GDExtensionBool script_instance_get_class_category(GDExtensionScriptInstanceDataPtr p_instance,
+                                                   GDExtensionPropertyInfo *p_class_category) {
   DartScriptInstance *instance = reinterpret_cast<DartScriptInstance *>(p_instance);
   return instance->get_class_category(p_class_category);
 }
@@ -571,7 +534,7 @@ void script_instance_free(GDExtensionScriptInstanceDataPtr p_instance) {
       if (Dart_IsError(result)) {
         GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
         GD_PRINT_ERROR(Dart_GetError(result));
-      }      
+      }
     }
 
     delete instance;
@@ -587,7 +550,7 @@ GDExtensionScriptInstanceInfo2 DartScriptInstance::script_instance_info = {
     script_instance_get,
     script_instance_get_property_list,
     script_instance_free_property_list,
-    nullptr,  // TODO: Check if we need to override this
+    nullptr, // TODO: Check if we need to override this
     script_instance_property_can_revert,
     script_instance_property_get_revert,
     script_instance_get_owner,
