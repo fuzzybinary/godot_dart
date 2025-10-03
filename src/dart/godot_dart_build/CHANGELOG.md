@@ -1,3 +1,7 @@
+## 0.8.0
+
+- BREAKING: Major changes to support more restrictive native calls in Dart 3.8.
+
 ## 0.7.0
 
 - Add the ability to use @GodotProperty on getters.

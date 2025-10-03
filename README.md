@@ -10,6 +10,9 @@ And I want to use it in Godot.
 
 > [!NOTE]  
 > This extension is compatible with Godot 4.2+. Global Classes require Godot 4.3
+> 
+> There are major changes to the entire library starting in `godot_dart` 0.10.0, which uses Dart 3.8. 
+> Previously, `godot_dart` upgraded to 0.9.0 without these changes and is therefore broken.
 
 
 Here's a list of planned features and work still to be done ( ✅ - Seems to be
@@ -68,6 +71,7 @@ part 'simple_script.g.dart';
 @GodotScript()
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
+  @pragma('vm:entry-point')
   static TypeInfo get sTypeInfo => _$SimpleScriptTypeInfo();
   // And provide an instance method to get the type info
   @override
@@ -159,29 +163,34 @@ These signal connections are automatically cleaned up if the target supplied to 
 
 ## Dart classes as Extensions
 
-Here's a Simple example class that can be used as an extension.
+Dart classes as extensions have had major changes in `godot_dart` 0.10.0, and are currently a work in progress. Their setup is basically the same as Scripts, except all of the type registration must be done manually.
 
 ```dart
-class Simple extends Sprite2D {
+class SimpleTestNode extends Sprite2D {
   // Create a static `sTypeInfo`. This is required for various Dart methods
   // implemented in C++ to gather information about your type.
-  static late TypeInfo sTypeInfo = TypeInfo(
-    Simple,
-    StringName.fromString('Simple'),
-    parentClass: StringName.fromString('Sprite2D'),
-    // a vTable getter is required for classes that will be used from extensions.
-    // If you are not adding any virtual functions, just return the base class's vTable.    
-    vTable: Sprite2D.sTypeInfo.vTable;
+  static final sTypeInfo = ExtensionTypeInfo<SimpleTestNode>(
+    className: StringName.fromString('SimpleTestNode'),
+    parentTypeInfo: Node.sTypeInfo,
+    nativeTypeName: StringName.fromString('Node'),
+    isRefCounted: Node.sTypeInfo.isRefCounted,
+    constructObjectDefault: () => SimpleTestNode(),
+    constructFromGodotObject: (owner) => SimpleTestNode.withNonNullOwner(owner),
   );
   // An override of [typeInfo] is required. This is how
   // the bindings understand the what types it's looking at.
   @override
-  TypeInfo get typeInfo => sTypeInfo;
-
-  double _timePassed = 0.0;
+  ExtensionTypeInfo<SimpleTestNode> get typeInfo => SimpleTestNode.sTypeInfo;
 
   // Parameterless constructor is required and must call super()
   Simple() : super();
+
+  // Required to create with an owner, though this is not called for Extension classes
+  SimpleTestNode.withNonNullOwner(super.owner) : super.withNonNullOwner();
+
+  double _timePassed = 0.0;
+
+  int maxSpeed = 12559;
   
   // All virtual functions from Godot should be available, and start
   // with a v instead of an underscore.
@@ -196,10 +205,18 @@ class Simple extends Sprite2D {
     setPosition(newPosition);
   }
 
-  // The simplest way to bind your class it to create a static function to
-  // bind it to Godot. The name doesn't matter
-  static void bind() {
-    GDNativeInterface.bindClass(Simple);  
+  // The simplest way to bind your class it to create a static function to bind all properties to Godot, and make sure to add it to the type resolver
+  static void bind(TypeResolver typeResolver) {
+    typeResolver.addType(sTypeInfo);
+    GDNativeInterface.bindClass(SimpleTestNode.sTypeInfo);
+    GDNativeInterface.addProperty(
+      SimpleTestNode.sTypeInfo,
+      DartPropertyInfo<SimpleTestNode, int>(
+          typeInfo: PrimitiveTypeInfo.forType(int)!,
+          name: 'maxSpeed',
+          getter: (self) => self.maxSpeed,
+          setter: (self, value) => self.maxSpeed = value),
+    );
   }
 }
 ```
@@ -212,7 +229,9 @@ These classes need to be registered to Godot in `main.dart`:
 
 ```dart
 void main() {
-  Simple.bind();
+  attachScriptResolver();
+  
+  SimpleTestNode.bind(TypeResolver.instance);
 }
 ```
 

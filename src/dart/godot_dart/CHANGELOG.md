@@ -1,3 +1,9 @@
+## 0.10.0
+
+- BREAKING: Fix extension to work with more restrictive native calls in Dart 3.8. 
+    - For scripts, `godot_dart_build` should do most migration for you, but you need to add `@pragma('vm:entry-point')` onto your declaration for `sTypeInfo` in all script classes
+    - Extension classes very different, and it is recommended to avoid using them for now. 
+
 ## 0.9.0
 
 - Add type safe `SignalX` objects supporting automatic registering / deregistering.
