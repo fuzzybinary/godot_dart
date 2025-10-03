@@ -53,6 +53,25 @@ class DartPropertyInfo<C, T> extends PropertyInfo {
   @pragma('vm:entry-point')
   final void Function(C, T) setter;
 
+  // Only used for properties on ExtensionTypes (not scripts)
+  @pragma('vm:entry-point')
+  MethodInfo<C> get getterInfo {
+    return MethodInfo(
+        returnInfo: this,
+        name: 'get__$name',
+        dartMethodCall: (self, _) => getter(self),
+        args: []);
+  }
+
+  // Only used for properties on ExtensionTypes (not scripts)
+  @pragma('vm:entry-point')
+  MethodInfo<C> get setterInfo {
+    return MethodInfo(
+        name: 'set__$name',
+        dartMethodCall: (self, args) => setter(self, args[0] as T),
+        args: [this]);
+  }
+
   const DartPropertyInfo({
     required super.typeInfo,
     required super.name,

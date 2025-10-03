@@ -13,6 +13,7 @@ import 'src/variant/variant.dart';
 
 export 'src/annotations/godot_script.dart';
 export 'src/core/core_types.dart';
+export 'src/core/godot_dart_native_bridge.dart';
 export 'src/core/gdextension.dart';
 export 'src/core/property_info.dart';
 export 'src/core/rpc_info.dart';

@@ -318,9 +318,6 @@ class ExtensionTypeInfo<T> implements TypeInfo {
 
   /// The first class in the inheritance tree that is implemented
   /// natively in Godot. Can be the class itself.
-  ///
-  /// TODO: Potentially remove this as it can be determined by a scan up the
-  /// class hierarchy.
   @pragma('vm:entry-point')
   final StringName nativeTypeName;
 
@@ -330,10 +327,12 @@ class ExtensionTypeInfo<T> implements TypeInfo {
 
   /// Construct this object from Godot with its default constructor.
   /// Called from [TypeResolver].
+  @pragma('vm:entry-point')
   final ConstructObjectDefault<T> constructObjectDefault;
 
   /// Cosntruct this object with a Godot created owner.
   /// Called from [TypeResolver].
+  @pragma('vm:entry-point')
   final ConstructFromGodotObject<T> constructFromGodotObject;
 
   /// A list of Dart methods callable from Godot. For the Godot

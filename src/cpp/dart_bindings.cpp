@@ -362,76 +362,73 @@ Dart_Handle GodotDartBindings::new_object_copy(Dart_Handle type_name, GDExtensio
   return dart_object;
 }
 
-//void GodotDartBindings::add_property(Dart_Handle bind_type, Dart_Handle dart_prop_info) {
-//
-//  GDExtensionPropertyInfo prop_info = {};
-//
-//  DART_CHECK(dart_type_info, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("typeInfo")),
-//             "Error getting typeInfo property");
-//  DART_CHECK(dart_variant_value, Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType")),
-//             "Error getting variant type");
-//
-//  int64_t type_value;
-//  Dart_IntegerToInt64(dart_variant_value, &type_value);
-//  prop_info.type = GDExtensionVariantType(type_value);
-//
-//  Dart_Handle name_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("name"));
-//  godot::StringName gd_name = create_godot_string_name(name_prop);
-//  prop_info.name = gd_name._native_ptr();
-//
-//  Dart_Handle class_name_prop = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
-//  void *gd_class_name = get_object_address(class_name_prop);
-//  prop_info.class_name = reinterpret_cast<GDExtensionStringNamePtr>(gd_class_name);
-//
-//  {
-//    DART_CHECK(hint, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("hint")), "Error getting hint property");
-//    DART_CHECK(enum_value, Dart_GetField(hint, Dart_NewStringFromCString("value")), "Error getting hint value");
-//    uint64_t hint_value;
-//    Dart_IntegerToUint64(enum_value, &hint_value);
-//    prop_info.hint = uint32_t(hint_value);
-//  }
-//
-//  Dart_Handle hint_string_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("hintString"));
-//  godot::String gd_hint_string = create_godot_string(hint_string_prop);
-//  prop_info.hint_string = gd_hint_string._native_ptr();
-//
-//  {
-//    DART_CHECK(dart_flags, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("flags")),
-//               "Error getting flagsproperty");
-//    uint64_t flags;
-//    Dart_IntegerToUint64(dart_flags, &flags);
-//    prop_info.usage = uint32_t(flags);
-//  }
-//
-//  TypeInfo property_type_info = {
-//      prop_info.class_name,
-//      nullptr,
-//      prop_info.type,
-//      nullptr,
-//  };
-//
-//  const char *property_name = nullptr;
-//  Dart_StringToCString(name_prop, &property_name);
-//
-//  Dart_Handle type_info_type = Dart_InstanceGetType(dart_type_info);
-//  Dart_Handle getter_args = Dart_NewListOfTypeFilled(type_info_type, Dart_Null(), 0);
-//  Dart_Handle setter_args = Dart_NewListOfTypeFilled(type_info_type, dart_type_info, 1);
-//
-//  bind_method(bind_type, property_name, property_type_info, getter_args, MethodFlags::PropertyGetter);
-//  bind_method(bind_type, property_name, TypeInfo(), setter_args, MethodFlags::PropertySetter);
-//
-//  std::string property_getter_name("get__");
-//  property_getter_name.append(property_name);
-//  std::string property_setter_name("set__");
-//  property_setter_name.append(property_name);
-//
-//  godot::StringName gd_getter(property_getter_name.c_str());
-//  godot::StringName gd_setter(property_setter_name.c_str());
-//
-//  GDEWrapper *gde = GDEWrapper::instance();
-//  gde_classdb_register_extension_class_property(gde->get_library_ptr(), bind_type.type_name, &prop_info,
-//                                                gd_setter._native_ptr(), gd_getter._native_ptr());
-//}
+void GodotDartBindings::add_property(Dart_Handle bind_type, Dart_Handle dart_prop_info) {
+
+  GDExtensionPropertyInfo prop_info = {};
+
+  DART_CHECK(dart_type_info, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("typeInfo")),
+             "Error getting typeInfo property");
+  DART_CHECK(dart_variant_value, Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType")),
+             "Error getting variant type");
+  // Class name
+  DART_CHECK(dart_class_name, Dart_GetField(bind_type, Dart_NewStringFromCString("className")),
+             "Failed to get className from TypeInfo");
+  godot::StringName class_name = *(godot::StringName *)get_object_address(dart_class_name);
+
+  int64_t type_value;
+  Dart_IntegerToInt64(dart_variant_value, &type_value);
+  prop_info.type = GDExtensionVariantType(type_value);
+
+  Dart_Handle name_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("name"));
+  godot::StringName gd_name = create_godot_string_name(name_prop);
+  prop_info.name = gd_name._native_ptr();
+
+  Dart_Handle class_name_prop = Dart_GetField(dart_type_info, Dart_NewStringFromCString("className"));
+  void *gd_class_name = get_object_address(class_name_prop);
+  prop_info.class_name = reinterpret_cast<GDExtensionStringNamePtr>(gd_class_name);
+
+  {
+    DART_CHECK(hint, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("hint")), "Error getting hint property");
+    DART_CHECK(enum_value, Dart_GetField(hint, Dart_NewStringFromCString("value")), "Error getting hint value");
+    uint64_t hint_value;
+    Dart_IntegerToUint64(enum_value, &hint_value);
+    prop_info.hint = uint32_t(hint_value);
+  }
+
+  Dart_Handle hint_string_prop = Dart_GetField(dart_prop_info, Dart_NewStringFromCString("hintString"));
+  godot::String gd_hint_string = create_godot_string(hint_string_prop);
+  prop_info.hint_string = gd_hint_string._native_ptr();
+
+  {
+    DART_CHECK(dart_flags, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("flags")),
+               "Error getting flagsproperty");
+    uint64_t flags;
+    Dart_IntegerToUint64(dart_flags, &flags);
+    prop_info.usage = uint32_t(flags);
+  }
+
+  const char *property_name = nullptr;
+  Dart_StringToCString(name_prop, &property_name);
+
+  DART_CHECK(getter_method_info, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("getterInfo")),
+             "Could not get getterInfo from property.");
+  DART_CHECK(d_getter_name, Dart_GetField(getter_method_info, Dart_NewStringFromCString("name")),
+             "Could not get name for getter");
+  godot::StringName getter_name = create_godot_string_name(d_getter_name);
+
+  DART_CHECK(setter_method_info, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("setterInfo")),
+             "Could not get setterInfo from property.");
+  DART_CHECK(d_setter_name, Dart_GetField(setter_method_info, Dart_NewStringFromCString("name")),
+             "Could not get name for setter");
+  godot::StringName setter_name = create_godot_string_name(d_setter_name);
+
+  bind_method(bind_type, getter_method_info);
+  bind_method(bind_type, setter_method_info);
+
+  GDEWrapper *gde = GDEWrapper::instance();
+  gde_classdb_register_extension_class_property(gde->get_library_ptr(), class_name._native_ptr(), &prop_info,
+                                                setter_name._native_ptr(), getter_name._native_ptr());
+}
 
 /* Static Callbacks from Godot */
 
@@ -440,7 +437,6 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
                                   GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
   GodotDartBindings *gde = GodotDartBindings::instance();
   if (!gde) {
-    // oooff
     return;
   }
   gde->execute_on_dart_thread([&]() {
@@ -552,11 +548,15 @@ void GodotDartBindings::call_virtual_func(void *p_instance, GDExtensionConstStri
     // oooff
     return;
   }
+  // Can't call this function
+  if (!p_userdata) {
+    return;
+  }
 
   gde->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
-    DartGodotInstanceBinding *binding = reinterpret_cast<DartGodotInstanceBinding *>(instance);
+    DartGodotInstanceBinding *binding = reinterpret_cast<DartGodotInstanceBinding *>(p_instance);
     Dart_Handle dart_instance = binding->get_dart_object();
 
     Dart_Handle dart_method_info = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));

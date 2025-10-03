@@ -156,7 +156,6 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_signal_list() const
 
   godot::TypedArray<godot::Dictionary> ret_val;
 
-  std::cout << "Getting signals for script.\n";
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
@@ -167,7 +166,6 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_signal_list() const
 
     intptr_t signal_size = 0;
     Dart_ListLength(dart_signal_list, &signal_size);
-    std::cout << "Got a script with " << signal_size << "signals.\n";
     for (intptr_t i = 0; i < signal_size; ++i) {
       Dart_Handle signal_info = Dart_ListGetAt(dart_signal_list, i);
 

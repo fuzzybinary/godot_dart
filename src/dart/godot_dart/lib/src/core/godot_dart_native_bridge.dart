@@ -23,8 +23,8 @@ sealed class GDNativeInterface {
       ExtensionTypeInfo<dynamic> typeInfo, MethodInfo<dynamic> methodInfo);
 
   @Native<Void Function(Handle, Handle)>(symbol: 'add_property')
-  external static void addProperty(
-      ExtensionTypeInfo<dynamic> typeInfo, PropertyInfo propertyInfo);
+  external static void addProperty(ExtensionTypeInfo<dynamic> typeInfo,
+      DartPropertyInfo<dynamic, dynamic> propertyInfo);
 
   @Native<Handle Function(Pointer<Void>)>(symbol: 'gd_string_to_dart_string')
   external static String? _gdStringToDartString(Pointer<Void> stringPtr);

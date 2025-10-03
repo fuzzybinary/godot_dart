@@ -75,11 +75,7 @@ GDE_EXPORT void add_property(Dart_Handle d_bind_type_info, Dart_Handle d_propert
     return;
   }
 
-  // TODO: Add property
-  /*TypeInfo bind_type_info;
-  type_info_from_dart(&bind_type_info, d_bind_type_info);
-
-  bindings->add_property(bind_type_info, d_property_info);*/
+  bindings->add_property(d_bind_type_info, d_property_info);
 }
 
 GDE_EXPORT Dart_Handle gd_string_to_dart_string(void *string_ptr) {
