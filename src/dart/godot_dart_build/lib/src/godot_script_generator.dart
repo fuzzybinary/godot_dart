@@ -5,6 +5,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart' as c;
+import 'package:collection/collection.dart';
 import 'package:godot_dart/godot_dart.dart';
 // ignore: implementation_imports
 import 'package:godot_dart/src/core/signals.dart';
@@ -151,13 +152,20 @@ class GodotScriptAnnotationGenerator
     for (final method in element.methods) {
       final exportAnnotation = _godotExportChecker.firstAnnotationOf(method,
           throwOnUnresolved: false);
+      // Automatically export all RPC methods as well
+      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+
+      if ((exportAnnotation != null || rpcAnnotation != null) &&
+          method.parameters.firstWhereOrNull((p) => p.isNamed) != null) {
+        log.severe(
+            'Method ${method.name} cannot be exported (or an RPC method) because it has named parameters, which is not supported by Godot.');
+        continue;
+      }
       if (method.hasOverride || exportAnnotation != null) {
         buffer.write(_buildMethodInfo(method, exportAnnotation));
         buffer.writeln(',');
       }
-      // Automatically export all RPC methods as well
-      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
-          throwOnUnresolved: false);
       if (rpcAnnotation != null) {
         buffer.write(_buildMethodInfo(method, rpcAnnotation));
         buffer.write(',');
