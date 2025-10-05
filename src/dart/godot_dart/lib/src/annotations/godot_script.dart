@@ -35,9 +35,8 @@ class SignalArgument {
 @immutable
 class GodotSignal {
   final String signalName;
-  final List<SignalArgument> args;
 
-  const GodotSignal(this.signalName, {this.args = const []});
+  const GodotSignal(this.signalName);
 }
 
 /// Annotate a field that should be visible to the Godot property inspector

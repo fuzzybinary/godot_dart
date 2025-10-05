@@ -6,6 +6,8 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart' as c;
 import 'package:godot_dart/godot_dart.dart';
+// ignore: implementation_imports
+import 'package:godot_dart/src/core/signals.dart';
 import 'package:source_gen/source_gen.dart';
 
 const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
@@ -13,6 +15,8 @@ const _godotExportChecker = TypeChecker.fromRuntime(GodotExport);
 const _godotSignalChecker = TypeChecker.fromRuntime(GodotSignal);
 const _godotPropertyChecker = TypeChecker.fromRuntime(GodotProperty);
 const _godotRpcInfoChecker = TypeChecker.fromRuntime(GodotRpc);
+// ignore: invalid_use_of_internal_member
+const _godotSignalCallableChecker = TypeChecker.fromRuntime(SignalCallable);
 
 /// Generates code for @GodotScript annotated classes
 class GodotScriptAnnotationGenerator
@@ -99,14 +103,24 @@ class GodotScriptAnnotationGenerator
               throwOnUnresolved: false)) {
         propertyFields.add(accessor);
       }
-      // TODO: Warn on properties having annotations on setters.
+      if (accessor.isSetter &&
+          _godotPropertyChecker.hasAnnotationOf(accessor,
+              throwOnUnresolved: false)) {
+        log.warning(
+            'Found `@GodotProperty` on setter `${accessor.name}`. `@GodotProperty` should not be used on setters, only getters.');
+      }
     }
     buffer.writeln('    signals: [');
     for (final signalField in signalFields) {
       final signalAnnotation =
           _godotSignalChecker.firstAnnotationOf(signalField);
-      buffer.write(_buildSignalInfo(signalField, signalAnnotation));
-      buffer.writeln(',');
+      if (_godotSignalCallableChecker.isAssignableFromType(signalField.type)) {
+        buffer.write(_buildSignalInfo(signalField, signalAnnotation));
+        buffer.writeln(',');
+      } else {
+        log.severe(
+            'Use of `@GodotSignal` on invalid field `${signalField.name}. The type must be one of the SignalX classes.');
+      }
     }
     buffer.writeln('    ],');
 
@@ -202,14 +216,12 @@ class GodotScriptAnnotationGenerator
     final signalName = reader.read('signalName').stringValue;
     buffer.writeln('  name: \'$signalName\',');
 
-    final signalArguments = reader.read('args').listValue;
+    //final signalArguments = reader.read('args').listValue;
+    final interfaceType = element.type as InterfaceType;
     buffer.writeln('  args:  [');
-    for (final arg in signalArguments) {
-      final argReader = ConstantReader(arg);
-      final argName = argReader.read('name').stringValue;
-      final argType = argReader.read('type').typeValue;
+    for (final param in interfaceType.typeArguments.indexed) {
       buffer.writeln(
-          '    PropertyInfo(name: \'$argName\', typeInfo: ${_typeInfoForType(argType)}),');
+          '    PropertyInfo(name: \'p${param.$1}\', typeInfo: ${_typeInfoForType(param.$2)}),');
     }
     buffer.writeln(']');
     buffer.write(')');

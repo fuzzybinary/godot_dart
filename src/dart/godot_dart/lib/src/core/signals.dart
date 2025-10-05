@@ -3,11 +3,7 @@ import 'dart:math';
 
 import 'package:meta/meta.dart';
 
-import '../gen/classes/object.dart';
-import '../gen/variant/callable.dart';
-import '../variant/variant.dart';
-import 'core_types.dart';
-import 'godot_dart_native_bridge.dart';
+import '../../godot_dart.dart';
 
 final Random _rand = Random();
 
@@ -87,8 +83,10 @@ abstract class SignalCallable {
 
   final String name;
   final int arguments;
+  final Signal signal;
 
-  SignalCallable(GodotObject object, this.name, this.arguments) {
+  SignalCallable(GodotObject object, this.name, this.arguments)
+      : signal = Signal.fromObjectSignal(object, name) {
     final callable = _createSignalCallableBinding(this, object);
     object.connect(name, callable);
     _targetFinalizer.attach(object, this);
@@ -112,6 +110,11 @@ class Signal0 extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function()>(this);
   }
 
+  void emit() {
+    signal.emit();
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
@@ -157,6 +160,11 @@ class Signal1<P1> extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function(P1)>(this);
   }
 
+  void emit(P1 p1) {
+    signal.emit(vargs: [Variant(p1)]);
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
@@ -202,6 +210,14 @@ class Signal2<P1, P2> extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function(P1, P2)>(this);
   }
 
+  void emit(P1 p1, P2 p2) {
+    signal.emit(vargs: [
+      Variant(p1),
+      Variant(p2),
+    ]);
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
@@ -250,6 +266,15 @@ class Signal3<P1, P2, P3> extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function(P1, P2, P3)>(this);
   }
 
+  void emit(P1 p1, P2 p2, P3 p3) {
+    signal.emit(vargs: [
+      Variant(p1),
+      Variant(p2),
+      Variant(p3),
+    ]);
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
@@ -299,6 +324,16 @@ class Signal4<P1, P2, P3, P4> extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function(P1, P2, P3, P4)>(this);
   }
 
+  void emit(P1 p1, P2 p2, P3 p3, P4 p4) {
+    signal.emit(vargs: [
+      Variant(p1),
+      Variant(p2),
+      Variant(p3),
+      Variant(p4),
+    ]);
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {
@@ -349,6 +384,17 @@ class Signal5<P1, P2, P3, P4, P5> extends SignalCallable {
     _subscriptions = _SubscriptionMap<void Function(P1, P2, P3, P4, P5)>(this);
   }
 
+  void emit(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) {
+    signal.emit(vargs: [
+      Variant(p1),
+      Variant(p2),
+      Variant(p3),
+      Variant(p4),
+      Variant(p5),
+    ]);
+  }
+
+  @internal
   @pragma('vm:entry-point')
   void call(List<Variant> args) {
     for (final sub in _subscriptions.values) {

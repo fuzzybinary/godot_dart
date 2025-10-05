@@ -1,8 +1,8 @@
 #include "dart_script_language.h"
 
-#include <godot_cpp/classes/resource_loader.hpp>
-#include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
 
 #include "../dart_bindings.h"
 #include "../dart_helpers.h"
@@ -84,7 +84,7 @@ bool DartScriptLanguage::_is_control_flow_keyword(const godot::String &keyword) 
   return keyword == "break" || keyword == "case" || keyword == "catch" || keyword == "continue" ||
          keyword == "default" || keyword == "do" || keyword == "else" || keyword == "finally" || keyword == "for" ||
          keyword == "if" || keyword == "return" || keyword == "switch" || keyword == "throw" || keyword == "try" ||
-         keyword == "while" || keyword == "yeild";
+         keyword == "while" || keyword == "yield";
 }
 
 godot::PackedStringArray DartScriptLanguage::_get_comment_delimiters() const {
@@ -306,7 +306,7 @@ godot::Dictionary DartScriptLanguage::_get_global_class_name(const godot::String
       Dart_Handle parent_type_str = Dart_NewStringFromCString("parentType");
 
       Dart_Handle current_type_info = type_info;
-      
+
       bool found_base_type = false;
 
       while (!found_base_type) {
@@ -446,13 +446,12 @@ void DartScriptLanguage::did_finish_hot_reload() {
     DartBlockScope scope;
 
     // Update files that are global classes (and weren't part of the prveious reload)
-    Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);  
+    Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);
 
     DART_CHECK(global_classes, Dart_Invoke(resolver, Dart_NewStringFromCString("getGlobalClassPaths"), 0, nullptr),
                "Failed to invoke resolver!");
     intptr_t list_length = 0;
-    DART_CHECK(result, Dart_ListLength(global_classes, &list_length),
-                                    "Failed to get global class length");
+    DART_CHECK(result, Dart_ListLength(global_classes, &list_length), "Failed to get global class length");
     for (intptr_t i = 0; i < list_length; ++i) {
       DART_CHECK(global_class_path, Dart_ListGetAt(global_classes, i), "Failed to get global class path");
       godot::String godot_path = create_godot_string(global_class_path);

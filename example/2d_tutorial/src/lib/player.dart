@@ -17,7 +17,7 @@ class Player extends Area2D {
   Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
 
   @GodotSignal('hit')
-  late final Signal _hit = Signal.fromObjectSignal(this, 'hit');
+  late final Signal0 _hit = Signal0(this, 'hit');
 
   @GodotProperty()
   var speed = 400;

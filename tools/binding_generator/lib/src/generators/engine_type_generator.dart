@@ -59,7 +59,6 @@ Future<void> generateEngineBindings(
     final inheritsTypeInfo =
         inheritsType == null ? 'null' : '$inheritsClass.sTypeInfo';
 
-    o.p("@pragma('vm:entry-point')");
     o.b('class ${classInfo.dartName} extends $inheritsClass {', () {
       o.p('static ExtensionTypeInfo<${classInfo.dartName}>? _sTypeInfo;');
       o.b('static ExtensionTypeInfo<${classInfo.dartName}> get sTypeInfo {',
@@ -82,7 +81,6 @@ Future<void> generateEngineBindings(
       o.nl();
 
       o.p('@override');
-      o.p("@pragma('vm:entry-point')");
       o.p('ExtensionTypeInfo<${classInfo.dartName}> get typeInfo => sTypeInfo;');
 
       _writeSignals(o, classInfo);
@@ -246,7 +244,6 @@ void _writeConstructors(CodeSink o, GodotExtensionApiJsonClass classInfo) {
   // Constructors
   o.p('${classInfo.dartName}() : super();');
   o.nl();
-  o.p("@pragma('vm:entry-point')");
   o.p('${classInfo.dartName}.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);');
   o.nl();
 }
