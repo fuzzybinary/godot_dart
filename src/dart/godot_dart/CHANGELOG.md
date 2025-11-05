@@ -1,3 +1,7 @@
+## 0.10.1
+
+- Fix missing `@pragma` on `_isReloading`
+
 ## 0.10.0
 
 - BREAKING: Fix extension to work with more restrictive native calls in Dart 3.8. 
