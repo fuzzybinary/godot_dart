@@ -28,8 +28,9 @@ class TypeResolver {
   }
 
   @pragma('vm:entry-point')
-  Set<String> getGlobalClassPaths() {
-    return _globalClassPaths;
+  List<String> getGlobalClassPaths() {
+    // Native code is expecting a list
+    return _globalClassPaths.toList();
   }
 
   @pragma('vm:entry-point')

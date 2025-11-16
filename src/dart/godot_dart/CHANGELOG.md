@@ -1,3 +1,7 @@
+## 0.10.2
+
+- Change `getGlobalClassPaths` to return a `List` over a `Set`, which should fix manual hot reloading.
+
 ## 0.10.1
 
 - Fix missing `@pragma` on `_isReloading`
