@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import '../../godot_dart.dart';
-import '../core/godot_dart_native_bridge.dart';
 
 class SignalAwaiter extends GodotObject {
   static final sTypeInfo = ExtensionTypeInfo<SignalAwaiter>(
