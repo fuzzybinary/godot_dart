@@ -5,8 +5,5 @@
 # Conventional directory for build output.
 build/
 
-# Don't check in generated files
-*.g.dart
-
 # Don't check in the kernel file
 main.dill

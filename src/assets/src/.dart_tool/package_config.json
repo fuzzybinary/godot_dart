@@ -147,15 +147,15 @@
     },
     {
       "name": "godot_dart",
-      "rootUri": "file:///home/jeff/.pub-cache/hosted/pub.dev/godot_dart-0.6.2",
+      "rootUri": "file:///home/jeff/.pub-cache/hosted/pub.dev/godot_dart-0.11.0",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.6"
     },
     {
       "name": "godot_dart_build",
-      "rootUri": "file:///home/jeff/.pub-cache/hosted/pub.dev/godot_dart_build-0.4.0",
+      "rootUri": "file:///home/jeff/.pub-cache/hosted/pub.dev/godot_dart_build-0.9.0",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.6"
     },
     {
       "name": "graphs",
@@ -365,11 +365,12 @@
       "name": "godot_dart_example",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.6"
     }
   ],
-  "generated": "2024-12-15T06:06:18.268064Z",
   "generator": "pub",
-  "generatorVersion": "3.6.0",
+  "generatorVersion": "3.11.0-268.0.dev",
+  "flutterRoot": "file:///home/jeff/Projects/flutter",
+  "flutterVersion": "3.40.0-1.0.pre-300",
   "pubCache": "file:///home/jeff/.pub-cache"
 }

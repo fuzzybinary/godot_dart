@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:godot_dart/godot_dart.dart';
 
 part 'player.g.dart';
@@ -14,16 +12,13 @@ class Player extends Area2D {
 
   Player() : super();
 
-  Player.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  Player.withNonNullOwner(super.owner) : super.withNonNullOwner();
 
   @GodotSignal('hit')
   late final Signal0 _hit = Signal0(this, 'hit');
 
   @GodotProperty()
   var speed = 400;
-
-  @GodotProperty()
-  var test = 111;
 
   late Vector2 _screenSize;
 
@@ -76,7 +71,7 @@ class Player extends Area2D {
     setPosition(position);
   }
 
-  @GodotRpc()
+  @GodotExport()
   void start(Vector2 pos) {
     setPosition(pos);
     show();

@@ -11,13 +11,13 @@ import 'package:godot_dart/godot_dart.dart';
 import 'package:godot_dart/src/core/signals.dart';
 import 'package:source_gen/source_gen.dart';
 
-const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
-const _godotExportChecker = TypeChecker.fromRuntime(GodotExport);
-const _godotSignalChecker = TypeChecker.fromRuntime(GodotSignal);
-const _godotPropertyChecker = TypeChecker.fromRuntime(GodotProperty);
-const _godotRpcInfoChecker = TypeChecker.fromRuntime(GodotRpc);
+const _godotScriptChecker = TypeChecker.typeNamed(GodotScript);
+const _godotExportChecker = TypeChecker.typeNamed(GodotExport);
+const _godotSignalChecker = TypeChecker.typeNamed(GodotSignal);
+const _godotPropertyChecker = TypeChecker.typeNamed(GodotProperty);
+const _godotRpcInfoChecker = TypeChecker.typeNamed(GodotRpc);
 // ignore: invalid_use_of_internal_member
-const _godotSignalCallableChecker = TypeChecker.fromRuntime(SignalCallable);
+const _godotSignalCallableChecker = TypeChecker.typeNamed(SignalCallable);
 
 /// Generates code for @GodotScript annotated classes
 class GodotScriptAnnotationGenerator
@@ -98,17 +98,17 @@ class GodotScriptAnnotationGenerator
         propertyFields.add(field);
       }
     }
-    for (final accessor in element.accessors) {
-      if (accessor.isGetter &&
-          _godotPropertyChecker.hasAnnotationOf(accessor,
+    for (final getter in element.getters) {
+      if (_godotPropertyChecker.hasAnnotationOf(getter,
               throwOnUnresolved: false)) {
-        propertyFields.add(accessor);
+        propertyFields.add(getter);
       }
-      if (accessor.isSetter &&
-          _godotPropertyChecker.hasAnnotationOf(accessor,
+    }
+    for (final setter in element.setters) {
+      if (_godotPropertyChecker.hasAnnotationOf(setter,
               throwOnUnresolved: false)) {
         log.warning(
-            'Found `@GodotProperty` on setter `${accessor.name}`. `@GodotProperty` should not be used on setters, only getters.');
+            'Found `@GodotProperty` on setter `${setter.name}`. `@GodotProperty` should not be used on setters, only getters.');
       }
     }
     buffer.writeln('    signals: [');
@@ -130,7 +130,7 @@ class GodotScriptAnnotationGenerator
       final propertyAnnotation =
           _godotPropertyChecker.firstAnnotationOf(propertyField);
       buffer.write(_generatePropertyInfo(
-          element.name, propertyField, propertyAnnotation, packageName));
+          element.displayName, propertyField, propertyAnnotation, packageName));
       buffer.writeln(',');
     }
     buffer.writeln('    ],');
@@ -157,12 +157,12 @@ class GodotScriptAnnotationGenerator
           throwOnUnresolved: false);
 
       if ((exportAnnotation != null || rpcAnnotation != null) &&
-          method.parameters.firstWhereOrNull((p) => p.isNamed) != null) {
+          method.formalParameters.firstWhereOrNull((p) => p.isNamed) != null) {
         log.severe(
             'Method ${method.name} cannot be exported (or an RPC method) because it has named parameters, which is not supported by Godot.');
         continue;
       }
-      if (method.hasOverride || exportAnnotation != null) {
+      if (method.metadata.hasOverride || exportAnnotation != null) {
         buffer.write(_buildMethodInfo(method, exportAnnotation));
         buffer.writeln(',');
       }
@@ -186,7 +186,7 @@ class GodotScriptAnnotationGenerator
 
     final call = StringBuffer();
     call.write('dartMethodCall: (o, a) => o.${element.name}(');
-    call.write(element.parameters.indexed
+    call.write(element.formalParameters.indexed
         .map((e) => 'a[${e.$1}] as ${e.$2.type}')
         .join(','));
     call.write(')');
@@ -197,15 +197,15 @@ class GodotScriptAnnotationGenerator
       String? exportName =
           (nameReader?.isNull ?? true) ? element.name : nameReader?.stringValue;
       buffer.writeln('  name: \'$exportName\',');
-    } else if (element.hasOverride) {
-      final godotMethodName = _convertVirtualMethodName(element.name);
+    } else if (element.metadata.hasOverride) {
+      final godotMethodName = _convertVirtualMethodName(element.displayName);
       buffer.writeln('  name: \'$godotMethodName\',');
     }
 
     buffer.writeln('  $call,');
     buffer.writeln('  args: [');
 
-    for (final argument in element.parameters) {
+    for (final argument in element.formalParameters) {
       buffer.write(_generateArgumentPropertyInfo(argument));
       buffer.writeln(',');
     }
@@ -237,7 +237,7 @@ class GodotScriptAnnotationGenerator
     return buffer.toString();
   }
 
-  String _generateArgumentPropertyInfo(ParameterElement parameter) {
+  String _generateArgumentPropertyInfo(FormalParameterElement parameter) {
     final buffer = StringBuffer();
 
     buffer.writeln('PropertyInfo(');
@@ -298,13 +298,13 @@ class GodotScriptAnnotationGenerator
     if (element is ClassElement &&
         _godotScriptChecker.hasAnnotationOf(element,
             throwOnUnresolved: false)) {
-      final relativeName = element.library.librarySource.fullName
+      final relativeName = element.library.firstFragment.source.fullName
           .replaceFirst('/$packageName/', '');
       return 'res://src/$relativeName';
     }
 
     // Else, return its type
-    return type.getDisplayString(withNullability: false);
+    return type.element!.name!;
   }
 
   String _buildRpcMethodInfo(MethodElement method, DartObject rpcAnnotation) {
@@ -334,14 +334,16 @@ class GodotScriptAnnotationGenerator
           type.isDartCoreString;
     }
 
+    final typeName = type.element?.name;
+
     if (isPrimitive(type)) {
-      return 'PrimitiveTypeInfo.forType(${type.getDisplayString(withNullability: false)})!';
-    } else if (type.getDisplayString(withNullability: false) == 'Variant') {
+      return 'PrimitiveTypeInfo.forType($typeName)!';
+    } else if (typeName == 'Variant') {
       return 'Variant.sTypeInfo';
     } else if (type is VoidType) {
       return 'PrimitiveTypeInfo.forType(null)';
     } else {
-      return '${type.getDisplayString(withNullability: false)}.sTypeInfo';
+      return '$typeName.sTypeInfo';
     }
   }
 
@@ -395,7 +397,7 @@ class GodotScriptAnnotationGenerator
   c.Method _generateRpcMethod(MethodElement method) {
     StringBuffer methodBody = StringBuffer();
     methodBody.writeln('  final args = <Variant>[');
-    for (final arg in method.parameters) {
+    for (final arg in method.formalParameters) {
       methodBody.write('Variant(${arg.name}),');
     }
     methodBody.writeln('];');
@@ -406,25 +408,25 @@ class GodotScriptAnnotationGenerator
     methodBody.writeln("    self.rpc('${method.name}', vargs: args);");
     methodBody.writeln('  }');
 
-    final optionalParameters = method.parameters
+    final optionalParameters = method.formalParameters
         .where((e) => e.isOptional)
         .map((e) => c.Parameter((p) => p
           ..named = e.isNamed
-          ..name = e.name
-          ..type = c.Reference(e.type.getDisplayString(withNullability: true))))
+          ..name = e.displayName
+          ..type = c.Reference(e.type.getDisplayString())))
         .toList()
       ..add(c.Parameter((b) => b
         ..name = 'peerId'
         ..named = true
         ..type = c.Reference('int?')));
-    final requiredParametrs = method.parameters.where((e) => !e.isOptional).map(
+    final requiredParametrs = method.formalParameters.where((e) => !e.isOptional).map(
         (e) => c.Parameter((p) => p
           ..named = e.isNamed
-          ..name = e.name
+          ..name = e.displayName
           ..type =
-              c.Reference(e.type.getDisplayString(withNullability: true))));
+              c.Reference(e.type.getDisplayString())));
 
-    return c.Method((b) => b
+    return c.Method.returnsVoid((b) => b      
       ..optionalParameters.addAll(optionalParameters)
       ..requiredParameters.addAll(requiredParametrs)
       ..name = method.name

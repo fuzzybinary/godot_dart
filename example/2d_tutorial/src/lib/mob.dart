@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:godot_dart/godot_dart.dart';
@@ -17,7 +16,7 @@ class Mob extends RigidBody2D {
 
   Mob() : super();
 
-  Mob.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  Mob.withNonNullOwner(super.owner) : super.withNonNullOwner();
 
   @override
   void vReady() {

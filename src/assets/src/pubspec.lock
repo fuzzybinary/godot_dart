@@ -197,18 +197,18 @@ packages:
     dependency: "direct main"
     description:
       name: godot_dart
-      sha256: b22d99b9995ee5635d21a24e7e62b46adf49312bd9cb0fdfb0afc0d04b225fb8
+      sha256: aa433ddeaa376186747164aba9ab3efa6cb117653286742fd0ac76aeb49f02ab
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.2"
+    version: "0.11.0"
   godot_dart_build:
     dependency: "direct dev"
     description:
       name: godot_dart_build
-      sha256: c2dfa3e30efa38cb4cca59914e85a5ce13f911f38ed065c2f1e70cdd61398ee5
+      sha256: "052e5b14dd211e17860a081c94f2cab71e6a63cebbb17fb9a55d1bcba9a23e35"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0"
+    version: "0.9.0"
   graphs:
     dependency: transitive
     description:
@@ -482,4 +482,4 @@ packages:
     source: hosted
     version: "3.1.2"
 sdks:
-  dart: ">=3.5.0 <4.0.0"
+  dart: ">=3.6.0 <4.0.0"
