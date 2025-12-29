@@ -35,7 +35,10 @@ class SimpleTestNode extends Node {
   }
 }
 
-void main() {
+void main() {}
+
+@pragma('vm:entry-point')
+void godotMain() {
   attachScriptResolver();
 
   SimpleTestNode.bind(gde.typeResolver);

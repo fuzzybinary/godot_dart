@@ -30,7 +30,7 @@ add_library(godot_dart SHARED
     script/dart_script_language.cpp
     script/dart_script.cpp
     script/dart_resource_format.cpp
-  "dart_binding_c_interface.cpp")
+  "dart_binding_c_interface.cpp" "editor/dart_version_constants.h" "editor/dart_command_runner.h" "editor/dart_command_runner.cpp")
 
 target_include_directories(godot_dart PUBLIC
     "${GODOT_CPP_DIR}/include"

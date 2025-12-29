@@ -3,10 +3,15 @@
 #include <vector>
 #include <functional>
 
+#include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/thread.hpp>
 
 class DartProgressDialog;
+
+namespace godot_dart {
+class DartCommandRunner;
+}
 
 class GodotDartEditorPlugin : public godot::EditorPlugin {
   GDCLASS(GodotDartEditorPlugin, EditorPlugin)
@@ -30,18 +35,24 @@ private:
     std::function<bool ()> step;
   };
 
+  // SDK Initialization
+  bool initialize_dart_sdk();
+  void show_download_dart_dialog();
+  void download_dart();
+  void create_dart_command_runner();
+
+  // Building 
+  void push_build_work();
+  
   // Project creation
-  void show_create_project_dialog();
-  void confirm_create_project();
+  void show_create_project_dialog();  
   void create_project();
 
-  // Pub get
-  void show_pub_get_dialog();
-  void confirm_pub_get();
-
-  void hot_reload();  
+  void hot_reload();
 
   void run_work();
+
+  godot_dart::DartCommandRunner *_command_runner;
 
   std::vector<WorkStep> _work_steps;
 

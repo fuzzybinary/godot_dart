@@ -60,7 +60,7 @@ void GodotDartRuntimePlugin::base_init() {
   godot::ResourceLoader::get_singleton()->add_resource_format_loader(_resource_format_loader);
   godot::ResourceSaver::get_singleton()->add_resource_format_saver(_resource_format_saver);
 
-  godot::Engine::get_singleton()->register_script_language(DartScriptLanguage::instance());
+  godot::Engine::get_singleton()->register_script_language(DartScriptLanguage::instance());  
   
   if (has_dart_module() && has_package_config()) {
     initialize_dart_bindings();
@@ -85,7 +85,7 @@ bool GodotDartRuntimePlugin::has_dart_module() const {
   }
 
   std::stringstream ss_main_path;
-  ss_main_path << _root_dart_dir << "/main.dart";
+  ss_main_path << _root_dart_dir << "/main.dill";
   godot::String gd_main_path(ss_main_path.str().c_str());
   if (!godot::FileAccess::file_exists(gd_main_path)) {
     return false;
@@ -106,8 +106,15 @@ bool GodotDartRuntimePlugin::has_package_config() const {
 }
 
 bool GodotDartRuntimePlugin::initialize_dart_bindings() {
+  if (_dart_bindings) {
+    // Can't re-initialize, both becaues of threading and because the
+    // DART_HANDLEs held by Godot would break. Perform a hot reload instead
+    _dart_bindings->reload_code();
+    return true;
+  }
+
   char dart_script_path[256], package_path[256];
-  sprintf(dart_script_path, "%s/main.dart", _root_dart_dir.c_str());
+  sprintf(dart_script_path, "%s/main.dill", _root_dart_dir.c_str());
   sprintf(package_path, "%s/.dart_tool/package_config.json", _root_dart_dir.c_str());
 
   _dart_bindings = new GodotDartBindings();

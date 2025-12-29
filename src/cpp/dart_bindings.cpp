@@ -104,8 +104,8 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     // And call the main function from the user supplied library
     {
       Dart_Handle library = Dart_RootLibrary();
-      Dart_Handle mainFunctionName = Dart_NewStringFromCString("main");
-      DART_CHECK_RET(result, Dart_Invoke(library, mainFunctionName, 0, nullptr), false, "Error calling 'main'");
+      Dart_Handle mainFunctionName = Dart_NewStringFromCString("godotMain");
+      DART_CHECK_RET(result, Dart_Invoke(library, mainFunctionName, 0, nullptr), false, "Error calling 'godotMain'");
     }
   }
 
@@ -136,6 +136,7 @@ void GodotDartBindings::reload_code() {
 }
 
 void GodotDartBindings::shutdown() {
+  _work_lock.lock();
   Dart_EnterIsolate(_isolate);
   _isolate_current_thread = std::this_thread::get_id();
 
@@ -194,7 +195,9 @@ void GodotDartBindings::perform_frame_maintanance() {
   execute_on_dart_thread([&] {
     Dart_EnterScope();
 
+    // This can somehow cause a deadlock?
     DartDll_DrainMicrotaskQueue();
+
     while (_pending_messages > 0) {
       DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
       _pending_messages--;
@@ -203,8 +206,8 @@ void GodotDartBindings::perform_frame_maintanance() {
     // Back with a current isolate, let's take care of any pending ref count changes,
     // which we couldn't do while the finalizer was running.
     perform_pending_ref_changes();
-
-    // If we're reloading, check to see if we're done.
+    
+    // Check to see if we're done reloading
     if (_is_reloading) {
       Dart_Handle root_library = Dart_HandleFromPersistent(_godot_dart_library);
       DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")),

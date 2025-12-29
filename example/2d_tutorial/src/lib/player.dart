@@ -22,6 +22,9 @@ class Player extends Area2D {
   @GodotProperty()
   var speed = 400;
 
+  @GodotProperty()
+  var test = 111;
+
   late Vector2 _screenSize;
 
   @override

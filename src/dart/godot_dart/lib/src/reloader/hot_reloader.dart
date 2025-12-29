@@ -57,6 +57,7 @@ class HotReloader {
       }
       //log.fine('Hot-reloading code of isolate [${isolateRef.name}]...');
 
+      print('reloading');
       try {
         final reloadReport = await _vmService.reloadSources(
           isolateRef.id!,
@@ -90,6 +91,8 @@ class HotReloader {
       //{type:ReloadReport,success:false,notices:[{type:ReasonForCancelling,message:"lib/src/config.dart:32:1: Error: Expected ';' after this."}]}
       // log.severe(
       //     'Hot-reloading code failed:\n ${failedReloadReports.values.first.json?['notices'][0]['message']}');
+      print(
+          'Hot-reloading code failed:\n ${failedReloadReports.values.first.json?['notices'][0]['message']}');
       return HotReloadResult.failed;
     }
 

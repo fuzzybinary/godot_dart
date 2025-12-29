@@ -24,7 +24,7 @@ public:
     return _root_dart_dir;
   }
 
-  bool initialize_dart_bindings();
+  bool initialize_dart_bindings();  
   void shutdown_dart_bindings();
 
   static GodotDartRuntimePlugin* get_instance() {
