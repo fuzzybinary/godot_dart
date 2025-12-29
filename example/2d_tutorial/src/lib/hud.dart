@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:godot_dart/godot_dart.dart';
 
 part 'hud.g.dart';
@@ -14,7 +12,7 @@ class Hud extends CanvasLayer {
 
   Hud() : super();
 
-  Hud.withNonNullOwner(Pointer<Void> owner) : super.withNonNullOwner(owner);
+  Hud.withNonNullOwner(super.owner) : super.withNonNullOwner();
 
   @GodotSignal('start_game')
   late final Signal0 _startGame = Signal0(this, 'start_game');

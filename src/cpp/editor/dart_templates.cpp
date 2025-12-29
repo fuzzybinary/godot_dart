@@ -33,9 +33,6 @@ const char *pubspec_template_fmt = "name: my_godot_dart\n"
 const char *git_ignore_template = "# Files and directories created by pub\n"
                                   ".dart_tool/\n"
                                   ".packages\n"
-                                  "\n"
-                                  "# Don't check in generated files\n"
-                                  "*.g.dart\n"
                                   "\n";
 
 const char *dart_script = "import 'package:godot_dart/godot_dart.dart';\n"

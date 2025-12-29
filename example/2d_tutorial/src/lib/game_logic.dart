@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:math' as math;
 
 import 'package:godot_dart/godot_dart.dart';
@@ -25,8 +24,8 @@ class GameLogic extends Node {
 
   GameLogic() : super();
 
-  GameLogic.withNonNullOwner(Pointer<Void> owner)
-      : super.withNonNullOwner(owner);
+  GameLogic.withNonNullOwner(super.owner)
+      : super.withNonNullOwner();
 
   @override
   void vReady() {}

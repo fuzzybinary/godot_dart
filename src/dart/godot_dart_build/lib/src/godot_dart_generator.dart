@@ -10,7 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:source_gen/source_gen.dart';
 
-const _godotScriptChecker = TypeChecker.fromRuntime(GodotScript);
+final _godotScriptChecker = TypeChecker.typeNamed(GodotScript);
 // TODO: Need to make this a builder option
 const godotPrefix = 'res://src';
 
@@ -35,7 +35,7 @@ class GodotDartBuilder extends Builder {
     libraryBuilder.body.add(await _generateScriptResolver(
         buildStep, packageName, assets, libraryBuilder));
     final c.DartEmitter emitter = c.DartEmitter(useNullSafetySyntax: true);
-    final DartFormatter formatter = DartFormatter();
+    final DartFormatter formatter = DartFormatter(languageVersion: DartFormatter.latestLanguageVersion);
 
     final outputId =
         AssetId(buildStep.inputId.package, 'godot_dart_scripts.g.dart');
@@ -69,8 +69,9 @@ class GodotDartBuilder extends Builder {
           );
         }
 
+        
         final relativeName =
-            _removePackage(library.librarySource.fullName, packageName);
+            _removePackage(library.firstFragment.source.fullName, packageName);
 
         log.log(Level.INFO, '$relativeName => ${element.name}');
 
@@ -78,7 +79,7 @@ class GodotDartBuilder extends Builder {
         final isGlobal = isGlobalReader.isBool && isGlobalReader.boolValue;
 
         typeMap
-            .add((type: element.name, path: relativeName, isGlobal: isGlobal));
+            .add((type: element.name!, path: relativeName, isGlobal: isGlobal));
       }
     }
 
