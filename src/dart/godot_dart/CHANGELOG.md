@@ -1,3 +1,16 @@
+## 0.11.0
+
+- Use `SignalX` over `Signal` for Dart defined signals.
+- Fix template to use newer requirements.
+
+## 0.10.2
+
+- Change `getGlobalClassPaths` to return a `List` over a `Set`, which should fix manual hot reloading.
+
+## 0.10.1
+
+- Fix missing `@pragma` on `_isReloading`
+
 ## 0.10.0
 
 - BREAKING: Fix extension to work with more restrictive native calls in Dart 3.8. 

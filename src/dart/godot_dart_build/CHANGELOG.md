@@ -1,3 +1,8 @@
+## 0.9.0
+
+- Use `SignalX` over `Signal` for Dart defined signals.
+- Emit a build error if a `@GodotExport` or `@GodotRpc` methoduses named parameters
+
 ## 0.8.0
 
 - BREAKING: Major changes to support more restrictive native calls in Dart 3.8.

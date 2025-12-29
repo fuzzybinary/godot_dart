@@ -72,10 +72,10 @@ part 'simple_script.g.dart';
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
   @pragma('vm:entry-point')
-  static TypeInfo get sTypeInfo => _$SimpleScriptTypeInfo();
+  static final ExtensionTypeInfo<SimpleScript> sTypeInfo = _$SimpleScriptTypeInfo();
   // And provide an instance method to get the type info
   @override
-  TypeInfo get typeInfo => SimpleScript.sTypeInfo;
+  ExtensionTypeInfo<SimpleScript> get typeInfo => sTypeInfo;
   
   // Required constructor
   SimpleScript() : super();
@@ -124,8 +124,9 @@ void main() {
 
 ### Signals
 
-You can add signals to your script with the `GodotSignal` property. This takes the signal name and a list 
-of arguments for the signal:
+You can add signals to your script with the `GodotSignal` property, and adding one of the `SignalX` objects
+provided by Godot Dart, depending on the number of arguments: `Signal0` for a signal with zero arguments,
+`Signal1` for a signal with 1, etc.
 
 ```dart
 @GodotScript()
@@ -134,13 +135,13 @@ class Hud extends CanvasLayer {
 
   
   @GodotSignal('start_game')
-  late final Signal _startGame = Signal.fromObjectSignal(this, 'start_game');
+  late final Signal0 _startGame = Signal0(this, 'start_game');
 }
 ```
 
-You can then emit signals with `Signal.emit`.
+You can then emit signals with `SignalX.emit`.
 
-Classes from Godot support type safe signal subscription for each or their signals.  For example, if you
+These signals, and those provided in Godot, support type safe signal subscription.  For example, if you
 want to subscribe to the `animation_added` signal on `AnimationLibrary`, you can do so like so:
 
 ```dart
@@ -239,9 +240,9 @@ void main() {
 
 ### Casting
 
-Early versions of Godot Dart required using `.cast<T>` to perform downcasting. This is no longer
-necessary. Dart's built in `is` and `as` operators should now work to perform downcasting. `cast<T>` 
-has also been removed and replaced with `.as<T>`, which is an implementation of `as?` or `dynamic_cast`.
+Dart's built in `is` and `as` operators should now work to perform downcasting. Godot Dart provides a convenience 
+extension method `.as<T>`, which is an implementation of `as?` or `dynamic_cast`, and returns `null` if the
+object is not of the expected type.
 
 ### Virtual functions
 

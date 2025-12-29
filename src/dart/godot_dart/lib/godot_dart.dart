@@ -32,6 +32,7 @@ export 'src/variant/variant.dart' hide getToTypeConstructor;
 // ignore: unused_element
 late GodotDart _globalExtension;
 HotReloader? _reloader;
+// ignore: unused_element
 @pragma('vm:entry-point')
 bool _isReloading = false;
 
