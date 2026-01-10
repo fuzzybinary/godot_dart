@@ -118,7 +118,14 @@ import 'godot_dart_scripts.g.dart';
 void main() {
   // ... other bindings
 
-  attachScriptResolver();
+  refreshScripts();
+}
+
+// This method is necessary so that hot reload can properly reattach file
+// names to script types.
+@pragma('vm:entry-point')
+void refreshScripts() {
+  populateScriptResolver();
 }
 ```
 
@@ -230,7 +237,7 @@ These classes need to be registered to Godot in `main.dart`:
 
 ```dart
 void main() {
-  attachScriptResolver();
+  refreshScripts();
   
   SimpleTestNode.bind(TypeResolver.instance);
 }

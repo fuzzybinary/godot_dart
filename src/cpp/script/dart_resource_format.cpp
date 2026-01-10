@@ -1,17 +1,16 @@
 #include "dart_resource_format.h"
 
-#include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
 
-#include "dart_script_language.h"
 #include "dart_script.h"
+#include "dart_script_language.h"
 
 using namespace godot;
 
 // ResourceFormatLoader
 
 DartResourceFormatLoader::DartResourceFormatLoader() {
-
 }
 
 void DartResourceFormatLoader::_bind_methods() {
@@ -38,7 +37,7 @@ godot::String DartResourceFormatLoader::_get_resource_type(const godot::String &
 }
 
 godot::String DartResourceFormatLoader::_get_resource_script_class(const godot::String &path) const {
-  return path.get_extension().to_lower() == "dart" ? godot::String("DartScript") : "";  
+  return path.get_extension().to_lower() == "dart" ? godot::String("DartScript") : "";
 }
 
 bool DartResourceFormatLoader::_exists(const godot::String &path) const {
@@ -70,7 +69,6 @@ godot::Variant DartResourceFormatLoader::_load(const godot::String &path, const 
 void DartResourceFormatSaver::_bind_methods() {
 }
 
-
 godot::Error DartResourceFormatSaver::_save(const godot::Ref<godot::Resource> &resource, const godot::String &path,
                                             uint32_t flags) {
   Ref<DartScript> script = Object::cast_to<DartScript>(resource.ptr());
@@ -92,11 +90,14 @@ godot::Error DartResourceFormatSaver::_save(const godot::Ref<godot::Resource> &r
   file->flush();
   file->close();
 
+  DartScriptLanguage *language = DartScriptLanguage::instance();
+  language->push_cached_script(path, script);
+
   return OK;
 }
 
 bool DartResourceFormatSaver::_recognize(const godot::Ref<godot::Resource> &resource) const {
-  DartScript* script = Object::cast_to<DartScript>(resource.ptr());
+  DartScript *script = Object::cast_to<DartScript>(resource.ptr());
   return script != nullptr;
 }
 

@@ -56,6 +56,10 @@ public:
     return _properties_cache;
   }
 
+  // Create the Dart object represented by this script
+  Dart_Handle create_dart_object(Object *for_object);
+  Dart_Handle get_dart_type_info();
+
   // ScriptInstances in extensions are never of the type that calls
   // _placeholder_erased, so we handle this manually on instance free
   void dart_placeholder_erased(DartScriptInstance *p_placeholder);
@@ -69,7 +73,6 @@ private:
   void *create_script_instance_internal(Object *for_object, bool is_placeholder) const;
 
   godot::String _source_code;
-  godot::String _path;
   std::unordered_map<godot::StringName, GDExtensionPropertyInfo> _properties_cache;
   godot::Variant _rpc_config;
 

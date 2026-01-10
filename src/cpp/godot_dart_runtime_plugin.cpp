@@ -2,21 +2,21 @@
 
 #include <sstream>
 
-#include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/classes/resource_loader.hpp>
-#include <godot_cpp/classes/resource_saver.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/resource_saver.hpp>
 
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
 #include "godot_string_wrappers.h"
 #include "ref_counted_wrapper.h"
 
+#include "script/dart_resource_format.h"
 #include "script/dart_script_instance.h"
 #include "script/dart_script_language.h"
-#include "script/dart_resource_format.h"
 
 GodotDartRuntimePlugin *GodotDartRuntimePlugin::s_instance = nullptr;
 
@@ -61,7 +61,7 @@ void GodotDartRuntimePlugin::base_init() {
   godot::ResourceSaver::get_singleton()->add_resource_format_saver(_resource_format_saver);
 
   godot::Engine::get_singleton()->register_script_language(DartScriptLanguage::instance());
-  
+
   if (has_dart_module() && has_package_config()) {
     initialize_dart_bindings();
   }
@@ -154,13 +154,14 @@ void GodotDartRuntimePlugin::shutdown_dart_bindings() {
 
     for (const auto &itr : DartScriptInstance::s_instanceMap) {
       godot::Object obj;
-      obj._owner = itr.second->_binding.get_godot_object();
+      obj._owner = itr.second->get_godot_object();
+      if (!obj._owner) continue;
 
       auto str = obj.to_string().utf8();
 
       // TODO: Remove when we know we're not leaking
       printf("Leaked binding instance at %llx\n: %s", static_cast<int64_t>(itr.first), str.get_data());
-      printf("   binding at %llx\n", (intptr_t)&itr.second->_binding);
+      //printf("   binding at %llx\n", (intptr_t)&itr.second->_binding);
     }
   }
 

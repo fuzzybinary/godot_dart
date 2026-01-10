@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <gdextension_interface.h>
 #include <godot_cpp/classes/ref_counted.hpp>
 
@@ -11,8 +13,7 @@ class DartScript;
 
 class DartScriptInstance {
 public:
-  DartScriptInstance(Dart_Handle for_object, Dart_Handle type_info, godot::Ref<DartScript> script, godot::Object *owner,
-                     bool is_placeholder, bool is_refcounted);
+  DartScriptInstance(godot::Ref<DartScript> script, godot::Object *owner, bool is_placeholder, bool is_refcounted);
   ~DartScriptInstance();
 
   bool set(const godot::StringName &p_name, GDExtensionConstVariantPtr p_value);
@@ -57,18 +58,25 @@ public:
 
   void notify_property_list_changed();
 
-  Dart_Handle get_dart_object() {
-    return _binding.get_dart_object();
+  Dart_Handle get_dart_object();
+  GDExtensionObjectPtr get_godot_object() {
+    if (_binding.has_value()) {
+      return _binding->get_godot_object();
+    }
+    return nullptr;
   }
 
   static const GDExtensionScriptInstanceInfo2 *get_script_instance_info();
 
   static std::map<intptr_t, DartScriptInstance *> s_instanceMap;
 
-  DartGodotInstanceBinding _binding;
-
 private:
+  Dart_Handle create_dart_object();
+
   bool _is_placeholder;
+  bool _is_refcounted;
+
+  std::optional<DartGodotInstanceBinding> _binding;
 
   godot::Ref<DartScript> _dart_script;
   godot::Object *_godot_object;

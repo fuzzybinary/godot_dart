@@ -324,7 +324,6 @@ void DartScript::load_from_disk(const godot::String &path) {
     String text = file->get_as_text();
     set_source_code(text);
     file->close();
-    _path = path;
   }
 }
 
@@ -332,7 +331,8 @@ void DartScript::did_hot_reload() {
   _update_exports();
   auto editor_interface = godot::EditorInterface::get_singleton();
   if (editor_interface) {
-    editor_interface->get_resource_filesystem()->update_file(_path);
+    String path = get_path();
+    editor_interface->get_resource_filesystem()->update_file(path);
   }
 }
 
@@ -347,9 +347,12 @@ void *DartScript::_instance_create(Object *for_object) const {
   }
 
   const_cast<DartScript *>(this)->refresh_type(false);
-  if (_dart_type == nullptr) {
-    return nullptr;
-  }
+  // Even if we don't know our type, we still need to create the script instance,
+  // This is mostly for new scripts that we might not know about yet because
+  // hot reload hasn't happened.
+  // if (_dart_type == nullptr) {
+  //   return nullptr;
+  // }
 
   return create_script_instance_internal(for_object, false);
 }
@@ -364,10 +367,13 @@ void *DartScript::_placeholder_instance_create(Object *for_object) const {
     return nullptr;
   }
 
-  const_cast<DartScript *>(this)->refresh_type(false);
-  if (_dart_type == nullptr) {
-    return nullptr;
-  }
+  // Even if we don't know our type, we still need to create the script instance,
+  // This is mostly for new scripts that we don't know about yet because hot reload
+  // hasn't taken affect.
+  // const_cast<DartScript *>(this)->refresh_type(false);
+  // if (_dart_type == nullptr) {
+  //   return nullptr;
+  // }
 
   return create_script_instance_internal(for_object, true);
 }
@@ -377,6 +383,26 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
   GDExtensionScriptInstancePtr godot_script_instance = nullptr;
 
   RefCounted *rc = Object::cast_to<RefCounted>(for_object);
+  DartScriptInstance *script_instance =
+      new DartScriptInstance(const_cast<DartScript *>(this), for_object, is_placeholder, rc != nullptr);
+
+  godot_script_instance =
+      gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
+                                  reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
+  if (is_placeholder) {
+    _placeholders.insert(script_instance);
+  }
+
+  return godot_script_instance;
+}
+
+Dart_Handle DartScript::create_dart_object(Object *for_object) {
+  GodotDartBindings *bindings = GodotDartBindings::instance();
+  Dart_Handle ret_object = Dart_Null();
+
+  if (!_dart_type) {
+    return Dart_Null();
+  }
 
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
@@ -386,20 +412,18 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
     if (Dart_IsNull(dart_object)) {
       GD_PRINT_ERROR("Failed to create script instance! Got Null");
     }
-
-    Dart_Handle type_info = Dart_HandleFromPersistent(_type_info);
-    DartScriptInstance *script_instance = new DartScriptInstance(dart_object, type_info, const_cast<DartScript *>(this),
-                                                                 for_object, is_placeholder, rc != nullptr);
-
-    godot_script_instance =
-        gde_script_instance_create2(DartScriptInstance::get_script_instance_info(),
-                                    reinterpret_cast<GDExtensionScriptInstanceDataPtr>(script_instance));
-    if (is_placeholder) {
-      _placeholders.insert(script_instance);
-    }
+    ret_object = dart_object;
   });
 
-  return godot_script_instance;
+  return ret_object;
+}
+
+Dart_Handle DartScript::get_dart_type_info() {
+  if (!_type_info) {
+    return Dart_Null();
+  }
+
+  return Dart_HandleFromPersistent(_type_info);
 }
 
 void DartScript::dart_placeholder_erased(DartScriptInstance *p_placeholder) {

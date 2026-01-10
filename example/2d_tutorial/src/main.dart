@@ -36,7 +36,12 @@ class SimpleTestNode extends Node {
 }
 
 void main() {
-  attachScriptResolver();
+  refreshScripts();
 
   SimpleTestNode.bind(gde.typeResolver);
+}
+
+@pragma('vm:entry-point')
+void refreshScripts() {
+  populateScriptResolver();
 }

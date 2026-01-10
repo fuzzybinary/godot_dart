@@ -35,7 +35,8 @@ class GodotDartBuilder extends Builder {
     libraryBuilder.body.add(await _generateScriptResolver(
         buildStep, packageName, assets, libraryBuilder));
     final c.DartEmitter emitter = c.DartEmitter(useNullSafetySyntax: true);
-    final DartFormatter formatter = DartFormatter(languageVersion: DartFormatter.latestLanguageVersion);
+    final DartFormatter formatter =
+        DartFormatter(languageVersion: DartFormatter.latestLanguageVersion);
 
     final outputId =
         AssetId(buildStep.inputId.package, 'godot_dart_scripts.g.dart');
@@ -69,7 +70,6 @@ class GodotDartBuilder extends Builder {
           );
         }
 
-        
         final relativeName =
             _removePackage(library.firstFragment.source.fullName, packageName);
 
@@ -93,6 +93,7 @@ class GodotDartBuilder extends Builder {
       c.LibraryBuilder libraryBuilder) async {
     final methodBody = StringBuffer();
     methodBody.writeln('final typeResolver = gde.typeResolver;');
+    methodBody.writeln('typeResolver.clearScripts();');
     final typeMap = await _getTypePathPairs(buildStep, packageName, assets);
     for (final t in typeMap) {
       libraryBuilder.directives.add(c.Directive.import(t.path));
@@ -102,7 +103,7 @@ class GodotDartBuilder extends Builder {
     }
 
     final method = c.Method((b) => b
-      ..name = 'attachScriptResolver'
+      ..name = 'populateScriptResolver'
       ..returns = c.refer('void')
       ..body = c.Code(methodBody.toString()));
 

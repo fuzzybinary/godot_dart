@@ -445,6 +445,10 @@ void DartScriptLanguage::did_finish_hot_reload() {
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
+    DART_CHECK(root_library, Dart_RootLibrary(), "Failed to get root library");
+    DART_CHECK(refresh_result, Dart_Invoke(root_library, Dart_NewStringFromCString("refreshScripts"), 0, nullptr),
+               "Failed to refresh scripts after hot reload.");
+
     // Update files that are global classes (and weren't part of the prveious reload)
     Dart_Handle resolver = Dart_HandleFromPersistent(_type_resolver);
 

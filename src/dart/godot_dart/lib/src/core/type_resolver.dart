@@ -44,6 +44,12 @@ class TypeResolver {
     return _typeTypeInfoLookup[type];
   }
 
+  void clearScripts() {
+    _scriptFileTypeMap.clear();
+    _scriptTypeFileMap.clear();
+    _globalClassPaths.clear();
+  }
+
   void addScriptType(
       String path, Type scriptType, ExtensionTypeInfo<dynamic> typeInfo) {
     assert(!_scriptFileTypeMap.containsKey(path));
