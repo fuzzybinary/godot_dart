@@ -1,3 +1,7 @@
+## 0.10.0
+
+- BREAKING: Fix issues iwth hot reload on new scripts.
+
 ## 0.9.0
 
 - Use `SignalX` over `Signal` for Dart defined signals.

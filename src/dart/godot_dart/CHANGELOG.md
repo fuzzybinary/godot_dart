@@ -1,3 +1,8 @@
+## 0.12.0
+
+- Update to latest analyzer / source_gen
+- BREAKING: Fix issues with hot reload on new scripts.
+
 ## 0.11.0
 
 - Use `SignalX` over `Signal` for Dart defined signals.
