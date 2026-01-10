@@ -78,7 +78,7 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
     }
 
     Dart_Handle field_name = to_dart_string(p_name);
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
 
     Dart_Handle prop_info_args[] = {field_name};
     DART_CHECK(dart_property_info,
@@ -128,7 +128,7 @@ bool DartScriptInstance::get(const godot::StringName &p_name, GDExtensionVariant
     if (Dart_IsNull(object)) {
       return;
     }
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
 
     Dart_Handle args[] = {field_name};
     DART_CHECK(dart_property_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getPropertyInfo"), 1, args),
@@ -233,7 +233,7 @@ const GDExtensionMethodInfo *DartScriptInstance::get_method_list(uint32_t *r_cou
       return;
     }
 
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
     DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t method_count = 0;
@@ -267,7 +267,7 @@ void DartScriptInstance::free_method_list(const GDExtensionMethodInfo *p_list) {
       return;
     }
 
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
     DART_CHECK(dart_method_list, Dart_GetField(obj_type_info, Dart_NewStringFromCString("methods")),
                "Failed to get properties info");
     intptr_t prop_count = 0;
@@ -298,7 +298,7 @@ GDExtensionBool DartScriptInstance::has_method(const godot::StringName &p_name) 
       return;
     }
 
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
 
     Dart_Handle method_info_args[] = {to_dart_string(p_name)};
     DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),
@@ -336,7 +336,7 @@ void DartScriptInstance::call(const godot::StringName *p_method, const GDExtensi
       return;
     }
 
-    DART_CHECK(obj_type_info, _binding->get_type_info(), "Failed to find typeInfo");
+    DART_CHECK(obj_type_info, _dart_script->get_dart_type_info(), "Failed to find typeInfo");
 
     Dart_Handle method_info_args[] = {to_dart_string(*p_method)};
     DART_CHECK(method_info, Dart_Invoke(obj_type_info, Dart_NewStringFromCString("getMethodInfo"), 1, method_info_args),

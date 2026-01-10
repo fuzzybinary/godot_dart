@@ -1,3 +1,7 @@
+## 0.12.1
+
+- Fix issues with hot reload not pulling properties / signals from the refreshed type info in scripts.
+
 ## 0.12.0
 
 - Update to latest analyzer / source_gen

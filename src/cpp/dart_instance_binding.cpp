@@ -93,10 +93,6 @@ Dart_Handle DartGodotInstanceBinding::get_dart_object() {
   return Dart_HandleFromPersistent((Dart_PersistentHandle)_persistent_handle);
 }
 
-Dart_Handle DartGodotInstanceBinding::get_type_info() {
-  return Dart_HandleFromPersistent(_dart_type_info);
-}
-
 bool DartGodotInstanceBinding::convert_to_strong() {
   if (!_is_weak) return true;
 
@@ -164,6 +160,9 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
 
       Dart_Handle type_name = to_dart_string(class_name);
       DART_CHECK(type_info, bindings->get_dart_type_info(type_name), "Error finding Dart type");
+      // TODO: Since DartTypeInfo is ephemeral (it's recreated on hot reload), it might be good to have bindings
+      // hold onto the Type, not the TypeInfo. Bindings only use this for object creation, so holding onto the
+      // type info isn't needed.
       if (!Dart_IsNull(type_info)) {
         Dart_PersistentHandle persistent_type_info = Dart_NewPersistentHandle(type_info);
         binding = new DartGodotInstanceBinding(persistent_type_info, p_instance);

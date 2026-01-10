@@ -27,7 +27,6 @@ public:
   }
 
   Dart_Handle get_dart_object();
-  Dart_Handle get_type_info();
   GDExtensionObjectPtr get_godot_object() const {
     return _godot_object;
   }
