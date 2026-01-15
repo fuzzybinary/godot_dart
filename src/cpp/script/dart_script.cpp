@@ -399,6 +399,7 @@ void *DartScript::create_script_instance_internal(Object *for_object, bool is_pl
 Dart_Handle DartScript::create_dart_object(Object *for_object) {
   GodotDartBindings *bindings = GodotDartBindings::instance();
   Dart_Handle ret_object = Dart_Null();
+  refresh_type(false);
 
   if (!_dart_type) {
     return Dart_Null();
