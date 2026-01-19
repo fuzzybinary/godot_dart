@@ -14,7 +14,7 @@ class Hud extends CanvasLayer {
 
   Hud.withNonNullOwner(super.owner) : super.withNonNullOwner();
 
-  @GodotSignal('start_game')
+  @GodotSignal()
   late final Signal0 _startGame = Signal0(this, 'start_game');
 
   @override

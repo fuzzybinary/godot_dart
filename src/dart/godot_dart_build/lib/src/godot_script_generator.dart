@@ -1,5 +1,7 @@
 import 'dart:mirrors';
 
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -100,13 +102,13 @@ class GodotScriptAnnotationGenerator
     }
     for (final getter in element.getters) {
       if (_godotPropertyChecker.hasAnnotationOf(getter,
-              throwOnUnresolved: false)) {
+          throwOnUnresolved: false)) {
         propertyFields.add(getter);
       }
     }
     for (final setter in element.setters) {
       if (_godotPropertyChecker.hasAnnotationOf(setter,
-              throwOnUnresolved: false)) {
+          throwOnUnresolved: false)) {
         log.warning(
             'Found `@GodotProperty` on setter `${setter.name}`. `@GodotProperty` should not be used on setters, only getters.');
       }
@@ -115,12 +117,16 @@ class GodotScriptAnnotationGenerator
     for (final signalField in signalFields) {
       final signalAnnotation =
           _godotSignalChecker.firstAnnotationOf(signalField);
-      if (_godotSignalCallableChecker.isAssignableFromType(signalField.type)) {
-        buffer.write(_buildSignalInfo(signalField, signalAnnotation));
-        buffer.writeln(',');
+      if (_godotSignalCallableChecker.isAssignableFromType(signalField.type) &&
+          signalField.hasInitializer) {
+        final signalInfo = _buildSignalInfo(signalField, signalAnnotation);
+        if (signalInfo != null) {
+          buffer.write(signalInfo);
+          buffer.writeln(',');
+        }
       } else {
         log.severe(
-            'Use of `@GodotSignal` on invalid field `${signalField.name}. The type must be one of the SignalX classes.');
+            'Use of `@GodotSignal` on invalid field `${signalField.name}`. The type must be one of the SignalX classes and have a default initialier.');
       }
     }
     buffer.writeln('    ],');
@@ -216,12 +222,40 @@ class GodotScriptAnnotationGenerator
     return buffer.toString();
   }
 
-  String _buildSignalInfo(FieldElement element, DartObject? signalAnnotation) {
+  AstNode? getAstNodeFromElement(Element element) {
+    final session = element.session;
+    final parsedLibResult = session?.getParsedLibraryByElement(element.library!)
+        as ParsedLibraryResult?;
+    final fragmentDelcaration =
+        parsedLibResult?.getFragmentDeclaration(element.firstFragment);
+    return fragmentDelcaration?.node;
+  }
+
+  String? _buildSignalInfo(
+      VariableElement element, DartObject? signalAnnotation) {
     final buffer = StringBuffer();
     buffer.writeln('SignalInfo(');
 
-    final reader = ConstantReader(signalAnnotation);
-    final signalName = reader.read('signalName').stringValue;
+    // Find the name of the signal through the AST
+    final node = getAstNodeFromElement(element);
+    if (node == null) {
+      log.severe('Could not find AST Node for ${element.name}?');
+      return null;
+    }
+    final constructorNode =
+        node.childEntities.whereType<MethodInvocation>().firstOrNull;
+    if (constructorNode == null) {
+      log.severe(
+          'Could not find constructor for ${element.name}! Is it initialized properly?');
+      return null;
+    }
+    final signalNameArg = constructorNode.argumentList.arguments[1];
+    if (signalNameArg is! StringLiteral) {
+      log.severe('Signal name for ${element.name} must be a StringLiteral!');
+      return null;
+    }
+
+    final signalName = signalNameArg.stringValue!;
     buffer.writeln('  name: \'$signalName\',');
 
     //final signalArguments = reader.read('args').listValue;
@@ -419,14 +453,14 @@ class GodotScriptAnnotationGenerator
         ..name = 'peerId'
         ..named = true
         ..type = c.Reference('int?')));
-    final requiredParametrs = method.formalParameters.where((e) => !e.isOptional).map(
-        (e) => c.Parameter((p) => p
+    final requiredParametrs = method.formalParameters
+        .where((e) => !e.isOptional)
+        .map((e) => c.Parameter((p) => p
           ..named = e.isNamed
           ..name = e.displayName
-          ..type =
-              c.Reference(e.type.getDisplayString())));
+          ..type = c.Reference(e.type.getDisplayString())));
 
-    return c.Method.returnsVoid((b) => b      
+    return c.Method.returnsVoid((b) => b
       ..optionalParameters.addAll(optionalParameters)
       ..requiredParameters.addAll(requiredParametrs)
       ..name = method.name

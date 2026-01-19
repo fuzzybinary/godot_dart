@@ -69,6 +69,7 @@ part 'simple_script.g.dart';
 
 // Generate the boilerplate for this object to be an accessible Godot script
 @GodotScript()
+@pragma('vm:entry-point')
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
   @pragma('vm:entry-point')
@@ -88,6 +89,10 @@ class SimpleScript extends Sprite2D  {
   // You can export fields as properties
   @GodotProperty()
   int speed = 400
+
+  // You can have (mostly) type safe Signals
+  @GodotSignal()
+  late final Signal1<Node> onHit = Signal1(this, 'on_hit');
 
   // Overridden virtuals are added automatically via build_runner
   @override
@@ -141,7 +146,7 @@ class Hud extends CanvasLayer {
   //...
 
   
-  @GodotSignal('start_game')
+  @GodotSignal()
   late final Signal0 _startGame = Signal0(this, 'start_game');
 }
 ```
@@ -167,6 +172,8 @@ class MyClass extends Node {
 ```
 
 These signal connections are automatically cleaned up if the target supplied to `connect` is removed.
+
+You can also `await` a Signal firing with `SignalX asFuture(this)`.
 
 
 ## Dart classes as Extensions

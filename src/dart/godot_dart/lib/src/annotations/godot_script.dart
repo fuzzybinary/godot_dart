@@ -32,11 +32,12 @@ class SignalArgument {
 }
 
 /// Annotate a Godot Signal
+///
+/// Signals must be a variable of one of the `SignalX` types, such as [Signal0], [Signal1], etc.
+/// The name of the signal is taken from `name` parameter of the Signal.
 @immutable
 class GodotSignal {
-  final String signalName;
-
-  const GodotSignal(this.signalName);
+  const GodotSignal();
 }
 
 /// Annotate a field that should be visible to the Godot property inspector
