@@ -476,9 +476,14 @@ void DartScript::refresh_type(bool force) {
         _type_info = Dart_NewPersistentHandle(type_info);
 
         // Find the base type
-        Dart_Handle base_type = Dart_GetField(type_info, Dart_NewStringFromCString("parentType"));
-        if (Dart_IsNull(base_type)) {
-          _base_script = language->find_script_for_type(dart_type);
+        DART_CHECK(base_type_info, Dart_GetField(type_info, Dart_NewStringFromCString("parentTypeInfo")),
+                   "Failed to get parentTypeInfo for type");
+        if (!Dart_IsNull(base_type_info)) {
+          DART_CHECK(base_type, Dart_GetField(base_type_info, Dart_NewStringFromCString("type")),
+                     "Failed to get type from parentTypeInfo");
+          if (!Dart_IsNull(base_type)) {
+            _base_script = language->find_script_for_type(base_type);
+          }
         }
 
         // Update Properties

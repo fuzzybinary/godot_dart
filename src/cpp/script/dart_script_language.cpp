@@ -303,18 +303,18 @@ godot::Dictionary DartScriptLanguage::_get_global_class_name(const godot::String
       godot::StringName gd_native_type_name = *(godot::StringName *)get_object_address(native_type_name);
 
       // More overly used strings
-      Dart_Handle parent_type_str = Dart_NewStringFromCString("parentType");
+      Dart_Handle parent_type_info_str = Dart_NewStringFromCString("parentTypeInfo");
 
       Dart_Handle current_type_info = type_info;
 
       bool found_base_type = false;
 
       while (!found_base_type) {
-        DART_CHECK(parent_type, Dart_GetField(current_type_info, parent_type_str), "Failed getting parent type");
-        if (Dart_IsNull(parent_type)) {
+        DART_CHECK(parent_type_info, Dart_GetField(current_type_info, parent_type_info_str),
+                   "Failed getting parent type info");
+        if (Dart_IsNull(parent_type_info)) {
           break;
         }
-        DART_CHECK(parent_type_info, Dart_GetField(parent_type, s_type_info_str), "Failed to get parent type info!");
         DART_CHECK(value, Dart_GetField(parent_type_info, is_global_class_str),
                    "Failed to get isGlobalClass from typeInfo!");
         bool is_global = false;
