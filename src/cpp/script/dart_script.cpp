@@ -216,19 +216,23 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_script_property_list() con
 
   godot::TypedArray<godot::Dictionary> ret_val;
 
-  // TODO: Look if there's a better way to store these strings as constants
-  for (const auto &prop : _properties_cache) {
-    const auto &prop_info = prop.second;
-    godot::Dictionary info_dict;
-    info_dict[godot::Variant(godot::String("type"))] = Variant(prop_info.type);
-    info_dict[godot::Variant(godot::String("name"))] = Variant(*reinterpret_cast<godot::String *>(prop_info.name));
-    info_dict[godot::Variant(godot::String("class_name"))] =
-        Variant(*reinterpret_cast<godot::StringName *>(prop_info.name));
-    info_dict[godot::Variant(godot::String("hint"))] = Variant(prop_info.hint);
-    info_dict[godot::Variant(godot::String("hint_string"))] =
-        Variant(*reinterpret_cast<godot::String *>(prop_info.hint_string));
-    info_dict[godot::Variant(godot::String("usage"))] = Variant(prop_info.usage);
-    ret_val.push_back(info_dict);
+  const DartScript *top = this;
+  while (top != nullptr) {
+    const auto &properties_cache = top->get_properties();
+    for (const auto &prop_info : properties_cache) {
+      godot::Dictionary info_dict;
+      info_dict[godot::Variant(godot::String("type"))] = Variant(prop_info.type);
+      info_dict[godot::Variant(godot::String("name"))] =
+          Variant(*reinterpret_cast<godot::StringName *>(prop_info.name));
+      info_dict[godot::Variant(godot::String("class_name"))] =
+          Variant(*reinterpret_cast<godot::StringName *>(prop_info.class_name));
+      info_dict[godot::Variant(godot::String("hint"))] = Variant(prop_info.hint);
+      info_dict[godot::Variant(godot::String("hint_string"))] =
+          Variant(*reinterpret_cast<godot::String *>(prop_info.hint_string));
+      info_dict[godot::Variant(godot::String("usage"))] = Variant(prop_info.usage);
+      ret_val.push_back(info_dict);
+    }
+    top = top->_base_script.ptr();
   }
 
   return ret_val;
@@ -433,7 +437,7 @@ void DartScript::dart_placeholder_erased(DartScriptInstance *p_placeholder) {
 
 void DartScript::clear_property_cache() {
   for (auto &prop : _properties_cache) {
-    gde_free_property_info_fields(&prop.second);
+    gde_free_property_info_fields(&prop);
   }
   _properties_cache.clear();
 }
@@ -495,13 +499,27 @@ void DartScript::refresh_type(bool force) {
         intptr_t prop_count = 0;
         Dart_ListLength(properties_list, &prop_count);
 
+        // Always add a secret hidden property that tells Godot the name of our class
+        {
+          DART_CHECK(class_name, Dart_GetField(type_info, Dart_NewStringFromCString("className")),
+                     "Failed to get class name.");
+          GDExtensionPropertyInfo property_info = {
+              GDEXTENSION_VARIANT_TYPE_NIL,
+              new godot::StringName(*reinterpret_cast<godot::StringName *>(get_object_address(class_name))),
+              new godot::String(),
+              PROPERTY_HINT_NONE,
+              new godot::String(path),
+              PROPERTY_USAGE_CATEGORY};
+          _properties_cache.push_back(property_info);
+        }
+
         if (prop_count > 0) {
           for (auto i = 0; i < prop_count; ++i) {
             DART_CHECK(dart_property, Dart_ListGetAt(properties_list, i), "Failed to get property at index");
             GDExtensionPropertyInfo property_info;
             gde_property_info_from_dart(dart_property, &property_info);
             godot::StringName *prop_name = reinterpret_cast<godot::StringName *>(property_info.name);
-            _properties_cache[*prop_name] = property_info;
+            _properties_cache.push_back(property_info);
           }
         }
 

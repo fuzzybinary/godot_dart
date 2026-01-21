@@ -1,5 +1,7 @@
 #include "dart_script_instance.h"
 
+#include <algorithm>
+
 #include <dart_api.h>
 
 #include <godot_cpp/classes/object.hpp>
@@ -163,15 +165,32 @@ bool DartScriptInstance::get_class_category(GDExtensionPropertyInfo *p_class_cat
 
 const GDExtensionPropertyInfo *DartScriptInstance::get_property_list(uint32_t *r_count) {
   GDExtensionPropertyInfo *prop_list{nullptr};
-  const auto &prop_map = _dart_script->get_properties();
-  size_t prop_count = prop_map.size();
+
+  // First scan to get total size
+  size_t prop_count = 0;
+  {
+    DartScript *top = _dart_script.ptr();
+    while (top != nullptr) {
+      const auto &properties = top->get_properties();
+      prop_count += properties.size();
+
+      top = top->get_base_dart_script().ptr();
+    }
+  }
+
   *r_count = prop_count;
   if (prop_count > 0) {
+    // Now get all the properties
     prop_list = new GDExtensionPropertyInfo[prop_count];
     size_t index = 0;
-    for (const auto &property : prop_map) {
-      prop_list[index] = property.second;
-      ++index;
+    DartScript *top = _dart_script.ptr();
+    while (top != nullptr) {
+      const auto &properties = top->get_properties();
+      for (const auto &property_info : properties) {
+        prop_list[index] = property_info;
+        ++index;
+      }
+      top = top->get_base_dart_script().ptr();
     }
   }
 
@@ -184,11 +203,19 @@ void DartScriptInstance::free_property_list(const GDExtensionPropertyInfo *p_lis
 
 GDExtensionVariantType DartScriptInstance::get_property_type(const godot::StringName &p_name,
                                                              GDExtensionBool *r_is_valid) {
-  const auto &properties = _dart_script->get_properties();
-  const auto &prop_itr = properties.find(p_name);
-  *r_is_valid = prop_itr != properties.end();
-  if (r_is_valid) {
-    return prop_itr->second.type;
+
+  DartScript *top = _dart_script.ptr();
+  while (top != nullptr) {
+    const auto &properties = top->get_properties();
+    const auto &prop_itr = std::find_if(properties.begin(), properties.end(), [&](auto &e) {
+      godot::StringName name(*reinterpret_cast<godot::StringName *>(e.name));
+      return name == p_name;
+    });
+    *r_is_valid = prop_itr != properties.end();
+    if (r_is_valid) {
+      return prop_itr->type;
+    }
+    top = top->get_base_dart_script().ptr();
   }
   return GDExtensionVariantType{};
 }

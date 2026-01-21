@@ -394,6 +394,17 @@ class ExtensionTypeInfo<T> implements TypeInfo {
 
   @pragma('vm:entry-point')
   PropertyInfo? getPropertyInfo(String propertyName) {
-    return properties.firstWhereOrNull((e) => e.name == propertyName);
+    ExtensionTypeInfo<dynamic>? searchTypeInfo = this;
+    PropertyInfo? info;
+    while (searchTypeInfo != null &&
+        searchTypeInfo.className != searchTypeInfo.nativeTypeName) {
+      info = searchTypeInfo.properties
+          .firstWhereOrNull((e) => e.name == propertyName);
+      if (info != null) {
+        break;
+      }
+      searchTypeInfo = searchTypeInfo.parentTypeInfo;
+    }
+    return info;
   }
 }

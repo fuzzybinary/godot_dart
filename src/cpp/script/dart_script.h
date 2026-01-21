@@ -52,13 +52,16 @@ public:
   void *_instance_create(Object *for_object) const override;
   void *_placeholder_instance_create(Object *for_object) const override;
 
-  const std::unordered_map<godot::StringName, GDExtensionPropertyInfo> &get_properties() const {
+  const std::vector<GDExtensionPropertyInfo> &get_properties() const {
     return _properties_cache;
   }
 
   // Create the Dart object represented by this script
   Dart_Handle create_dart_object(Object *for_object);
   Dart_Handle get_dart_type_info();
+  godot::Ref<DartScript> get_base_dart_script() {
+    return _base_script;
+  }
 
   // ScriptInstances in extensions are never of the type that calls
   // _placeholder_erased, so we handle this manually on instance free
@@ -73,7 +76,7 @@ private:
   void *create_script_instance_internal(Object *for_object, bool is_placeholder) const;
 
   godot::String _source_code;
-  std::unordered_map<godot::StringName, GDExtensionPropertyInfo> _properties_cache;
+  std::vector<GDExtensionPropertyInfo> _properties_cache;
   godot::Variant _rpc_config;
 
   mutable std::unordered_set<DartScriptInstance *> _placeholders;
