@@ -1,6 +1,11 @@
+## 0.11.0
+
+- Remove the need to specify signal names on `@GodotSignal`
+- Support `List<T>` on properties along with editor hints for properties. Automatically convert Godot `Array` to `List<T>`.
+
 ## 0.10.0
 
-- BREAKING: Fix issues iwth hot reload on new scripts.
+- BREAKING: Fix issues with hot reload on new scripts.
 
 ## 0.9.0
 

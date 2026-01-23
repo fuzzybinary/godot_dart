@@ -1,7 +1,7 @@
 name: godot_dart_build
 description: build_runner interface for simplifying binding to Godot
 repository: https://github.com/fuzzybinary/godot_dart
-version: 0.10.0
+version: 0.11.0
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
@@ -14,7 +14,7 @@ dependencies:
   build: ^4.0.0
   build_config: ^1.2.0
   source_gen: ^4.1.1
-  godot_dart: '>=0.11.0<1.0.0'
+  godot_dart: '>=0.13.0<1.0.0'
   code_builder: ^4.5.0
   dart_style: ^3.0.0
   glob: ^2.1.2

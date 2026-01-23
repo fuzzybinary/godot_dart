@@ -1,3 +1,11 @@
+## 0.13.0
+
+- Fix issue assigning values to Dart properties on Load
+- Remove the need to specify signal names on `@GodotSignal`
+- Get parent type info properly
+- Properly support properties from base classes when using inheritance. 
+- Support `List<T>` on properties along with editor hints for properties. Automatically convert Godot `Array` to `List<T>`.
+
 ## 0.12.1
 
 - Fix issues with hot reload not pulling properties / signals from the refreshed type info in scripts.
