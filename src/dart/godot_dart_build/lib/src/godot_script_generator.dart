@@ -4,6 +4,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart' as c;
@@ -295,50 +296,95 @@ class GodotScriptAnnotationGenerator
         ? field.type
         : (field as PropertyAccessorElement).returnType;
 
-    buffer.writeln('DartPropertyInfo<$parentType, $type>(');
+    // Handle lists super spec
+    bool isList = type.isDartCoreList;
+    DartType? listType;
+    if (isList && type is ParameterizedType) {
+      listType = type.typeArguments.first;
+    }
+
+    buffer
+        .writeln('DartPropertyInfo<$parentType, ${isList ? 'Array' : type}>(');
     buffer.writeln('  name: \'$exportName\',');
     buffer.writeln('  typeInfo: ${_typeInfoForType(type)},');
 
-    final propertyHint = _getPropertyHint(type);
+    final propertyHint = _getPropertyHint(type, packageName);
     if (propertyHint != null) {
-      buffer.writeln('  hint: ${propertyHint.toString()},');
-      buffer.writeln(
-          '  hintString: \'${_getPropertyHintString(type, packageName)}\',');
+      buffer.writeln('  hint: ${propertyHint.hint.toString()},');
+      buffer.writeln('  hintString: \'${propertyHint.hintString}\',');
     }
-    buffer.writeln('  getter: (self) => self.${field.name},');
-    buffer.writeln('  setter: (self, value) => self.${field.name} = value,');
+    var getterBody = 'self.${field.name}';
+    var setterBody = 'self.${field.name} = value';
+    if (isList && listType != null) {
+      if (listType.nullabilitySuffix != NullabilitySuffix.question) {
+        log.warning(
+            '$parentType.$exportName has a non-nullable element type. It is highly recommended'
+            ' that you make List elements nullable in order to make editing them possible.');
+      }
+      getterBody = 'GDArrayExtensions.fromList(self.${field.name})';
+      setterBody = 'self.${field.name} = value.toDartList()';
+    }
+    buffer.writeln('  getter: (self) => $getterBody,');
+    buffer.writeln('  setter: (self, value) => $setterBody,');
 
     buffer.write(')');
 
     return buffer.toString();
   }
 
-  PropertyHint? _getPropertyHint(DartType type) {
+  ({PropertyHint hint, String hintString})? _getPropertyHint(
+      DartType type, String packageName) {
     final element = type.element;
+
+    String getScriptResourceForType(DartType type) {
+      final element = type.element;
+      if (element is ClassElement &&
+          _godotScriptChecker.hasAnnotationOf(element,
+              throwOnUnresolved: false)) {
+        final relativeName = element.library.firstFragment.source.fullName
+            .replaceFirst('/$packageName/', '');
+        return 'res://src/$relativeName';
+      }
+
+      // Else, return its type
+      return type.element!.name!;
+    }
+
     if (element is ClassElement) {
       for (final supertype in element.allSupertypes) {
         if (supertype.element.name == 'Node') {
-          return PropertyHint.nodeType;
+          return (
+            hint: PropertyHint.nodeType,
+            hintString: getScriptResourceForType(type)
+          );
         } else if (supertype.element.name == 'Resource') {
-          return PropertyHint.resourceType;
+          return (
+            hint: PropertyHint.resourceType,
+            hintString: getScriptResourceForType(type)
+          );
         }
       }
     }
-    return null;
-  }
 
-  String _getPropertyHintString(DartType type, String packageName) {
-    final element = type.element;
-    if (element is ClassElement &&
-        _godotScriptChecker.hasAnnotationOf(element,
-            throwOnUnresolved: false)) {
-      final relativeName = element.library.firstFragment.source.fullName
-          .replaceFirst('/$packageName/', '');
-      return 'res://src/$relativeName';
+    if (type.isDartCoreList) {
+      final arrayElementType = (type as ParameterizedType).typeArguments.first;
+      final arrayElementVariantType = _variantTypeForType(arrayElementType);
+      if (arrayElementVariantType != null) {
+        final elementHint = _getPropertyHint(arrayElementType, packageName);
+        if (elementHint != null) {
+          final hintString =
+              '${arrayElementVariantType.value}/${elementHint.hint.value}:${elementHint.hintString}';
+
+          return (hint: PropertyHint.typeString, hintString: hintString);
+        } else {
+          final hintString =
+              '${arrayElementVariantType.value}/${PropertyHint.none.value}:';
+          return (hint: PropertyHint.typeString, hintString: hintString);
+        }
+      }
     }
 
-    // Else, return its type
-    return type.element!.name!;
+    return null;
   }
 
   String _buildRpcMethodInfo(MethodElement method, DartObject rpcAnnotation) {
@@ -372,6 +418,8 @@ class GodotScriptAnnotationGenerator
 
     if (isPrimitive(type)) {
       return 'PrimitiveTypeInfo.forType($typeName)!';
+    } else if (type.isDartCoreList) {
+      return 'Array.sTypeInfo';
     } else if (typeName == 'Variant') {
       return 'Variant.sTypeInfo';
     } else if (type is VoidType) {
@@ -379,6 +427,60 @@ class GodotScriptAnnotationGenerator
     } else {
       return '$typeName.sTypeInfo';
     }
+  }
+
+  VariantType? _variantTypeForType(DartType type) {
+    if (type.isDartCoreInt) {
+      return VariantType.integer;
+    } else if (type.isDartCoreDouble) {
+      return VariantType.float;
+    } else if (type.isDartCoreBool) {
+      return VariantType.bool;
+    } else if (type.isDartCoreString) {
+      return VariantType.string;
+    } else if (type.isDartCoreEnum) {
+      return VariantType.integer;
+    }
+
+    const variantTypeMap = <String, VariantType>{
+      'Vector2': VariantType.vector2,
+      'Vector2i': VariantType.vector2i,
+      'Rect2': VariantType.rect2,
+      'Rect2i': VariantType.rect2i,
+      'Vector3': VariantType.vector3,
+      'Vector3i': VariantType.vector3i,
+      'Transform2D': VariantType.transform2d,
+      'Vector4': VariantType.vector4,
+      'Vector4i': VariantType.vector4i,
+      'Plane': VariantType.plane,
+      'Quaternion': VariantType.quaternion,
+      'AABB': VariantType.aabb,
+      'Basis': VariantType.basis,
+      'Transform3D': VariantType.transform3d,
+      'Projection': VariantType.projection,
+      'Color': VariantType.color,
+      'StringName': VariantType.stringName,
+      'GDStringName': VariantType.string,
+      'NodePath': VariantType.nodePath,
+      'RID': VariantType.rid,
+      'PackedByteArray': VariantType.packedByteArray,
+      'PackedInt32Array': VariantType.packedInt32Array,
+      'PackedInt64Array': VariantType.packedFloat64Array,
+      'PackedFloatArray': VariantType.packedFloat64Array,
+      'PackedStringArray': VariantType.packedStringArray,
+      'PackedVector2Array': VariantType.packedVector2Array,
+      'PackedVector3Array': VariantType.packedVector3Array,
+      'PackedVector4Array': VariantType.packedVector4Array,
+      'PackedColor4Array': VariantType.packedColorArray,
+      // Not supported via conversion
+      // Object
+      // Callable
+      // Signal
+      // Dictionary
+      // Array
+    };
+
+    return variantTypeMap[type.element?.name];
   }
 
   String _convertVirtualMethodName(String methodName) {

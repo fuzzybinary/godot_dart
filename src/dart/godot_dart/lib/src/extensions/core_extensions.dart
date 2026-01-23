@@ -47,8 +47,30 @@ extension WeakRefExtension on Object {
   }
 }
 
-extension GDPointerExtension<T> on Pointer {
+extension GDPointerExtension on Pointer {
   Object? toDart() {
     return GDNativeInterface.gdObjectToDartObject(cast());
+  }
+}
+
+extension GDArrayExtensions on Array {
+  List<T> toDartList<T>() {
+    final arraySize = size();
+    final list = <T>[];
+    for (int i = 0; i < arraySize; i++) {
+      final element = this[i].as<T>();
+      if (element is T) {
+        list.add(element);
+      }
+    }
+    return list;
+  }
+
+  static Array fromList<T>(List<T> list) {
+    final array = Array();
+    for (var element in list) {
+      array.append(Variant(element));
+    }
+    return array;
   }
 }
