@@ -11,7 +11,7 @@ To help make sense of the logic, here's a diagram:
 ```mermaid
 flowchart TD
     X(tieDartToNative) --> A{Is RefCounted?}
-    A -->|No| B(Hold String)
+    A -->|No| B(Hold Strong)
     A -->|Yes| C(Hold Weak) --> D(initRef) --> E{Is RefCount > 1?}
     E -->|Yes| F(Convert To Strong)
     Y(reference callback) --> R{Is Incrementing?}
