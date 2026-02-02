@@ -362,6 +362,8 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   @pragma('vm:entry-point')
   final bool isScript;
 
+  bool get isNativeType => nativeTypeName == className;
+
   ExtensionTypeInfo({
     required this.className,
     required this.parentTypeInfo,
@@ -383,21 +385,30 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   bool hasSignal(String signalName) => getSignalInfo(signalName) != null;
 
   @pragma('vm:entry-point')
-  MethodInfo<T>? getMethodInfo(String methodName) {
-    return methods.firstWhereOrNull((e) => e.name == methodName);
+  MethodInfo<dynamic>? getMethodInfo(String methodName) {
+    var method = methods.firstWhereOrNull((e) => e.name == methodName);
+    if (method != null) return method;
+
+    if (!isNativeType) return parentTypeInfo?.getMethodInfo(methodName);
+
+    return null;
   }
 
   @pragma('vm:entry-point')
   SignalInfo? getSignalInfo(String signalName) {
-    return signals.firstWhereOrNull((e) => e.name == signalName);
+    final signal = signals.firstWhereOrNull((e) => e.name == signalName);
+    if (signal != null) return signal;
+
+    if (!isNativeType) return parentTypeInfo?.getSignalInfo(signalName);
+
+    return null;
   }
 
   @pragma('vm:entry-point')
   PropertyInfo? getPropertyInfo(String propertyName) {
     ExtensionTypeInfo<dynamic>? searchTypeInfo = this;
     PropertyInfo? info;
-    while (searchTypeInfo != null &&
-        searchTypeInfo.className != searchTypeInfo.nativeTypeName) {
+    while (searchTypeInfo != null && !searchTypeInfo.isNativeType) {
       info = searchTypeInfo.properties
           .firstWhereOrNull((e) => e.name == propertyName);
       if (info != null) {
