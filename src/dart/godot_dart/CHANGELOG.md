@@ -1,3 +1,7 @@
+## 0.13.1
+
+- Fix calling signals and virtual methods in super classes.
+
 ## 0.13.0
 
 - Fix issue assigning values to Dart properties on Load
