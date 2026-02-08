@@ -9,6 +9,7 @@ import '../gen/builtins.dart';
 import '../gen/engine_classes.dart';
 import '../gen/utility_functions.dart';
 import '../variant/variant.dart';
+import '../variant/array.dart';
 
 extension TNode on Node {
   T? getNodeT<T>([String? path]) {
@@ -53,7 +54,7 @@ extension GDPointerExtension on Pointer {
   }
 }
 
-extension GDArrayExtensions on Array {
+extension GDArrayExtensions on GDArray {
   List<T> toDartList<T>() {
     final arraySize = size();
     final list = <T>[];
@@ -66,8 +67,8 @@ extension GDArrayExtensions on Array {
     return list;
   }
 
-  static Array fromList<T>(List<T> list) {
-    final array = Array();
+  static GDArray fromList<T>(List<T> list) {
+    final array = GDArray();
     for (var element in list) {
       array.append(Variant(element));
     }

@@ -75,7 +75,7 @@ void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
       // Create the variant to write into. The return ptr is the memory
       // already allocated by the Variant
       final retType =
-          returnType.type == 'String' ? 'GDString' : returnType.type;
+          returnType.dartType == 'String' ? 'GDString' : returnType.dartType;
       o.p('final retVal = $retType();');
       o.p('final retPtr = retVal.nativePtr;');
       return;
@@ -116,7 +116,7 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
       if (returnType.type == 'String' || returnType.type == 'StringName') {
         o.p('return retVal.toDartString();');
       } else {
-        if (hasCustomImplementation(returnType.type)) {
+        if (needsOpaqueUpdate(returnType.type)) {
           o.p('retVal.updateFromOpaque();');
         }
         o.p('return retVal;');
@@ -272,7 +272,7 @@ String getArgumentDefaultValue(ArgumentProxy arg, String defaultValue) {
       if (defaultValue == '&""') return "''";
       return defaultValue.replaceAll('"', "'").replaceAll('&', '');
     case 'Array':
-      if (defaultValue == '[]') return 'Array()';
+      if (defaultValue == '[]') return 'GDArray()';
       break;
     case 'Dictionary':
       if (defaultValue == '{}') return 'Dictionary()';

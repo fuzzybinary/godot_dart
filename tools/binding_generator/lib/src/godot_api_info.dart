@@ -79,6 +79,12 @@ class GodotApiInfo {
         // Special case, included in every file
         if (strippedType.toLowerCase() == 'variant') return [];
 
+        // Special case, array is generated as BaseArray then extended
+        // as Array and TypedArray.
+        if (strippedType.toLowerCase() == 'array') {
+          return ['src/variant/array.dart'];
+        }
+
         if (hasCustomImplementation(strippedType)) {
           return ['src/variant/${strippedType.toSnakeCase()}.dart'];
         } else {

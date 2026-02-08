@@ -69,7 +69,6 @@ part 'simple_script.g.dart';
 
 // Generate the boilerplate for this object to be an accessible Godot script
 @GodotScript()
-@pragma('vm:entry-point')
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
   @pragma('vm:entry-point')
@@ -145,7 +144,6 @@ provided by Godot Dart, depending on the number of arguments: `Signal0` for a si
 class Hud extends CanvasLayer {
   //...
 
-  
   @GodotSignal()
   late final Signal0 _startGame = Signal0(this, 'start_game');
 }

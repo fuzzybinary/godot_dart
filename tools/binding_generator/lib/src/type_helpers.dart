@@ -26,14 +26,24 @@ bool hasDartType(String typeName) {
 }
 
 // Variant Types that were custom implemented to avoid back
-// and forth with Godot
-final customImplementedTypes = [
+// and forth with Godot or needed hand tuned capabilities
+const customImplementedTypes = [
   'Vector3',
   'Vector2',
+  'Array',
 ];
+
+// Variant types that are custom implemented and need their
+// data updated from their opaque data poitners to be in sync
+// with what Godot has. These are all essentially "value" types.
+const needOpaqueUpdateTypes = ['Vector3', 'Vector2'];
 
 bool hasCustomImplementation(String typeName) {
   return customImplementedTypes.contains(typeName);
+}
+
+bool needsOpaqueUpdate(String typeName) {
+  return needOpaqueUpdateTypes.contains(typeName);
 }
 
 final typeToFFIType = {
@@ -107,6 +117,7 @@ String getCorrectedType(String type, {String? meta}) {
     'String': 'String',
     'StringName': 'String',
     'Object': 'GodotObject',
+    'Array': 'GDArray',
     'real_t': 'double',
     'int8_t': 'int',
     'uint8_t': 'int',

@@ -147,7 +147,7 @@ class GodotDart {
         oob,
       );
       if (oob.value != 0) {
-        throw RangeError.index(index, self);
+        throw RangeError('oob value is ${oob.value}');
       }
     });
 
@@ -166,7 +166,7 @@ class GodotDart {
         oob,
       );
       if (oob.value != 0) {
-        throw RangeError.index(index, self);
+        throw RangeError('oob value is ${oob.value}');
       }
     });
   }

@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import '../gen/builtins.dart';
 import '../gen/global_constants.dart';
+import '../variant/array.dart';
 import '../variant/variant.dart';
 import 'core.dart';
 
@@ -249,7 +250,7 @@ class MethodInfo<T> {
   Dictionary asDict() {
     var dict = Dictionary();
     dict[Variant('name')] = Variant(name);
-    var argsArray = Array();
+    var argsArray = GDArray();
     for (int i = 0; i < args.length; ++i) {
       argsArray.append(Variant(args[i].asDict()));
     }
@@ -279,7 +280,7 @@ class SignalInfo {
   Dictionary asDict() {
     var dict = Dictionary();
     dict[Variant('name')] = Variant(name);
-    var argsArray = Array();
+    var argsArray = GDArray();
     for (int i = 0; i < args.length; ++i) {
       argsArray.append(Variant(args[i].asDict()));
     }

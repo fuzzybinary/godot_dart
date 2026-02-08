@@ -303,8 +303,8 @@ class GodotScriptAnnotationGenerator
       listType = type.typeArguments.first;
     }
 
-    buffer
-        .writeln('DartPropertyInfo<$parentType, ${isList ? 'Array' : type}>(');
+    buffer.writeln(
+        'DartPropertyInfo<$parentType, ${isList ? 'GDArray' : type}>(');
     buffer.writeln('  name: \'$exportName\',');
     buffer.writeln('  typeInfo: ${_typeInfoForType(type)},');
 
@@ -419,7 +419,7 @@ class GodotScriptAnnotationGenerator
     if (isPrimitive(type)) {
       return 'PrimitiveTypeInfo.forType($typeName)!';
     } else if (type.isDartCoreList) {
-      return 'Array.sTypeInfo';
+      return 'GDArray.sTypeInfo';
     } else if (typeName == 'Variant') {
       return 'Variant.sTypeInfo';
     } else if (type is VoidType) {

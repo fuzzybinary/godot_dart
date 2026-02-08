@@ -13,11 +13,14 @@ import '../core/type_resolver.dart';
 import '../gen/builtins.dart';
 import '../gen/classes/graph_edit.dart';
 import '../gen/global_constants.dart';
+import 'array.dart';
 import 'vector2.dart';
 import 'vector3.dart';
 
 export 'vector2.dart';
 export 'vector3.dart';
+export 'array.dart';
+export 'typed_array.dart';
 
 typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
@@ -147,9 +150,10 @@ void initVariantBindings(
   typeResolver.addType(Dictionary.sTypeInfo);
   _dartBuiltinConstructors[Dictionary.sTypeInfo.variantType] =
       Dictionary.fromVariantPtr;
-  Array.initBindings();
-  typeResolver.addType(Array.sTypeInfo);
-  _dartBuiltinConstructors[Array.sTypeInfo.variantType] = Array.fromVariantPtr;
+  GDBaseArray.initBindings();
+  typeResolver.addType(GDBaseArray.sTypeInfo);
+  _dartBuiltinConstructors[GDBaseArray.sTypeInfo.variantType] =
+      GDArray.fromVariantPtr; // NB: requests for Godot Array create GDArray
   PackedByteArray.initBindings();
   typeResolver.addType(PackedByteArray.sTypeInfo);
   _dartBuiltinConstructors[PackedByteArray.sTypeInfo.variantType] =
