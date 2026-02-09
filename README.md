@@ -72,7 +72,7 @@ part 'simple_script.g.dart';
 class SimpleScript extends Sprite2D  {
   // Return the type info that was generated...
   @pragma('vm:entry-point')
-  static final ExtensionTypeInfo<SimpleScript> sTypeInfo = _$SimpleScriptTypeInfo();
+  static ExtensionTypeInfo<SimpleScript> get sTypeInfo => _$SimpleScriptTypeInfo();
   // And provide an instance method to get the type info
   @override
   ExtensionTypeInfo<SimpleScript> get typeInfo => sTypeInfo;
@@ -182,7 +182,7 @@ Dart classes as extensions have had major changes in `godot_dart` 0.10.0, and ar
 class SimpleTestNode extends Sprite2D {
   // Create a static `sTypeInfo`. This is required for various Dart methods
   // implemented in C++ to gather information about your type.
-  static final sTypeInfo = ExtensionTypeInfo<SimpleTestNode>(
+  static get sTypeInfo => ExtensionTypeInfo<SimpleTestNode>(
     className: StringName.fromString('SimpleTestNode'),
     parentTypeInfo: Node.sTypeInfo,
     nativeTypeName: StringName.fromString('Node'),
