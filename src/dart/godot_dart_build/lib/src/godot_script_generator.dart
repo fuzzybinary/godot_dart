@@ -350,25 +350,24 @@ class GodotScriptAnnotationGenerator
       return type.element!.name!;
     }
 
-    if (element is ClassElement) {
-      for (final supertype in element.allSupertypes) {
-        if (supertype.element.name == 'Node') {
-          return (
-            hint: PropertyHint.nodeType,
-            hintString: getScriptResourceForType(type)
-          );
-        } else if (supertype.element.name == 'Resource') {
-          return (
-            hint: PropertyHint.resourceType,
-            hintString: getScriptResourceForType(type)
-          );
-        }
+    if (element case ClassElement ce) {
+      if (ce.isSubClassOf('Node')) {
+        return (
+          hint: PropertyHint.nodeType,
+          hintString: getScriptResourceForType(type)
+        );
+      } else if (ce.isSubClassOf('Resource')) {
+        return (
+          hint: PropertyHint.resourceType,
+          hintString: getScriptResourceForType(type)
+        );
       }
     }
 
     if (type.isDartCoreList) {
       final arrayElementType = (type as ParameterizedType).typeArguments.first;
       final arrayElementVariantType = _variantTypeForType(arrayElementType);
+
       if (arrayElementVariantType != null) {
         final elementHint = _getPropertyHint(arrayElementType, packageName);
         if (elementHint != null) {
@@ -440,6 +439,10 @@ class GodotScriptAnnotationGenerator
       return VariantType.string;
     } else if (type.isDartCoreEnum) {
       return VariantType.integer;
+    } else if (type.element case ClassElement ce) {
+      if (ce.isSubClassOf('GodotObject')) {
+        return VariantType.object;
+      }
     }
 
     const variantTypeMap = <String, VariantType>{
@@ -591,5 +594,16 @@ extension EnumHelper on ConstantReader {
     final index = peek('index')?.intValue;
 
     return values[index!];
+  }
+}
+
+extension InheritanceHelper on ClassElement {
+  bool isSubClassOf(String superclass) {
+    for (final supertype in allSupertypes) {
+      if (supertype.element.name == superclass) {
+        return true;
+      }
+    }
+    return false;
   }
 }

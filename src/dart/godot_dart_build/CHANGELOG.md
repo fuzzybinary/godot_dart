@@ -1,3 +1,7 @@
+## 0.12.0
+
+- Fix property hints for objects in lists.
+
 ## 0.11.0
 
 - Remove the need to specify signal names on `@GodotSignal`

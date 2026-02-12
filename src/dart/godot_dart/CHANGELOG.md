@@ -3,6 +3,7 @@
 - BREAKING: Change `Array` to `GDArray` to avoid collisions with `dart:ffi`'s `Array` attribute.
 - Support `Iterable<T>` on both `Array` and `TypedArray`.
 - Indexers on `TypedArray` are now support type safe retrieval.
+- Fix templates and README to correctly support hot reload.
 
 ## 0.13.1
 
