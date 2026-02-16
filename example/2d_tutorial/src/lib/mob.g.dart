@@ -16,10 +16,9 @@ ExtensionTypeInfo<Mob> _$MobTypeInfo() {
     constructFromGodotObject: (ptr) => Mob.withNonNullOwner(ptr),
     isScript: true,
     isGlobalClass: false,
-    signals: [],
-    properties: [],
-    rpcInfo: [],
   );
+  typeInfo.signals = [];
+  typeInfo.properties = [];
   typeInfo.methods = [
     MethodInfo(
       name: '_ready',
@@ -32,7 +31,7 @@ ExtensionTypeInfo<Mob> _$MobTypeInfo() {
       args: [
         PropertyInfo(
           name: 'delta',
-          typeInfo: PrimitiveTypeInfo.forType(double)!,
+          type: double,
         ),
       ],
     ),
@@ -42,5 +41,6 @@ ExtensionTypeInfo<Mob> _$MobTypeInfo() {
       args: [],
     ),
   ];
+  typeInfo.rpcInfo = [];
   return typeInfo;
 }

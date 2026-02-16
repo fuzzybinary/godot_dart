@@ -313,7 +313,7 @@ void GodotDartBindings::bind_method(Dart_Handle dart_type_info, Dart_Handle dart
   delete[] method_info.arguments_metadata;
 }
 
-Dart_Handle GodotDartBindings::get_dart_type_info(Dart_Handle type_name) {
+Dart_Handle GodotDartBindings::get_dart_type_info_by_name(Dart_Handle type_name) {
   DART_CHECK_RET(type_resolver, Dart_HandleFromPersistent(_type_resolver), Dart_Null(), "Failed to get type resolver");
 
   Dart_Handle args[] = {
@@ -322,6 +322,19 @@ Dart_Handle GodotDartBindings::get_dart_type_info(Dart_Handle type_name) {
 
   DART_CHECK_RET(type_info, Dart_Invoke(type_resolver, Dart_NewStringFromCString("getTypeInfoByName"), 1, args),
                  Dart_Null(), "Failed to get type info for type name");
+
+  return type_info;
+}
+
+Dart_Handle GodotDartBindings::get_dart_type_info_by_type(Dart_Handle type) {
+  DART_CHECK_RET(type_resolver, Dart_HandleFromPersistent(_type_resolver), Dart_Null(), "Failed to get type resolver");
+
+  Dart_Handle args[] = {
+      type,
+  };
+
+  DART_CHECK_RET(type_info, Dart_Invoke(type_resolver, Dart_NewStringFromCString("getTypeInfoByType"), 1, args),
+                 Dart_Null(), "Failed to get type info for type.");
 
   return type_info;
 }
@@ -363,11 +376,22 @@ Dart_Handle GodotDartBindings::new_object_copy(Dart_Handle type_name, GDExtensio
 }
 
 void GodotDartBindings::add_property(Dart_Handle bind_type, Dart_Handle dart_prop_info) {
+  GodotDartBindings *gde = GodotDartBindings::instance();
+  if (gde == nullptr) {
+    return;
+  }
 
   GDExtensionPropertyInfo prop_info = {};
 
-  DART_CHECK(dart_type_info, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("typeInfo")),
-             "Error getting typeInfo property");
+  DART_CHECK(dart_propety_type, Dart_GetField(dart_prop_info, Dart_NewStringFromCString("type")),
+             "Error getting type property");
+  Dart_Handle dart_type_info = gde->get_dart_type_info_by_type(dart_propety_type);
+
+  if (Dart_IsNull(dart_type_info)) {
+    GD_PRINT_ERROR("GodotDart: Failed to get typeInfo for Darty Property!");
+    return;
+  }
+
   DART_CHECK(dart_variant_value, Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType")),
              "Error getting variant type");
   // Class name
@@ -425,8 +449,8 @@ void GodotDartBindings::add_property(Dart_Handle bind_type, Dart_Handle dart_pro
   bind_method(bind_type, getter_method_info);
   bind_method(bind_type, setter_method_info);
 
-  GDEWrapper *gde = GDEWrapper::instance();
-  gde_classdb_register_extension_class_property(gde->get_library_ptr(), class_name._native_ptr(), &prop_info,
+  GDEWrapper *wrapper = GDEWrapper::instance();
+  gde_classdb_register_extension_class_property(wrapper->get_library_ptr(), class_name._native_ptr(), &prop_info,
                                                 setter_name._native_ptr(), getter_name._native_ptr());
 }
 

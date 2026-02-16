@@ -4,11 +4,12 @@ import '../gen/builtins.dart';
 import '../gen/global_constants.dart';
 import '../variant/variant.dart';
 import 'type_info.dart';
+import 'gdextension.dart';
 
 @immutable
 class PropertyInfo {
   @pragma('vm:entry-point')
-  final TypeInfo typeInfo;
+  final Type type;
 
   @pragma('vm:entry-point')
   final String name;
@@ -23,7 +24,7 @@ class PropertyInfo {
   final int flags;
 
   const PropertyInfo({
-    required this.typeInfo,
+    required this.type,
     required this.name,
     this.hint = PropertyHint.none,
     this.hintString = '',
@@ -33,12 +34,15 @@ class PropertyInfo {
   Dictionary asDict() {
     final dict = Dictionary();
 
-    dict[Variant('type')] = Variant(typeInfo.variantType);
-    dict[Variant('name')] = Variant(name);
-    dict[Variant('class_name')] = Variant(typeInfo.className);
-    dict[Variant('hint')] = Variant(hint);
-    dict[Variant('hint_string')] = Variant(hintString);
-    dict[Variant('usage')] = Variant(flags);
+    final typeInfo = gde.typeResolver.getTypeInfoByType(type);
+    if (typeInfo != null) {
+      dict[Variant('type')] = Variant(typeInfo.variantType);
+      dict[Variant('name')] = Variant(name);
+      dict[Variant('class_name')] = Variant(typeInfo.className);
+      dict[Variant('hint')] = Variant(hint);
+      dict[Variant('hint_string')] = Variant(hintString);
+      dict[Variant('usage')] = Variant(flags);
+    }
 
     return dict;
   }
@@ -73,7 +77,7 @@ class DartPropertyInfo<C, T> extends PropertyInfo {
   }
 
   const DartPropertyInfo({
-    required super.typeInfo,
+    required super.type,
     required super.name,
     super.hint,
     super.hintString,

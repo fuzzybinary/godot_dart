@@ -1,6 +1,7 @@
 ## 0.12.0
 
 - Fix property hints for objects in lists.
+- Fix self referencing Signals and Properties.
 
 ## 0.11.0
 

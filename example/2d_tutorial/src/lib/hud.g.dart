@@ -16,12 +16,11 @@ ExtensionTypeInfo<Hud> _$HudTypeInfo() {
     constructFromGodotObject: (ptr) => Hud.withNonNullOwner(ptr),
     isScript: true,
     isGlobalClass: false,
-    signals: [
-      SignalInfo(name: 'start_game', args: []),
-    ],
-    properties: [],
-    rpcInfo: [],
   );
+  typeInfo.signals = [
+    SignalInfo(name: 'start_game', args: []),
+  ];
+  typeInfo.properties = [];
   typeInfo.methods = [
     MethodInfo(
       name: '_ready',
@@ -34,7 +33,7 @@ ExtensionTypeInfo<Hud> _$HudTypeInfo() {
       args: [
         PropertyInfo(
           name: 'delta',
-          typeInfo: PrimitiveTypeInfo.forType(double)!,
+          type: double,
         ),
       ],
     ),
@@ -49,5 +48,6 @@ ExtensionTypeInfo<Hud> _$HudTypeInfo() {
       args: [],
     ),
   ];
+  typeInfo.rpcInfo = [];
   return typeInfo;
 }

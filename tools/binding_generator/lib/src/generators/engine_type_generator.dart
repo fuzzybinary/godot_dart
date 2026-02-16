@@ -185,7 +185,7 @@ void _writeMethodInfo(CodeSink o, GodotExtensionApiJsonClass classInfo) {
         if (method.arguments case final args?) {
           for (final arg in args) {
             o.b('PropertyInfo(', () {
-              o.p('typeInfo: ${arg.proxy.typeInfo},'); // Need to get the type info for this item
+              o.p('type: ${arg.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
               o.p("name: '${arg.name}',");
             }, '),');
           }
@@ -193,7 +193,7 @@ void _writeMethodInfo(CodeSink o, GodotExtensionApiJsonClass classInfo) {
       }, '],');
       if (method.returnValue case final returnValue?) {
         o.b('returnInfo: PropertyInfo(', () {
-          o.p('typeInfo: ${returnValue.proxy.typeInfo},'); // Need to get the type info for this item
+          o.p('type: ${returnValue.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
           o.p("name: 'return',");
         }, '),');
       }

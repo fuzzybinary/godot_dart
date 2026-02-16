@@ -159,7 +159,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
       Dart_EnterScope();
 
       Dart_Handle type_name = to_dart_string(class_name);
-      DART_CHECK(type_info, bindings->get_dart_type_info(type_name), "Error finding Dart type");
+      DART_CHECK(type_info, bindings->get_dart_type_info_by_name(type_name), "Error finding Dart type");
       // TODO: Since DartTypeInfo is ephemeral (it's recreated on hot reload), it might be good to have bindings
       // hold onto the Type, not the TypeInfo. Bindings only use this for object creation, so holding onto the
       // type info isn't needed.

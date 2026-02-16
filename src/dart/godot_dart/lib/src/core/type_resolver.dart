@@ -41,7 +41,14 @@ class TypeResolver {
 
   @pragma('vm:entry-point')
   TypeInfo? getTypeInfoByType(Type type) {
-    return _typeTypeInfoLookup[type];
+    var info = _typeTypeInfoLookup[type];
+    if (info != null) return info;
+    // Not found, try the a primitive type
+    info = PrimitiveTypeInfo.forType(type);
+    if (info == null) {
+      print('Could not find type info for $type!');
+    }
+    return info;
   }
 
   void clearScripts() {
@@ -67,6 +74,44 @@ class TypeResolver {
     assert(!_stringTypeInfoLookup.containsKey(dartName));
     _stringTypeInfoLookup[dartName] = typeInfo;
     _typeTypeInfoLookup[typeInfo.type] = typeInfo;
+  }
+
+  void addGodotBuiltins() {
+    addType(Variant.sTypeInfo);
+    addType(GDString.sTypeInfo);
+    addType(StringName.sTypeInfo);
+    addType(GDArray.sTypeInfo);
+    addType(Vector2.sTypeInfo);
+    addType(Vector2i.sTypeInfo);
+    addType(Rect2.sTypeInfo);
+    addType(Rect2i.sTypeInfo);
+    addType(Vector3.sTypeInfo);
+    addType(Vector3i.sTypeInfo);
+    addType(Transform2D.sTypeInfo);
+    addType(Vector4.sTypeInfo);
+    addType(Vector4i.sTypeInfo);
+    addType(Plane.sTypeInfo);
+    addType(Quaternion.sTypeInfo);
+    addType(AABB.sTypeInfo);
+    addType(Basis.sTypeInfo);
+    addType(Transform3D.sTypeInfo);
+    addType(Projection.sTypeInfo);
+    addType(Color.sTypeInfo);
+    addType(NodePath.sTypeInfo);
+    addType(RID.sTypeInfo);
+    addType(Callable.sTypeInfo);
+    addType(Signal.sTypeInfo);
+    addType(Dictionary.sTypeInfo);
+    addType(PackedByteArray.sTypeInfo);
+    addType(PackedInt32Array.sTypeInfo);
+    addType(PackedInt64Array.sTypeInfo);
+    addType(PackedFloat32Array.sTypeInfo);
+    addType(PackedFloat64Array.sTypeInfo);
+    addType(PackedStringArray.sTypeInfo);
+    addType(PackedVector2Array.sTypeInfo);
+    addType(PackedVector3Array.sTypeInfo);
+    addType(PackedVector4Array.sTypeInfo);
+    addType(PackedColorArray.sTypeInfo);
   }
 
   @pragma('vm:entry-point')
@@ -113,7 +158,8 @@ class TypeResolver {
     if (methodInfo.returnInfo case final returnInfo?) {
       final retPtr = Pointer<Void>.fromAddress(retAddress);
 
-      _dartToPtr(object, retPtr, returnInfo.typeInfo);
+      final typeInfo = getTypeInfoByType(returnInfo.type)!;
+      _dartToPtr(object, retPtr, typeInfo);
     }
   }
 
@@ -128,7 +174,7 @@ class TypeResolver {
     for (int i = 0; i < argsCount; ++i) {
       var variantPtr = (variantsPtr + i).value;
       final argInfo = methodInfo.args[i];
-      dartArgs.add(variantPtrToDart(variantPtr, argInfo.typeInfo));
+      dartArgs.add(variantPtrToDart(variantPtr, argInfo.type));
     }
     if (methodInfo.returnInfo == null) {
       methodInfo.call(target, dartArgs);
@@ -162,7 +208,8 @@ class TypeResolver {
   Object? _ptrToDart(Pointer<Void> ptrArg, PropertyInfo argInfo) {
     if (ptrArg == nullptr) return null;
 
-    switch (argInfo.typeInfo) {
+    final typeInfo = getTypeInfoByType(argInfo.type)!;
+    switch (typeInfo) {
       case final PrimitiveTypeInfo<dynamic> info:
         return info.fromPointer(ptrArg);
       case final BuiltinTypeInfo<dynamic> info:

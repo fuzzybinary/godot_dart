@@ -191,7 +191,8 @@ class ArgumentProxy {
   final String name;
   final String type;
   final String rawDartType;
-  final String dartType;
+  final String _dartType;
+  String get dartType => getDartType();
 
   final bool isOptional;
   final bool isPointer;
@@ -204,11 +205,15 @@ class ArgumentProxy {
 
   final String defaultReturnValue;
 
+  String getDartType({bool withOptionality = true}) {
+    return '$_dartType${withOptionality && isOptional ? '?' : ''}';
+  }
+
   ArgumentProxy._({
     required this.name,
     required this.type,
     required this.rawDartType,
-    required this.dartType,
+    required String dartType,
     required this.isOptional,
     required this.isPointer,
     required this.isRefCounted,
@@ -216,7 +221,7 @@ class ArgumentProxy {
     required this.meta,
     required this.defaultArgumentValue,
     required this.defaultReturnValue,
-  });
+  }) : _dartType = dartType;
 
   ArgumentProxy renamed(String newName) {
     return ArgumentProxy._(
@@ -459,7 +464,7 @@ String godotTypeToDartType(String? godotType) {
     }
   }
 
-  return '$rawDartType${isOptional ? '?' : ''}';
+  return rawDartType;
 }
 
 // Stripped type with the number of pointers

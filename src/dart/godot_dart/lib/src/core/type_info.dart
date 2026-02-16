@@ -345,15 +345,15 @@ class ExtensionTypeInfo<T> implements TypeInfo {
   /// A list of Dart Signals callable from Godot. For the Godot
   /// standard library, this will be empty.
   @pragma('vm:entry-point')
-  final List<SignalInfo> signals;
+  List<SignalInfo> signals;
 
   /// A list of Dart Properties usable from Godot. For the Godot
   /// standard library, this will be empty.
   @pragma('vm:entry-point')
-  final List<DartPropertyInfo<T, dynamic>> properties;
+  List<DartPropertyInfo<T, dynamic>> properties;
 
   @pragma('vm:entry-point')
-  final List<RpcInfo> rpcInfo;
+  List<RpcInfo> rpcInfo;
 
   @pragma('vm:entry-point')
   final bool isGlobalClass;

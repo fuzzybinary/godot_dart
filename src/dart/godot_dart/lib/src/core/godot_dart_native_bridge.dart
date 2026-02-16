@@ -83,7 +83,7 @@ List<Object?> _variantsToDart(
   var result = <Object?>[];
   for (int i = 0; i < count; ++i) {
     var variantPtr = (variants + i).value;
-    result.add(variantPtrToDart(variantPtr, argInfoList[i].typeInfo));
+    result.add(variantPtrToDart(variantPtr, argInfoList[i].type));
   }
 
   return result;
@@ -102,16 +102,15 @@ List<Variant> _variantsToDartVariants(int variantsPtrPtr, int count) {
 }
 
 @pragma('vm:entry-point')
-Object? _variantAddressToDart(int variantAddress, TypeInfo typeInfo) {
-  return variantPtrToDart(Pointer<Void>.fromAddress(variantAddress), typeInfo);
+Object? _variantAddressToDart(int variantAddress, Type type) {
+  return variantPtrToDart(Pointer<Void>.fromAddress(variantAddress), type);
 }
 
 @internal
-Object? variantPtrToDart(Pointer<Void> variantPtr, TypeInfo typeInfo) {
+Object? variantPtrToDart(Pointer<Void> variantPtr, Type type) {
   // What to do here? This was essentially a "cast" replacement which is why it
   // had a special case checking if it was casting to "Variant."
-  if (typeInfo.variantType ==
-      GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX) {
+  if (type == Variant) {
     // Keep as variant
     return Variant.fromVariantPtr(variantPtr);
   } else {

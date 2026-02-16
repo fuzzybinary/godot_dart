@@ -14,7 +14,7 @@ void *get_object_address(Dart_Handle engine_handle) {
     GD_PRINT_ERROR(Dart_GetError(address));
     return nullptr;
   }
-  
+
   uint64_t object_ptr = 0;
   Dart_IntegerToUint64(address, &object_ptr);
 
@@ -67,7 +67,7 @@ void gde_free_method_info_fields(GDExtensionMethodInfo *method_info) {
 }
 
 uint32_t gde_arg_list_from_dart(Dart_Handle dart_arg_list, GDExtensionPropertyInfo **arg_list,
-                            GDExtensionClassMethodArgumentMetadata **arg_meta_data) {
+                                GDExtensionClassMethodArgumentMetadata **arg_meta_data) {
   if (arg_list == nullptr) {
     // TODO: Assert
     return 0;
@@ -79,13 +79,13 @@ uint32_t gde_arg_list_from_dart(Dart_Handle dart_arg_list, GDExtensionPropertyIn
 
   *arg_list = new GDExtensionPropertyInfo[args_length];
   if (arg_meta_data != nullptr) {
-    *arg_meta_data = new GDExtensionClassMethodArgumentMetadata[args_length];  
+    *arg_meta_data = new GDExtensionClassMethodArgumentMetadata[args_length];
   }
-  
+
   for (intptr_t i = 0; i < args_length; ++i) {
     Dart_Handle arg_type_info = Dart_ListGetAt(dart_arg_list, i);
     gde_property_info_from_dart(arg_type_info, arg_list[i]);
-    
+
     if (arg_meta_data != nullptr) {
       // TODO - actually need this to specify int / double size
       *arg_meta_data[i] = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
@@ -111,16 +111,24 @@ void gde_property_info_from_dart(Dart_Handle dart_property_info, GDExtensionProp
     };
     return;
   }
+  GodotDartBindings *gde = GodotDartBindings::instance();
 
-  DART_CHECK(dart_type_info, Dart_GetField(dart_property_info, Dart_NewStringFromCString("typeInfo")),
+  DART_CHECK(dart_prop_type, Dart_GetField(dart_property_info, Dart_NewStringFromCString("type")),
              "Failed to get type info");
+  Dart_Handle dart_type_info = gde->get_dart_type_info_by_type(dart_prop_type);
+  if (Dart_IsNull(dart_type_info)) {
+    GD_PRINT_ERROR("Failed to get typeInfo from propery type.");
+    return;
+  }
+
   DART_CHECK(dart_variant_type, Dart_GetField(dart_type_info, Dart_NewStringFromCString("variantType")),
              "Failed to get variantType");
   int64_t temp;
   Dart_IntegerToInt64(dart_variant_type, &temp);
   prop_info->type = static_cast<GDExtensionVariantType>(temp);
 
-  DART_CHECK(class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")), "Failed to get className!");
+  DART_CHECK(class_name, Dart_GetField(dart_type_info, Dart_NewStringFromCString("className")),
+             "Failed to get className!");
   prop_info->class_name = get_object_address(class_name);
 
   DART_CHECK(dart_name, Dart_GetField(dart_property_info, Dart_NewStringFromCString("name")), "Failed to get name");

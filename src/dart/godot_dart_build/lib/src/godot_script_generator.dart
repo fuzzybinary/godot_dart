@@ -88,8 +88,8 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('    isScript: true,');
     buffer.writeln(
         '    isGlobalClass: ${isGlobalClassReader.isNull ? 'false' : isGlobalClassReader.boolValue},');
+    buffer.writeln('  );');
 
-    // TODO sepearate out signals and properties in case they self reference
     List<FieldElement> signalFields = [];
     List<Element> propertyFields = [];
     for (final field in element.fields) {
@@ -114,7 +114,7 @@ class GodotScriptAnnotationGenerator
             'Found `@GodotProperty` on setter `${setter.name}`. `@GodotProperty` should not be used on setters, only getters.');
       }
     }
-    buffer.writeln('    signals: [');
+    buffer.writeln('  typeInfo.signals = [');
     for (final signalField in signalFields) {
       final signalAnnotation =
           _godotSignalChecker.firstAnnotationOf(signalField);
@@ -130,9 +130,9 @@ class GodotScriptAnnotationGenerator
             'Use of `@GodotSignal` on invalid field `${signalField.name}`. The type must be one of the SignalX classes and have a default initialier.');
       }
     }
-    buffer.writeln('    ],');
+    buffer.writeln('  ];');
 
-    buffer.writeln('    properties: [');
+    buffer.writeln('  typeInfo.properties = [');
     for (final propertyField in propertyFields) {
       final propertyAnnotation =
           _godotPropertyChecker.firstAnnotationOf(propertyField);
@@ -140,18 +140,7 @@ class GodotScriptAnnotationGenerator
           element.displayName, propertyField, propertyAnnotation, packageName));
       buffer.writeln(',');
     }
-    buffer.writeln('    ],');
-
-    buffer.writeln('    rpcInfo: [');
-    for (final method in element.methods) {
-      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
-          throwOnUnresolved: false);
-      if (rpcAnnotation != null) {
-        buffer.write(_buildRpcMethodInfo(method, rpcAnnotation));
-      }
-    }
-    buffer.writeln('    ],');
-    buffer.writeln('  );');
+    buffer.writeln('  ];');
 
     buffer.writeln('  typeInfo.methods = [');
 
@@ -179,6 +168,17 @@ class GodotScriptAnnotationGenerator
       }
     }
     buffer.writeln('  ];');
+
+    buffer.writeln('  typeInfo.rpcInfo = [');
+    for (final method in element.methods) {
+      final rpcAnnotation = _godotRpcInfoChecker.firstAnnotationOf(method,
+          throwOnUnresolved: false);
+      if (rpcAnnotation != null) {
+        buffer.write(_buildRpcMethodInfo(method, rpcAnnotation));
+      }
+    }
+    buffer.writeln('  ];');
+
     buffer.writeln('  return typeInfo;');
     buffer.writeln('}');
 
@@ -264,7 +264,7 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('  args:  [');
     for (final param in interfaceType.typeArguments.indexed) {
       buffer.writeln(
-          '    PropertyInfo(name: \'p${param.$1}\', typeInfo: ${_typeInfoForType(param.$2)}),');
+          '    PropertyInfo(name: \'p${param.$1}\', type: ${_propertyTypeForType(param.$2)}),');
     }
     buffer.writeln(']');
     buffer.write(')');
@@ -277,7 +277,7 @@ class GodotScriptAnnotationGenerator
 
     buffer.writeln('PropertyInfo(');
     buffer.writeln('  name: \'${parameter.name}\',');
-    buffer.writeln('  typeInfo: ${_typeInfoForType(parameter.type)},');
+    buffer.writeln('  type: ${_propertyTypeForType(parameter.type)},');
     buffer.write(')');
 
     return buffer.toString();
@@ -306,7 +306,7 @@ class GodotScriptAnnotationGenerator
     buffer.writeln(
         'DartPropertyInfo<$parentType, ${isList ? 'GDArray' : type}>(');
     buffer.writeln('  name: \'$exportName\',');
-    buffer.writeln('  typeInfo: ${_typeInfoForType(type)},');
+    buffer.writeln('  type: ${_propertyTypeForType(type)},');
 
     final propertyHint = _getPropertyHint(type, packageName);
     if (propertyHint != null) {
@@ -405,26 +405,17 @@ class GodotScriptAnnotationGenerator
     return buffer.toString();
   }
 
-  String _typeInfoForType(DartType type) {
-    bool isPrimitive(DartType type) {
-      return type.isDartCoreBool ||
-          type.isDartCoreDouble ||
-          type.isDartCoreInt ||
-          type.isDartCoreString;
-    }
-
+  String _propertyTypeForType(DartType type) {
     final typeName = type.element?.name;
 
-    if (isPrimitive(type)) {
-      return 'PrimitiveTypeInfo.forType($typeName)!';
-    } else if (type.isDartCoreList) {
-      return 'GDArray.sTypeInfo';
+    if (type.isDartCoreList) {
+      return 'GDArray';
     } else if (typeName == 'Variant') {
-      return 'Variant.sTypeInfo';
+      return 'Variant';
     } else if (type is VoidType) {
-      return 'PrimitiveTypeInfo.forType(null)';
+      return 'null';
     } else {
-      return '$typeName.sTypeInfo';
+      return '$typeName';
     }
   }
 

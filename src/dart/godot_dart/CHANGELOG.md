@@ -4,6 +4,7 @@
 - Support `Iterable<T>` on both `Array` and `TypedArray`.
 - Indexers on `TypedArray` are now support type safe retrieval.
 - Fix templates and README to correctly support hot reload.
+- Use `Type` instead of `TypeInfo` on PropertyInfo to support properties, methods, and signals that self reference.
 
 ## 0.13.1
 

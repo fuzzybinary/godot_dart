@@ -55,6 +55,7 @@ void _registerGodot(int extensionToken) {
 
   initVariantBindings(ffiInterface, _globalExtension.typeResolver);
   PrimitiveTypeInfo.initTypeMappings();
+  _globalExtension.typeResolver.addGodotBuiltins();
   _globalExtension.typeResolver.addGodotStandardLibrary();
 
   GD.initBindings();

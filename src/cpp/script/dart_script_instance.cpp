@@ -90,13 +90,13 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
       return;
     }
 
-    DART_CHECK(prop_type_info, Dart_GetField(dart_property_info, Dart_NewStringFromCString("typeInfo")),
-               "Failed to get typeInfo for property");
+    DART_CHECK(prop_type, Dart_GetField(dart_property_info, Dart_NewStringFromCString("type")),
+               "Failed to get type for property");
     Dart_Handle value_address = Dart_NewInteger(reinterpret_cast<intptr_t>(p_value));
     Dart_Handle native_library = Dart_HandleFromPersistent(gde->_native_library);
     Dart_Handle args[] = {
         value_address,
-        prop_type_info,
+        prop_type,
     };
     DART_CHECK(dart_property_value,
                Dart_Invoke(native_library, Dart_NewStringFromCString("_variantAddressToDart"), 2, args),
@@ -107,7 +107,11 @@ bool DartScriptInstance::set(const godot::StringName &p_name, GDExtensionConstVa
         object,
         dart_property_value,
     };
-    DART_CHECK(_, Dart_InvokeClosure(prop_setter, 2, set_args), "Failed calling setter");
+    Dart_Handle _ = Dart_InvokeClosure(prop_setter, 2, set_args);
+    if (Dart_IsError(_)) {
+      GD_PRINT_ERROR(Dart_GetError(_));
+      return;
+    }
 
     set_value = true;
   });

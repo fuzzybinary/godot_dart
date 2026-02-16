@@ -45,7 +45,8 @@ public:
   Dart_Handle new_dart_object(Dart_Handle type_name);
   Dart_Handle new_godot_owned_object(Dart_Handle type, void *ptr);
   Dart_Handle new_object_copy(Dart_Handle type_name, GDExtensionConstObjectPtr ptr);
-  Dart_Handle get_dart_type_info(Dart_Handle type_info);
+  Dart_Handle get_dart_type_info_by_name(Dart_Handle type_info);
+  Dart_Handle get_dart_type_info_by_type(Dart_Handle type);
 
   void bind_method(Dart_Handle dart_type_info, Dart_Handle dart_method_info);
   void add_property(Dart_Handle dart_type_info, Dart_Handle dart_prop_info);

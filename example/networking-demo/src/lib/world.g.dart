@@ -16,18 +16,9 @@ ExtensionTypeInfo<World> _$WorldTypeInfo() {
     constructFromGodotObject: (ptr) => World.withNonNullOwner(ptr),
     isScript: true,
     isGlobalClass: false,
-    signals: [],
-    properties: [],
-    rpcInfo: [
-      RpcInfo(
-        name: 'messageRpc',
-        mode: MultiplayerAPIRPCMode.rpcModeAnyPeer,
-        callLocal: true,
-        transferMode: MultiplayerPeerTransferMode.reliable,
-        transferChannel: 0,
-      ),
-    ],
   );
+  typeInfo.signals = [];
+  typeInfo.properties = [];
   typeInfo.methods = [
     MethodInfo(
       name: '_ready',
@@ -50,11 +41,11 @@ ExtensionTypeInfo<World> _$WorldTypeInfo() {
       args: [
         PropertyInfo(
           name: 'username',
-          typeInfo: PrimitiveTypeInfo.forType(String)!,
+          type: String,
         ),
         PropertyInfo(
           name: 'data',
-          typeInfo: PrimitiveTypeInfo.forType(String)!,
+          type: String,
         ),
       ],
     ),
@@ -62,6 +53,15 @@ ExtensionTypeInfo<World> _$WorldTypeInfo() {
       name: 'onSendPressed',
       dartMethodCall: (o, a) => o.onSendPressed(),
       args: [],
+    ),
+  ];
+  typeInfo.rpcInfo = [
+    RpcInfo(
+      name: 'messageRpc',
+      mode: MultiplayerAPIRPCMode.rpcModeAnyPeer,
+      callLocal: true,
+      transferMode: MultiplayerPeerTransferMode.reliable,
+      transferChannel: 0,
     ),
   ];
   return typeInfo;

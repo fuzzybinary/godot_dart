@@ -16,19 +16,18 @@ ExtensionTypeInfo<Player> _$PlayerTypeInfo() {
     constructFromGodotObject: (ptr) => Player.withNonNullOwner(ptr),
     isScript: true,
     isGlobalClass: false,
-    signals: [
-      SignalInfo(name: 'hit', args: []),
-    ],
-    properties: [
-      DartPropertyInfo<Player, int>(
-        name: 'speed',
-        typeInfo: PrimitiveTypeInfo.forType(int)!,
-        getter: (self) => self.speed,
-        setter: (self, value) => self.speed = value,
-      ),
-    ],
-    rpcInfo: [],
   );
+  typeInfo.signals = [
+    SignalInfo(name: 'hit', args: []),
+  ];
+  typeInfo.properties = [
+    DartPropertyInfo<Player, int>(
+      name: 'speed',
+      type: int,
+      getter: (self) => self.speed,
+      setter: (self, value) => self.speed = value,
+    ),
+  ];
   typeInfo.methods = [
     MethodInfo(
       name: '_ready',
@@ -41,7 +40,7 @@ ExtensionTypeInfo<Player> _$PlayerTypeInfo() {
       args: [
         PropertyInfo(
           name: 'delta',
-          typeInfo: PrimitiveTypeInfo.forType(double)!,
+          type: double,
         ),
       ],
     ),
@@ -51,7 +50,7 @@ ExtensionTypeInfo<Player> _$PlayerTypeInfo() {
       args: [
         PropertyInfo(
           name: 'pos',
-          typeInfo: Vector2.sTypeInfo,
+          type: Vector2,
         ),
       ],
     ),
@@ -61,10 +60,11 @@ ExtensionTypeInfo<Player> _$PlayerTypeInfo() {
       args: [
         PropertyInfo(
           name: 'body',
-          typeInfo: Node2D.sTypeInfo,
+          type: Node2D,
         ),
       ],
     ),
   ];
+  typeInfo.rpcInfo = [];
   return typeInfo;
 }

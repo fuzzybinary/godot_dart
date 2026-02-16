@@ -16,19 +16,18 @@ ExtensionTypeInfo<GameLogic> _$GameLogicTypeInfo() {
     constructFromGodotObject: (ptr) => GameLogic.withNonNullOwner(ptr),
     isScript: true,
     isGlobalClass: false,
-    signals: [],
-    properties: [
-      DartPropertyInfo<GameLogic, PackedScene?>(
-        name: 'mobScene',
-        typeInfo: PackedScene.sTypeInfo,
-        hint: PropertyHint.resourceType,
-        hintString: 'PackedScene',
-        getter: (self) => self.mobScene,
-        setter: (self, value) => self.mobScene = value,
-      ),
-    ],
-    rpcInfo: [],
   );
+  typeInfo.signals = [];
+  typeInfo.properties = [
+    DartPropertyInfo<GameLogic, PackedScene?>(
+      name: 'mobScene',
+      type: PackedScene,
+      hint: PropertyHint.resourceType,
+      hintString: 'PackedScene',
+      getter: (self) => self.mobScene,
+      setter: (self, value) => self.mobScene = value,
+    ),
+  ];
   typeInfo.methods = [
     MethodInfo(
       name: '_ready',
@@ -41,7 +40,7 @@ ExtensionTypeInfo<GameLogic> _$GameLogicTypeInfo() {
       args: [
         PropertyInfo(
           name: 'delta',
-          typeInfo: PrimitiveTypeInfo.forType(double)!,
+          type: double,
         ),
       ],
     ),
@@ -71,5 +70,6 @@ ExtensionTypeInfo<GameLogic> _$GameLogicTypeInfo() {
       args: [],
     ),
   ];
+  typeInfo.rpcInfo = [];
   return typeInfo;
 }

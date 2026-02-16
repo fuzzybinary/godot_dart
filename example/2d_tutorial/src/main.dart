@@ -27,10 +27,11 @@ class SimpleTestNode extends Node {
     GDNativeInterface.addProperty(
       SimpleTestNode.sTypeInfo,
       DartPropertyInfo<SimpleTestNode, int>(
-          typeInfo: PrimitiveTypeInfo.forType(int)!,
-          name: 'maxSpeed',
-          getter: (self) => self.maxSpeed,
-          setter: (self, value) => self.maxSpeed = value),
+        type: int,
+        name: 'maxSpeed',
+        getter: (self) => self.maxSpeed,
+        setter: (self, value) => self.maxSpeed = value,
+      ),
     );
   }
 }
