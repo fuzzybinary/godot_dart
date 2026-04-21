@@ -38,7 +38,7 @@ extension GodotListImportHelper<T> on List<T> {
   }
 }
 
-String? argumentAllocation(ArgumentProxy arg) {
+List<String>? argumentAllocation(ArgumentProxy arg) {
   if (arg.needsAllocation) {
     var ffiType = getFFIType(arg, forPtrCall: true);
     final argName = escapeName(arg.name).toLowerCamelCase();
@@ -47,10 +47,20 @@ String? argumentAllocation(ArgumentProxy arg) {
             arg.typeCategory == TypeCategory.bitfieldType
         ? '.value'
         : '';
-    return 'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName$bang$value;';
+    return [
+      'final ${argName}Ptr = arena.allocate<$ffiType>(sizeOf<$ffiType>())..value = $argName$bang$value;'
+    ];
   } else if (arg.typeCategory == TypeCategory.engineClass) {
     final argName = escapeName(arg.name).toLowerCamelCase();
-    return 'final ${argName}Ptr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>())..value = ($argName?.nativePtr ?? nullptr);';
+    return [
+      'final ${argName}Ptr = arena.allocate<GDExtensionObjectPtr>(sizeOf<GDExtensionObjectPtr>())..value = ($argName?.nativePtr ?? nullptr);'
+    ];
+  } else if (isCopiedBuiltin(arg.type)) {
+    final argName = escapeName(arg.name).toLowerCamelCase();
+    return [
+      'final ${argName}Ptr = arena.allocate<Uint8>(${arg.type}.sTypeInfo.size);',
+      '${arg.name}.copyTo(${argName}Ptr);'
+    ];
   }
   return null;
 }
@@ -72,10 +82,6 @@ void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
       // Otherwise use the default
       break;
     case TypeCategory.builtinClass:
-      // Create the variant to write into. The return ptr is the memory
-      // already allocated by the Variant
-      final retType =
-          returnType.dartType == 'String' ? 'GDString' : returnType.dartType;
       // Create the variant to write into.
       final retType = switch (returnType.type) {
         'String' => 'GDString',
@@ -83,7 +89,13 @@ void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
         _ => returnType.dartType
       };
       o.p('final retVal = $retType();');
-      o.p('final retPtr = retVal.nativePtr;');
+      if (isCopiedBuiltin(returnType.type)) {
+        // Need to allocate memory for to copy from
+        o.p('final retPtr = arena.allocate<Uint8>($retType.sTypeInfo.size);');
+      } else {
+        // The return ptr is the memory already allocated by the Variant
+        o.p('final retPtr = retVal.nativePtr;');
+      }
       return;
     case TypeCategory.nativeStructure:
       returnTypeName = returnType.rawDartType;
@@ -122,8 +134,8 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
       if (returnType.type == 'String' || returnType.type == 'StringName') {
         o.p('return retVal.toDartString();');
       } else {
-        if (needsOpaqueUpdate(returnType.type)) {
-          o.p('retVal.updateFromOpaque();');
+        if (isCopiedBuiltin(returnType.type)) {
+          o.p('retVal.copyFrom(retPtr);');
         }
         o.p('return retVal;');
       }
@@ -140,7 +152,11 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
 void writeArgumentAllocations(List<ArgumentProxy> arguments, CodeSink out) {
   for (final arg in arguments) {
     final alloc = argumentAllocation(arg);
-    if (alloc != null) out.p(alloc);
+    if (alloc != null) {
+      for (var a in alloc) {
+        out.p(a);
+      }
+    }
   }
 }
 
@@ -585,8 +601,13 @@ void convertDartToPtrArgument(
       break;
     case TypeCategory.builtinClass:
       final bang = argument.defaultArgumentValue != null ? '!' : '';
-      //final optional = argument.isOptional ? ' ?? nullptr' : '';
-      o.p('$argumentName.value = $varName$bang.nativePtr.cast();');
+      if (isCopiedBuiltin(argument.type)) {
+        o.p('final ${varName}Ptr = arena.allocate<Uint8>(${argument.type}.sTypeInfo.size);');
+        o.p('$varName$bang.copyTo(${varName}Ptr);');
+        o.p('$argumentName.value = ${varName}Ptr.cast();');
+      } else {
+        o.p('$argumentName.value = $varName$bang.nativePtr.cast();');
+      }
       break;
     case TypeCategory.nativeStructure:
       if (argument.isPointer) {

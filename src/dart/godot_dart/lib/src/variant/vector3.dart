@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../core/core_types.dart';
@@ -31,7 +32,7 @@ enum Vector3Axis {
   );
 }
 
-class Vector3 extends BuiltinType {
+class Vector3 extends CopyiedBuiltinType {
   static const int _size = 12;
   static final sTypeInfo = BuiltinTypeInfo<Vector3>(
     className: StringName.fromString('Vector3'),
@@ -40,19 +41,6 @@ class Vector3 extends BuiltinType {
     constructObjectDefault: () => Vector3(),
     constructCopy: (ptr) => Vector3.copyPtr(ptr),
   );
-
-  @override
-  Pointer<Uint8> get nativePtr {
-    _updateOpaque();
-    return nativeDataPtr;
-  }
-
-  @override
-  void constructCopy(GDExtensionTypePtr ptr) {
-    gde.callBuiltinConstructor(_bindings.constructor_1!, ptr, [
-      nativePtr.cast(),
-    ]);
-  }
 
   @override
   BuiltinTypeInfo<Vector3> get typeInfo => sTypeInfo;
@@ -68,14 +56,13 @@ class Vector3 extends BuiltinType {
   double get z => _data[2];
   set z(double value) => _data[2] = value;
 
-  Vector3({double x = 0.0, double y = 0.0, double z = 0.0})
-      : super.nonFinalized() {
+  Vector3({double x = 0.0, double y = 0.0, double z = 0.0}) {
     _data[0] = x;
     _data[1] = y;
     _data[2] = z;
   }
 
-  Vector3.copy(Vector3 copy) : super.nonFinalized() {
+  Vector3.copy(Vector3 copy) {
     _data[0] = copy._data[0];
     _data[1] = copy._data[1];
     _data[2] = copy._data[2];
@@ -93,26 +80,27 @@ class Vector3 extends BuiltinType {
       : this.fromVariantPtr(variant.nativePtr.cast());
 
   @internal
-  Vector3.fromVariantPtr(GDExtensionVariantPtr variantPtr)
-      : super.nonFinalized() {
-    allocateOpaque(sTypeInfo.size, null);
+  Vector3.fromVariantPtr(GDExtensionVariantPtr variantPtr) {
     final c = getToTypeConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
     if (c == null) return;
 
-    c(nativeDataPtr.cast(), variantPtr);
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, nativeDataPtr[i]);
-    }
+    using((arena) {
+      final nativeMem = arena.allocate<Uint8>(_size);
+
+      c(nativeMem.cast(), variantPtr);
+      copyFrom(nativeMem);
+    });
   }
 
-  Vector3.copyPtr(Pointer<Void> pointer) : super.nonFinalized() {
-    final bytePtr = pointer.cast<Uint8>();
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, bytePtr[i]);
-    }
+  Vector3.copyPtr(Pointer<Void> pointer) {
+    copyFrom(pointer.cast());
+  }
+
+  void set(double x, double y, double z) {
+    _data[0] = x;
+    _data[1] = y;
+    _data[2] = z;
   }
 
   // --- Godot Public Interface ---
@@ -252,8 +240,8 @@ class Vector3 extends BuiltinType {
   Vector3 lerp(Vector3 to, double weight) {
     return Vector3(
       x: x + (weight * (to.x - x)),
-      y: x + (weight * (to.y - y)),
-      z: x + (weight * (to.z - z)),
+      y: y + (weight * (to.y - y)),
+      z: z + (weight * (to.z - z)),
     );
   }
 
@@ -473,25 +461,48 @@ class Vector3 extends BuiltinType {
 
   Vector3 operator -(Vector3 other) => Vector3.copy(this)..subtract(other);
 
-  Vector3 operator *(num scale) => Vector3.copy(this)..scale(scale);
-
-  Vector3 operator /(num scale) => Vector3.copy(this)..scale(1.0 / scale);
-
-  void updateFromOpaque() {
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, nativeDataPtr[i]);
+  Vector3 operator *(dynamic other) {
+    if (other is num) {
+      return Vector3.copy(this)..scale(other);
+    } else if (other is Vector3) {
+      return Vector3(x: x * other.x, y: y * other.y, z: z * other.z);
     }
+    throw ArgumentError(
+        'Unsuported type for Vector3.operator*: ${other.runtimeType}');
   }
 
-  void _updateOpaque() {
-    if (nativeDataPtr == nullptr) {
-      allocateOpaque(sTypeInfo.size, null);
+  Vector3 operator /(dynamic other) {
+    if (other is num) {
+      return Vector3.copy(this)..scale(1.0 / other);
+    } else if (other is Vector3) {
+      return Vector3(x: x / other.x, y: y / other.y, z: z / other.z);
     }
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      nativeDataPtr[i] = byteData.getUint8(i);
-    }
+    throw ArgumentError(
+        'Unsuported type for Vector3.operator*: ${other.runtimeType}');
+  }
+
+  double operator [](int index) => _data[index];
+  void operator []=(int index, double value) => _data[index] = value;
+
+  @override
+  void copyFrom(Pointer<Uint8> data) {
+    final floatPtr = data.cast<Float>();
+    _data[0] = floatPtr[0];
+    _data[1] = floatPtr[1];
+    _data[2] = floatPtr[2];
+  }
+
+  @override
+  void copyTo(Pointer<Uint8> data) {
+    final floatPtr = data.cast<Float>();
+    floatPtr[0] = _data[0];
+    floatPtr[1] = _data[1];
+    floatPtr[2] = _data[2];
+  }
+
+  @override
+  String toString() {
+    return '($x, $y, $z)';
   }
 
   static final _Vector3Bindings _bindings = _Vector3Bindings();

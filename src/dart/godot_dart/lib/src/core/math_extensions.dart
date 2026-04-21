@@ -1,6 +1,17 @@
 // These are mostly taken from Godot's Math namespace in service of implementing
 // math variants in Dart.
 
+extension DoubleHelpers on double {
+  bool isEqualApprox(double a, [double epsilon = 0.001]) {
+    if (this == a) return true;
+    return (this - a).abs() < epsilon;
+  }
+
+  bool isZeroApprox() {
+    return isEqualApprox(0);
+  }
+}
+
 bool equalApprox(double a, double b, [double epsilon = 0.001]) {
   if (a == b) return true;
   return (a - b).abs() < epsilon;

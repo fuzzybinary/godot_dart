@@ -28,22 +28,28 @@ bool hasDartType(String typeName) {
 // Variant Types that were custom implemented to avoid back
 // and forth with Godot or needed hand tuned capabilities
 const customImplementedTypes = [
+  'Array',
+  'Basis',
+  'Transform3D',
   'Vector3',
   'Vector2',
-  'Array',
 ];
 
-// Variant types that are custom implemented and need their
-// data updated from their opaque data poitners to be in sync
-// with what Godot has. These are all essentially "value" types.
-const needOpaqueUpdateTypes = ['Vector3', 'Vector2'];
+// Variant types that are copied to / from Godot, and don't hold
+// onto any native memory
+const isCopyiedBuiltinType = [
+  'Basis',
+  'Transform3D',
+  'Vector2',
+  'Vector3',
+];
 
 bool hasCustomImplementation(String typeName) {
   return customImplementedTypes.contains(typeName);
 }
 
-bool needsOpaqueUpdate(String typeName) {
-  return needOpaqueUpdateTypes.contains(typeName);
+bool isCopiedBuiltin(String typeName) {
+  return isCopyiedBuiltinType.contains(typeName);
 }
 
 final typeToFFIType = {

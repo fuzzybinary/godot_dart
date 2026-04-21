@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../core/core_types.dart';
@@ -23,7 +24,7 @@ enum Vector2Axis {
   }
 }
 
-class Vector2 extends BuiltinType {
+class Vector2 extends CopyiedBuiltinType {
   static const int _size = 8;
   static final sTypeInfo = BuiltinTypeInfo<Vector2>(
     className: StringName.fromString('Vector2'),
@@ -32,19 +33,6 @@ class Vector2 extends BuiltinType {
     constructObjectDefault: () => Vector2(),
     constructCopy: (ptr) => Vector2.copyPtr(ptr),
   );
-
-  @override
-  Pointer<Uint8> get nativePtr {
-    _updateOpaque();
-    return nativeDataPtr;
-  }
-
-  @override
-  void constructCopy(GDExtensionTypePtr ptr) {
-    gde.callBuiltinConstructor(_bindings.constructor_1!, ptr, [
-      nativePtr.cast(),
-    ]);
-  }
 
   @override
   BuiltinTypeInfo<Vector2> get typeInfo => sTypeInfo;
@@ -57,17 +45,17 @@ class Vector2 extends BuiltinType {
   double get y => _data[1];
   set y(double value) => _data[1] = value;
 
-  Vector2({double x = 0.0, double y = 0.0}) : super.nonFinalized() {
+  Vector2({double x = 0.0, double y = 0.0}) {
     _data[0] = x;
     _data[1] = y;
   }
 
-  Vector2.copy(Vector2 copy) : super.nonFinalized() {
+  Vector2.copy(Vector2 copy) {
     _data[0] = copy._data[0];
     _data[1] = copy._data[1];
   }
 
-  Vector2.fromXY(double x, double y) : super.nonFinalized() {
+  Vector2.fromXY(double x, double y) {
     _data[0] = x;
     _data[1] = y;
   }
@@ -96,26 +84,21 @@ class Vector2 extends BuiltinType {
       : this.fromVariantPtr(variant.nativePtr.cast());
 
   @internal
-  Vector2.fromVariantPtr(GDExtensionVariantPtr variantPtr)
-      : super.nonFinalized() {
-    allocateOpaque(sTypeInfo.size, null);
+  Vector2.fromVariantPtr(GDExtensionVariantPtr variantPtr) {
     final c = getToTypeConstructor(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2);
     if (c == null) return;
 
-    c(nativeDataPtr.cast(), variantPtr);
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, nativeDataPtr[i]);
-    }
+    using((arena) {
+      final nativeMem = arena.allocate<Uint8>(_size);
+
+      c(nativeMem.cast(), variantPtr);
+      copyFrom(nativeMem);
+    });
   }
 
-  Vector2.copyPtr(Pointer<Void> pointer) : super.nonFinalized() {
-    final bytePtr = pointer.cast<Uint8>();
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, bytePtr[i]);
-    }
+  Vector2.copyPtr(Pointer<Void> pointer) {
+    copyFrom(pointer.cast());
   }
 
   // --- Godot Public Interface ---
@@ -376,21 +359,18 @@ class Vector2 extends BuiltinType {
 
   Vector2 operator /(num scale) => Vector2.copy(this)..scale(1.0 / scale);
 
-  void updateFromOpaque() {
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      byteData.setUint8(i, nativeDataPtr[i]);
-    }
+  @override
+  void copyFrom(Pointer<Uint8> data) {
+    final floatPtr = data.cast<Float>();
+    _data[0] = floatPtr[0];
+    _data[1] = floatPtr[1];
   }
 
-  void _updateOpaque() {
-    if (nativeDataPtr == nullptr) {
-      allocateOpaque(sTypeInfo.size, null);
-    }
-    final byteData = _data.buffer.asByteData();
-    for (int i = 0; i < byteData.lengthInBytes; ++i) {
-      nativeDataPtr[i] = byteData.getUint8(i);
-    }
+  @override
+  void copyTo(Pointer<Uint8> data) {
+    final floatPtr = data.cast<Float>();
+    floatPtr[0] = _data[0];
+    floatPtr[1] = _data[1];
   }
 
   static final _Vector2Bindings _bindings = _Vector2Bindings();

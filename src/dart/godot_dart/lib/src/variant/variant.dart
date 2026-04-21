@@ -14,13 +14,17 @@ import '../gen/builtins.dart';
 import '../gen/classes/graph_edit.dart';
 import '../gen/global_constants.dart';
 import 'array.dart';
+import 'basis.dart';
+import 'transform3d.dart';
 import 'vector2.dart';
 import 'vector3.dart';
 
+export 'array.dart';
+export 'basis.dart';
+export 'transform3d.dart';
+export 'typed_array.dart';
 export 'vector2.dart';
 export 'vector3.dart';
-export 'array.dart';
-export 'typed_array.dart';
 
 typedef GDExtensionVariantFromType = void Function(
     GDExtensionVariantPtr, GDExtensionTypePtr);
@@ -32,7 +36,7 @@ typedef VariantConstructor = void Function(
 late List<GDExtensionVariantFromType?> _fromTypeConstructor;
 late List<GDExtensionTypeFromVariant?> _toTypeConstructor;
 
-typedef BuiltinConstructor = BuiltinType Function(GDExtensionVariantPtr);
+typedef BuiltinConstructor = dynamic Function(GDExtensionVariantPtr);
 Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
 void initVariantBindings(
@@ -299,6 +303,14 @@ class Variant implements Finalizable {
       final c = _fromTypeConstructor[
           GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
       c!.call(nativePtr.cast(), obj.cast());
+    } else if (obj is CopyiedBuiltinType) {
+      final typeInfo = obj.typeInfo;
+      final c = _fromTypeConstructor[typeInfo.variantType];
+      using((arena) {
+        final mem = arena.allocate<Uint8>(typeInfo.size);
+        obj.copyTo(mem);
+        c!.call(nativePtr.cast(), mem.cast());
+      });
     } else if (obj is BuiltinType) {
       // Builtin type
       final typeInfo = obj.typeInfo;

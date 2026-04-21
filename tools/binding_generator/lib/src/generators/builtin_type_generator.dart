@@ -322,6 +322,8 @@ void _writeMembers(CodeSink o, BuiltinClass builtin) {
           valueCast = 'GDString.fromString(${member.name}).nativePtr.cast()';
         } else if (valueMemberProxy.isOptional) {
           valueCast = '${valueMemberProxy.name}?.nativePtr.cast() ?? nullptr';
+        } else if (isCopiedBuiltin(valueMemberProxy.type)) {
+          valueCast = 'valuePtr.cast()';
         } else {
           valueCast = '${valueMemberProxy.name}.nativePtr.cast()';
         }

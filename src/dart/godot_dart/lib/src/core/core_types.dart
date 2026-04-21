@@ -9,6 +9,15 @@ import 'godot_dart_native_bridge.dart';
 import 'signals.dart';
 import 'type_info.dart';
 
+/// Core interface for hand implemented types that are copied when going to /
+/// from Godot. They do not hold onto any native memory.
+abstract class CopyiedBuiltinType {
+  BuiltinTypeInfo<dynamic> get typeInfo;
+
+  void copyFrom(Pointer<Uint8> data);
+  void copyTo(Pointer<Uint8> data);
+}
+
 /// Core interface for types that can convert to Variant (the builtin types)
 abstract class BuiltinType implements Finalizable {
   @internal
@@ -19,8 +28,6 @@ abstract class BuiltinType implements Finalizable {
 
   BuiltinTypeInfo<dynamic> get typeInfo;
 
-  // Overrideable
-  @pragma('vm:entry-point')
   Pointer<Uint8> get nativePtr {
     return nativeDataPtr;
   }
@@ -122,8 +129,9 @@ abstract class ExtensionType implements Finalizable {
     // Script instance should take care of this. Should we assert that the
     // object has a script instance?
     if (!typeInfo.isScript) {
-      bool isGodotType = typeInfo.nativeTypeName.toDartString() ==
-          typeInfo.className.toDartString();
+      final nativeTypeName = typeInfo.nativeTypeName.toDartString();
+      final className = typeInfo.className.toDartString();
+      bool isGodotType = nativeTypeName == className;
       GDNativeInterface.tieDartToNative(
           this, typeInfo, _owner, this is RefCounted, isGodotType);
     }
