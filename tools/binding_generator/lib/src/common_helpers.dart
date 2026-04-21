@@ -76,6 +76,12 @@ void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
       // already allocated by the Variant
       final retType =
           returnType.dartType == 'String' ? 'GDString' : returnType.dartType;
+      // Create the variant to write into.
+      final retType = switch (returnType.type) {
+        'String' => 'GDString',
+        'StringName' => 'StringName',
+        _ => returnType.dartType
+      };
       o.p('final retVal = $retType();');
       o.p('final retPtr = retVal.nativePtr;');
       return;
