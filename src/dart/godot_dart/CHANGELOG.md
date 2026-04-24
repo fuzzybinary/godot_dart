@@ -5,6 +5,8 @@
 - Indexers on `TypedArray` are now support type safe retrieval.
 - Fix templates and README to correctly support hot reload.
 - Use `Type` instead of `TypeInfo` on PropertyInfo to support properties, methods, and signals that self reference.
+- Dart implemented `Variant` types now copy data on funciton calls an no longer hold onto native memory.
+- Implement `Transform3D` and `Basis`
 
 ## 0.13.1
 
