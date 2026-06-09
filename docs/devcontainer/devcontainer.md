@@ -2,6 +2,8 @@
 
 This document describes an optional VS Code DevContainer workflow for users or contributors who want a reproducible Godot Dart setup.
 
+A DevContainer lets VS Code reopen a project inside a Docker container and use that container as the development environment. The `.devcontainer/devcontainer.json` file describes how VS Code should create and configure that environment. See the official VS Code Dev Containers documentation for more details: https://code.visualstudio.com/docs/devcontainers/containers
+
 This is **not** the recommended installation path for Godot Dart. The standard setup remains the one described in the main `README.md`.
 
 The goal of this workflow is to make it easier to:
@@ -55,9 +57,13 @@ You need:
 - a GitHub token or a direct artifact URL;
 - optionally, Godot installed on the host if you choose the host-first workflow.
 
+The example script currently assumes a Debian/Ubuntu-based container image because it uses `apt-get` and the Dart Debian package repository. The example DevContainer configuration below uses `mcr.microsoft.com/devcontainers/base:ubuntu-22.04`.
+
 ## Recommended workflow
 
 This workflow assumes that you create a Godot project first.
+
+### 1. Create a Godot project
 
 Start with a normal Godot project:
 
@@ -68,7 +74,24 @@ my_godot_project/
 └── main.tscn
 ```
 
-Then add the DevContainer and setup files inside that Godot project:
+The `project.godot` file should be at the root of the project.
+
+### 2. Add the DevContainer files
+
+Inside the Godot project, add a `.devcontainer/` folder:
+
+```text
+my_godot_project/
+├── .devcontainer/
+│   └── devcontainer.json
+├── project.godot
+├── icon.svg
+└── main.tscn
+```
+
+### 3. Add the install script
+
+Copy or adapt the reference script into the Godot project under `scripts/install.sh`:
 
 ```text
 my_godot_project/
@@ -83,58 +106,32 @@ my_godot_project/
 
 The `.devcontainer/devcontainer.json` file configures the container used by VS Code, and `scripts/install.sh` performs the Godot Dart setup after the container is created.
 
-## Files provided in this repository
+### 4. Add environment variables
 
-This repository provides the reference documentation and helper script under:
+Create a local `.env` file at the Godot project root.
 
-```text
-docs/devcontainer/
-├── devcontainer.md
-└── install.sh
+You can either provide a `GITHUB_TOKEN` so the script can download the latest successful GitHub Actions artifact, or provide a direct artifact URL with `GODOT_DART_ARTIFACT_URL`.
+
+See the next section for details.
+
+### 5. Reopen the project in the DevContainer
+
+Open the Godot project folder in VS Code and reopen it in the DevContainer.
+
+The `postCreateCommand` in `.devcontainer/devcontainer.json` runs:
+
+```bash
+bash scripts/install.sh
 ```
 
-These files are meant to document the approach and provide a reference implementation.
+### 6. Choose how Godot should run
 
-For a real Godot project, copy or adapt the helper script into your project:
+After the artifact has been downloaded and extracted, choose one of the workflows below:
 
-```text
-my_godot_project/
-└── scripts/
-    └── install.sh
-```
+- use the **host-first** workflow if you want to run Godot on the host;
+- use the **container-first** workflow if you want Dart setup and Godot to run inside the same container.
 
-## Expected project layout after installation
-
-After the prebuilt artifact is extracted, a working Godot Dart project may look like this:
-
-```text
-my_godot_project/
-├── project.godot
-├── godot_dart.gdextension
-├── libgodot_dart.so
-├── libdart_dll.so
-├── godot_dart/
-│   └── logo_dart.svg
-└── src/
-    ├── analysis_options.yaml
-    ├── pubspec.yaml
-    ├── main.dart
-    ├── godot_dart_scripts.g.dart
-    └── lib/
-```
-
-The exact native libraries may vary by platform. For example, the downloaded artifact may contain:
-
-```text
-libgodot_dart.so
-libgodot_dart.dylib
-godot_dart.dll
-libdart_dll.so
-libdart_dll.dylib
-dart_dll.dll
-```
-
-The important point is that the native libraries and `godot_dart.gdextension` must be available from the Godot project root, next to `project.godot`.
+The important rule is to avoid mixing Dart package resolution from one environment with Godot running in another environment.
 
 ## Environment variables
 
@@ -180,6 +177,39 @@ src/build_runner.log
 ```
 
 Be careful with `pubspec.lock`: some repositories intentionally commit lockfiles, especially examples or tools. Do not ignore or remove `pubspec.lock` globally unless that is the intended policy for the project.
+
+## Expected project layout after installation
+
+After the prebuilt artifact is extracted, a working Godot Dart project may look like this:
+
+```text
+my_godot_project/
+├── project.godot
+├── godot_dart.gdextension
+├── libgodot_dart.so
+├── libdart_dll.so
+├── godot_dart/
+│   └── logo_dart.svg
+└── src/
+    ├── analysis_options.yaml
+    ├── pubspec.yaml
+    ├── main.dart
+    ├── godot_dart_scripts.g.dart
+    └── lib/
+```
+
+The exact native libraries may vary by platform. For example, the downloaded artifact may contain:
+
+```text
+libgodot_dart.so
+libgodot_dart.dylib
+godot_dart.dll
+libdart_dll.so
+libdart_dll.dylib
+dart_dll.dll
+```
+
+The important point is that the native libraries and `godot_dart.gdextension` must be available from the Godot project root, next to `project.godot`.
 
 ## Important rule: do not mix environments
 
@@ -325,30 +355,7 @@ and:
 
 This keeps the Dart pub cache inside the project workspace and makes the setup reproducible after the container is created.
 
-## Install script behavior
-
-The install script:
-
-1. installs minimal system dependencies;
-2. installs the Dart SDK if missing;
-3. loads `.env` if present;
-4. downloads the prebuilt `godot-extension` artifact;
-5. extracts it into the Godot project root;
-6. ensures a `godot_dart.gdextension` file exists;
-7. optionally runs `dart pub get` and `build_runner`;
-8. writes an `install.log` file.
-
-The script supports these environment variables:
-
-```bash
-GITHUB_TOKEN
-GODOT_DART_ARTIFACT_URL
-GODOT_DART_REPO
-GODOT_DART_ARTIFACT_NAME
-SKIP_DART_SETUP
-PUB_CACHE
-LOG_FILE
-```
+## Supported environment variables
 
 ### `GITHUB_TOKEN`
 
@@ -383,7 +390,7 @@ Default:
 PUB_CACHE="${PROJECT_ROOT}/.pub-cache"
 ```
 
-### Why use a project-local `PUB_CACHE`?
+#### Why use a project-local `PUB_CACHE`?
 
 When working across a host machine and a DevContainer, using a project-local `PUB_CACHE` can make troubleshooting easier:
 
@@ -401,6 +408,16 @@ This avoids relying on environment-specific default cache locations such as:
 However, this does **not** make host/container mixing safe by itself.
 
 The important part is still that `dart pub get`, `build_runner`, and Godot must run in the same environment.
+
+### `LOG_FILE`
+
+Overrides the install log path.
+
+Default:
+
+```bash
+LOG_FILE="install.log"
+```
 
 ## Troubleshooting
 

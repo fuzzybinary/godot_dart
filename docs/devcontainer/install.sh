@@ -12,6 +12,11 @@ set -euo pipefail
 # - extracts it into the project root;
 # - optionally runs dart pub get + build_runner in ./src.
 #
+# Assumptions:
+# - this script is intended to run from a Debian/Ubuntu-based DevContainer;
+# - the project root is the parent directory of this script directory;
+# - the project root should contain project.godot.
+#
 # Important:
 # The environment that runs `dart pub get` / `build_runner` should be the same
 # environment that runs Godot. Otherwise .dart_tool/package_config.json may
@@ -39,16 +44,29 @@ log() {
 }
 
 warn() {
-  echo "⚠️  $*" >&2
+  echo "WARN: $*" >&2
 }
 
 fail() {
-  echo "❌ $*" >&2
+  echo "ERROR: $*" >&2
   exit 1
 }
 
 has_command() {
   command -v "$1" >/dev/null 2>&1
+}
+
+require_debian_or_ubuntu_container() {
+  if ! has_command apt-get; then
+    fail "This helper script currently requires a Debian/Ubuntu-based container image with apt-get."
+  fi
+}
+
+validate_project_root() {
+  if [ ! -f "${PROJECT_ROOT}/project.godot" ]; then
+    warn "project.godot was not found in ${PROJECT_ROOT}"
+    warn "This script is intended to be run from a Godot project root setup, usually via scripts/install.sh."
+  fi
 }
 
 load_env_file() {
@@ -184,30 +202,11 @@ extract_artifact() {
 }
 
 ensure_gdextension_file() {
-  if [ -f "${PROJECT_ROOT}/godot_dart.gdextension" ]; then
-    log "godot_dart.gdextension already exists"
-    return
+  if [ ! -f "${PROJECT_ROOT}/godot_dart.gdextension" ]; then
+    fail "godot_dart.gdextension not found after extraction. The downloaded artifact may not have the expected layout."
   fi
 
-  warn "godot_dart.gdextension not found after extraction; writing fallback file"
-
-  cat > "${PROJECT_ROOT}/godot_dart.gdextension" <<'EOF'
-[configuration]
-entry_symbol = "godot_dart_init"
-compatibility_minimum = 4.2
-
-[icons]
-DartScript = "res://godot_dart/logo_dart.svg"
-DartHotReload = "res://godot_dart/hot_reload.svg"
-
-[libraries]
-linux.debug.x86_64 = "res://libgodot_dart.so"
-linux.release.x86_64 = "res://libgodot_dart.so"
-windows.debug.x86_64 = "res://godot_dart.dll"
-windows.release.x86_64 = "res://godot_dart.dll"
-macos.debug = "res://libgodot_dart.dylib"
-macos.release = "res://libgodot_dart.dylib"
-EOF
+  log "godot_dart.gdextension found"
 }
 
 run_dart_setup() {
@@ -257,7 +256,7 @@ EOF
 print_summary() {
   cat <<EOF
 
-✅ Godot Dart setup complete.
+Godot Dart setup complete.
 
 Project root:
   ${PROJECT_ROOT}
@@ -285,6 +284,8 @@ main() {
   log "Repository: ${REPO}"
   log "Artifact name: ${ARTIFACT_NAME}"
 
+  validate_project_root
+  require_debian_or_ubuntu_container
   load_env_file
   install_system_dependencies
   install_dart_if_missing
