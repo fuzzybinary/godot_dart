@@ -8,6 +8,7 @@
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
+#include <godot_cpp/core/engine_ptrcall.hpp>
 
 #include "dart_helpers.h"
 #include "gde_wrapper.h"
@@ -153,11 +154,14 @@ void GodotDartRuntimePlugin::shutdown_dart_bindings() {
     DartGodotInstanceBinding::s_instanceMap.clear();
 
     for (const auto &itr : DartScriptInstance::s_instanceMap) {
-      godot::Object obj;
-      obj._owner = itr.second->get_godot_object();
-      if (!obj._owner) continue;
+      GDExtensionObjectPtr objPtr = itr.second->get_godot_object();
+      if (!objPtr) continue;
 
-      auto str = obj.to_string().utf8();
+      static GDExtensionMethodBindPtr _gde_method_bind = gde_classdb_get_method_bind(
+          godot::Object::get_class_static()._native_ptr(), godot::StringName("to_string")._native_ptr(), 2841200299);
+      godot::String gdStr = godot::internal::_call_native_mb_ret<godot::String>(_gde_method_bind, objPtr);
+
+      auto str = gdStr.utf8();
 
       // TODO: Remove when we know we're not leaking
       printf("Leaked binding instance at %llx\n: %s", static_cast<int64_t>(itr.first), str.get_data());
