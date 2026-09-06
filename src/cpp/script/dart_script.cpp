@@ -39,6 +39,9 @@ DartScript::~DartScript() {
 }
 
 void DartScript::_bind_methods() {
+  // We still tartget Godot 4.3+, but these methods were added later. Bind them to silence the errors.
+  // These should be removed if we upgrade `godot-cpp`
+  BIND_VIRTUAL_METHOD(DartScript, _get_doc_class_name);
 }
 
 godot::Ref<Script> DartScript::_get_base_script() const {
@@ -282,6 +285,10 @@ godot::TypedArray<godot::Dictionary> DartScript::_get_documentation() const {
   return godot::TypedArray<godot::Dictionary>();
 }
 
+godot::StringName DartScript::_get_doc_class_name() const {
+  return _class_name;
+}
+
 bool DartScript::_has_property_default_value(const godot::StringName &property) const {
   return false;
 }
@@ -490,6 +497,10 @@ void DartScript::refresh_type(bool force) {
           }
         }
 
+        DART_CHECK(class_name, Dart_GetField(type_info, Dart_NewStringFromCString("className")),
+                   "Failed to get class name.");
+        _class_name = godot::StringName(*reinterpret_cast<godot::StringName *>(get_object_address(class_name)));
+
         // Update Properties
         clear_property_cache();
 
@@ -501,11 +512,9 @@ void DartScript::refresh_type(bool force) {
 
         // Always add a secret hidden property that tells Godot the name of our class
         {
-          DART_CHECK(class_name, Dart_GetField(type_info, Dart_NewStringFromCString("className")),
-                     "Failed to get class name.");
           GDExtensionPropertyInfo property_info = {
               GDEXTENSION_VARIANT_TYPE_NIL,
-              new godot::StringName(*reinterpret_cast<godot::StringName *>(get_object_address(class_name))),
+              new godot::StringName(_class_name),
               new godot::String(),
               PROPERTY_HINT_NONE,
               new godot::String(path),

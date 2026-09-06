@@ -1,8 +1,12 @@
+# Contributing
+
 Contributions are welcome!
 
 But, please, before you do reach out to me on Mastodon
 [@fuzzybinary@mastodon.gamedev.place](https://mastodon.gamedev.place/@fuzzybinary).
 I'll let you know what I'm currently working on and where I could use some help.
+
+Alternately, I can also be reached on the [dart_community Discord](https://discord.gg/Qt6DgfAWWx).
 
 The rest of this document helps me / you understand how to build the extension.
 

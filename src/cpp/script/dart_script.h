@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include <vector>
 
 #include <dart_api.h>
 
@@ -37,6 +38,7 @@ public:
   bool _is_tool() const override;
   godot::StringName _get_instance_base_type() const override;
   godot::TypedArray<godot::Dictionary> _get_documentation() const override;
+  godot::StringName _get_doc_class_name() const;
   bool _has_property_default_value(const godot::StringName &property) const override;
   godot::Variant _get_property_default_value(const godot::StringName &property) const override;
   void _update_exports() override;
@@ -75,6 +77,7 @@ private:
   void clear_property_cache();
   void *create_script_instance_internal(Object *for_object, bool is_placeholder) const;
 
+  godot::StringName _class_name;
   godot::String _source_code;
   std::vector<GDExtensionPropertyInfo> _properties_cache;
   godot::Variant _rpc_config;
