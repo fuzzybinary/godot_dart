@@ -181,8 +181,12 @@ class TypeResolver {
     } else {
       final object = methodInfo.call(target, dartArgs);
       final retPtr = Pointer<Void>.fromAddress(variantReturnAddresss);
-      final retVariant = Variant(object);
-      retVariant.constructCopy(retPtr);
+      if (object is Variant) {
+        object.constructCopy(retPtr);
+      } else {
+        final retVariant = Variant(object);
+        retVariant.constructCopy(retPtr);
+      }
     }
   }
 

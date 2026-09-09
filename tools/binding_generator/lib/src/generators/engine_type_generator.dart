@@ -164,41 +164,42 @@ void _writeMethodInfo(CodeSink o, GodotExtensionApiJsonClass classInfo) {
 
   // Only the virtual methods that need to be in the MethodInfo table,
   // because all other methods won't be called from Godot => Dart.
-  for (final method in classInfo.methods!.where((m) => m.isVirtual)) {
-    final dartMethodName = getDartMethodName(method.name, true);
-    o.b('MethodInfo(', () {
-      o.p("name: '${method.name}',");
-      o.indent();
-      o.write('dartMethodCall: (self, args) => self.$dartMethodName(');
-      if (method.arguments case final args?) {
-        for (final (i, arg) in args.indexed) {
-          if (arg.proxy.isPointer) {
-            o.write('(args[$i] as Pointer<Void>).cast(),');
-          } else {
-            o.write('args[$i] as ${arg.proxy.dartType},');
-          }
-        }
-      }
-      o.write('),');
-      o.nl();
-      o.b('args: <PropertyInfo>[', () {
-        if (method.arguments case final args?) {
-          for (final arg in args) {
-            o.b('PropertyInfo(', () {
-              o.p('type: ${arg.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
-              o.p("name: '${arg.name}',");
-            }, '),');
-          }
-        }
-      }, '],');
-      if (method.returnValue case final returnValue?) {
-        o.b('returnInfo: PropertyInfo(', () {
-          o.p('type: ${returnValue.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
-          o.p("name: 'return',");
-        }, '),');
-      }
-    }, '),');
-  }
+  // Doing this fucks up default return values I think :(
+  // for (final method in classInfo.methods!.where((m) => m.isVirtual)) {
+  //   final dartMethodName = getDartMethodName(method.name, true);
+  //   o.b('MethodInfo(', () {
+  //     o.p("name: '${method.name}',");
+  //     o.indent();
+  //     o.write('dartMethodCall: (self, args) => self.$dartMethodName(');
+  //     if (method.arguments case final args?) {
+  //       for (final (i, arg) in args.indexed) {
+  //         if (arg.proxy.isPointer) {
+  //           o.write('(args[$i] as Pointer<Void>).cast(),');
+  //         } else {
+  //           o.write('args[$i] as ${arg.proxy.dartType},');
+  //         }
+  //       }
+  //     }
+  //     o.write('),');
+  //     o.nl();
+  //     o.b('args: <PropertyInfo>[', () {
+  //       if (method.arguments case final args?) {
+  //         for (final arg in args) {
+  //           o.b('PropertyInfo(', () {
+  //             o.p('type: ${arg.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
+  //             o.p("name: '${arg.name}',");
+  //           }, '),');
+  //         }
+  //       }
+  //     }, '],');
+  //     if (method.returnValue case final returnValue?) {
+  //       o.b('returnInfo: PropertyInfo(', () {
+  //         o.p('type: ${returnValue.proxy.getDartType(withOptionality: false)},'); // Need to get the type info for this item
+  //         o.p("name: 'return',");
+  //       }, '),');
+  //     }
+  //   }, '),');
+  // }
 }
 
 void _writeSignals(CodeSink o, GodotExtensionApiJsonClass classInfo) {

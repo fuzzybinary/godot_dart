@@ -1,3 +1,9 @@
+## 0.15.0
+
+(No native code changes - this is compatible with binaries from 0.14)
+- MAYBE BREAKING: Don't register virtuals in engine classes. (Prevents using incorrect default implementaitons).
+- Fix methods that return `Variant` from throwing `ArgumentError: Do not construct Variants with Variants`.
+
 ## 0.14.0
 
 - BREAKING: Change `Array` to `GDArray` to avoid collisions with `dart:ffi`'s `Array` attribute.

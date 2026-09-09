@@ -1,5 +1,6 @@
 ## 0.12.0
 
+- Use `GDArray` over `Array`.
 - Fix property hints for objects in lists.
 - Fix self referencing Signals and Properties.
 
