@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import '../gen/engine_classes.dart';
+import '../gen/global_constants.dart';
 
 /// An annotation that specifies that this class should be used as a Godot
 /// script.
@@ -45,8 +46,14 @@ class GodotSignal {
 class GodotProperty {
   final String? name;
 
-  // TODO: Property Hints
-  const GodotProperty({this.name});
+  /// Overrides the inspector hint inferred from the property's type.
+  /// Use [PropertyHint.none] to explicitly disable an inferred hint.
+  final PropertyHint? hint;
+
+  /// Overrides the inferred hint string. An empty string clears it.
+  final String? hintString;
+
+  const GodotProperty({this.name, this.hint, this.hintString});
 }
 
 @immutable
