@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:mirrors';
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -309,9 +310,22 @@ class GodotScriptAnnotationGenerator
     buffer.writeln('  type: ${_propertyTypeForType(type)},');
 
     final propertyHint = _getPropertyHint(type, packageName);
-    if (propertyHint != null) {
-      buffer.writeln('  hint: ${propertyHint.hint.toString()},');
-      buffer.writeln('  hintString: \'${propertyHint.hintString}\',');
+    final hintReader = reader.read('hint');
+    final hintStringReader = reader.read('hintString');
+    final hint = hintReader.isNull
+        ? propertyHint?.hint
+        : hintReader.enumValue<PropertyHint>();
+    final hintString = hintStringReader.isNull
+        ? propertyHint?.hintString
+        : hintStringReader.stringValue;
+    if (hint != null) {
+      buffer.writeln('  hint: $hint,');
+    }
+    if (hintString != null) {
+      // JSON escapes quotes, backslashes and control characters. Also escape
+      // dollar signs so the generated Dart literal cannot interpolate them.
+      final literal = jsonEncode(hintString).replaceAll(r'$', r'\$');
+      buffer.writeln('  hintString: $literal,');
     }
     var getterBody = 'self.${field.name}';
     var setterBody = 'self.${field.name} = value';

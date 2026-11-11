@@ -81,6 +81,27 @@ cmake --build build --config release
 This will put the dynamic library into `./src/cpp/build/` (under `Release` on Windows).  It will also copy
 the required files to `./example/2d_tutorial` for your convenience.
 
+## Tests
+
+The property hint tests run the builder on Dart scripts and check the generated
+metadata, including automatic hints and string escaping. They do not launch Godot
+or require the compiled C++ extension.
+
+First generate the Dart bindings as described above. When testing changes to the
+local `godot_dart` package, use the path override in
+`src/dart/godot_dart_build/pubspec_overrides.yaml`. Then, from the repository root,
+run:
+
+```sh
+cd src/dart/godot_dart_build
+dart pub get
+dart test test/property_hints_test.dart
+```
+
+To check the editor integration manually, expose a numeric property with
+`hint: PropertyHint.range, hintString: '0,1000,10'`, regenerate the script bindings,
+and verify that the inspector offers the configured range and step.
+
 ## Other Stuff
 
 For code formating, please use `dartfmt` and the provided `.clangformat` files.
