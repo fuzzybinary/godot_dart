@@ -1,3 +1,7 @@
+## 0.12.1
+
+- Support custom property hints. See [#40](https://github.com/fuzzybinary/godot_dart/pull/40)
+
 ## 0.12.0
 
 - Use `GDArray` over `Array`.

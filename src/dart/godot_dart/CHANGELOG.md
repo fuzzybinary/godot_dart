@@ -1,3 +1,8 @@
+## 0.15.1
+
+(No native code changes - this is compatible with binaries from 0.14)
+- Support custom property hints. See [#40](https://github.com/fuzzybinary/godot_dart/pull/40)
+
 ## 0.15.0
 
 (No native code changes - this is compatible with binaries from 0.14)
